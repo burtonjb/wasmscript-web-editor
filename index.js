@@ -327261,6 +327261,20 @@ ${tagToString(tag)}`;
       throw new Error("Not yet implemented");
     }
   };
+  var AstBuiltInFunctionCallExpression = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstBuiltInFunctionCallExpression");
+    }
+    builtInFunction;
+    identifier;
+    args;
+    constructor(node, builtInFunction, identifier3, args) {
+      super(node);
+      this.builtInFunction = builtInFunction;
+      this.identifier = identifier3;
+      this.args = args;
+    }
+  };
   var AstCallExpression = class extends AstAbstractExpressionNode {
     static {
       __name(this, "AstCallExpression");
@@ -327659,88 +327673,6 @@ ${tagToString(tag)}`;
     }
   };
 
-  // ../compiler/dist/src/compiler/ast/AstVariableAccess.js
-  var AbstractVariableNode = class extends AstAtomNode {
-    static {
-      __name(this, "AbstractVariableNode");
-    }
-    // encodes a variable name
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get name() {
-      return this.identifier.name;
-    }
-    get symbolName() {
-      return this.identifier.name;
-    }
-    get symbolKind() {
-      return "Variable";
-    }
-  };
-  var AstSimpleVariableAccess = class extends AbstractVariableNode {
-    static {
-      __name(this, "AstSimpleVariableAccess");
-    }
-    identifier;
-    constructor(node, identifier3) {
-      super(node);
-      this.identifier = identifier3;
-    }
-  };
-  var AstVariableDereference = class extends AbstractVariableNode {
-    static {
-      __name(this, "AstVariableDereference");
-    }
-    internal;
-    constructor(node, internal) {
-      super(node);
-      this.internal = internal;
-    }
-    get identifier() {
-      if (this.internal instanceof AstIdentifierNode) {
-        return this.internal;
-      }
-      return this.internal.identifier;
-    }
-  };
-  var AstVariableFieldAccess = class extends AbstractVariableNode {
-    static {
-      __name(this, "AstVariableFieldAccess");
-    }
-    variable;
-    fields;
-    constructor(node, variable, fields) {
-      super(node);
-      this.variable = variable;
-      this.fields = fields;
-    }
-    get identifier() {
-      if (this.variable instanceof AstIdentifierNode) {
-        return this.variable;
-      }
-      return this.variable.identifier;
-    }
-  };
-  var AstVariableIndexAccess = class extends AbstractVariableNode {
-    static {
-      __name(this, "AstVariableIndexAccess");
-    }
-    variable;
-    indexingExpression;
-    constructor(node, variable, indexingExpression) {
-      super(node);
-      this.variable = variable;
-      this.indexingExpression = indexingExpression;
-    }
-    get identifier() {
-      if (this.variable instanceof AstIdentifierNode) {
-        return this.variable;
-      }
-      return this.variable.identifier;
-    }
-  };
-
   // ../compiler/dist/src/compiler/ast/AstStatements.js
   var AstStatementNode = class extends AstNode {
     static {
@@ -327767,19 +327699,13 @@ ${tagToString(tag)}`;
       this.expression = expression;
     }
     get identifier() {
-      return this.variable.identifier;
+      return this.variable.variable;
     }
     get symbolName() {
-      return this.variable.identifier.name;
+      return this.variable.variable.name;
     }
     get symbolKind() {
       return "Variable";
-    }
-    toAssignmentStatement() {
-      if (this.expression == void 0) {
-        throw new Error(`Cannot convert this declaration to an assignment since there's no assignment here`);
-      }
-      return new AstVariableAssignmentStatement(this.parseTreeNode, new AstSimpleVariableAccess(this.parseTreeNode, this.variable.identifier), "=", this.expression);
     }
   };
   var AstTypeDefinitionStatement = class extends AstDefinitionNode {
@@ -327787,16 +327713,19 @@ ${tagToString(tag)}`;
       __name(this, "AstTypeDefinitionStatement");
     }
     generics;
-    identifier;
+    variable;
     typeExpression;
-    constructor(node, generics, identifier3, typeExpression) {
+    constructor(node, generics, variable, typeExpression) {
       super(node);
       this.generics = generics;
-      this.identifier = identifier3;
+      this.variable = variable;
       this.typeExpression = typeExpression;
     }
+    get identifier() {
+      return this.variable;
+    }
     get symbolName() {
-      return this.identifier.name;
+      return this.variable.name;
     }
     get symbolKind() {
       return "Type";
@@ -327898,15 +327827,15 @@ ${tagToString(tag)}`;
     static {
       __name(this, "AbstractFunctionDefinition");
     }
-    identifier;
+    variable;
     params;
     returnType;
     modifiers;
     // body scope is set on the BlockAstNodes for Functions/Operators/Methods but will be set on the function for wat* since they just have a string for the body
     _bodyScope;
-    constructor(node, identifier3, params, returnType, modifiers = []) {
+    constructor(node, variable, params, returnType, modifiers = []) {
       super(node);
-      this.identifier = identifier3;
+      this.variable = variable;
       this.params = params;
       this.returnType = returnType;
       this.modifiers = modifiers;
@@ -327954,7 +327883,7 @@ ${tagToString(tag)}`;
       this.body.augmentedProperties.scope = scope;
     }
     get symbolName() {
-      return this.identifier.name;
+      return this.variable.name;
     }
     get symbolKind() {
       return "Function";
@@ -327976,7 +327905,7 @@ ${tagToString(tag)}`;
       this.watBody = watBody;
     }
     get symbolName() {
-      return this.identifier.name;
+      return this.variable.name;
     }
     get symbolKind() {
       return "Function";
@@ -327997,6 +327926,9 @@ ${tagToString(tag)}`;
       this.params = params;
       this.returnType = returnType;
       this.body = body;
+    }
+    get identifier() {
+      return this.identifier;
     }
     get bodyScope() {
       return this.body.augmentedProperties.scope;
@@ -328035,6 +327967,9 @@ ${tagToString(tag)}`;
       this.returnType = returnType;
       this.watBody = watBody;
     }
+    get identifier() {
+      return this.identifier;
+    }
     get symbolName() {
       let header;
       if (this.params.length == 1) {
@@ -328065,7 +328000,7 @@ ${tagToString(tag)}`;
       this.fields = fields;
       this.fieldMap = /* @__PURE__ */ new Map();
       for (const f of fields) {
-        this.fieldMap.set(f.identifier.name, f);
+        this.fieldMap.set(f.variable.name, f);
       }
     }
     get symbolName() {
@@ -328103,16 +328038,19 @@ ${tagToString(tag)}`;
       __name(this, "AstVariableWithType");
     }
     isConstant;
-    identifier;
+    variable;
     type;
-    constructor(node, isConstant, identifier3, type) {
+    constructor(node, isConstant, variable, type) {
       super(node);
       this.isConstant = isConstant;
-      this.identifier = identifier3;
+      this.variable = variable;
       this.type = type;
     }
+    get identifier() {
+      return this.identifier;
+    }
     get symbolName() {
-      return this.identifier.name;
+      return this.variable.name;
     }
     get symbolKind() {
       return "Variable";
@@ -328123,13 +328061,95 @@ ${tagToString(tag)}`;
       __name(this, "AstVariableWithRequiredType");
     }
     isConstant;
-    identifier;
+    variable;
     type;
-    constructor(node, isConstant, identifier3, type) {
-      super(node, isConstant, identifier3, type);
+    constructor(node, isConstant, variable, type) {
+      super(node, isConstant, variable, type);
       this.isConstant = isConstant;
-      this.identifier = identifier3;
+      this.variable = variable;
       this.type = type;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstVariableAccess.js
+  var AbstractVariableNode = class extends AstAtomNode {
+    static {
+      __name(this, "AbstractVariableNode");
+    }
+    // encodes a variable name
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get name() {
+      return this.identifier.name;
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+    get symbolKind() {
+      return "Variable";
+    }
+  };
+  var AstSimpleVariableAccess = class extends AbstractVariableNode {
+    static {
+      __name(this, "AstSimpleVariableAccess");
+    }
+    identifier;
+    constructor(node, identifier3) {
+      super(node);
+      this.identifier = identifier3;
+    }
+  };
+  var AstVariableDereference = class extends AbstractVariableNode {
+    static {
+      __name(this, "AstVariableDereference");
+    }
+    internal;
+    constructor(node, internal) {
+      super(node);
+      this.internal = internal;
+    }
+    get identifier() {
+      if (this.internal instanceof AstIdentifierNode) {
+        return this.internal;
+      }
+      return this.internal.identifier;
+    }
+  };
+  var AstVariableFieldAccess = class extends AbstractVariableNode {
+    static {
+      __name(this, "AstVariableFieldAccess");
+    }
+    variable;
+    fields;
+    constructor(node, variable, fields) {
+      super(node);
+      this.variable = variable;
+      this.fields = fields;
+    }
+    get identifier() {
+      if (this.variable instanceof AstIdentifierNode) {
+        return this.variable;
+      }
+      return this.variable.identifier;
+    }
+  };
+  var AstVariableIndexAccess = class extends AbstractVariableNode {
+    static {
+      __name(this, "AstVariableIndexAccess");
+    }
+    variable;
+    indexingExpression;
+    constructor(node, variable, indexingExpression) {
+      super(node);
+      this.variable = variable;
+      this.indexingExpression = indexingExpression;
+    }
+    get identifier() {
+      if (this.variable instanceof AstIdentifierNode) {
+        return this.variable;
+      }
+      return this.variable.identifier;
     }
   };
 
@@ -328168,6 +328188,8 @@ ${tagToString(tag)}`;
         return this.traverseCallExpression(node, context);
       } else if (node instanceof AstFieldAccessExpression) {
         return this.traverseFieldAccessExpression(node, context);
+      } else if (node instanceof AstBuiltInFunctionCallExpression) {
+        return this.traverseBuiltInFunction(node, context);
       } else if (node instanceof AstUnitTypeExpression) {
         return this.traverseUnitTypeExpression(node, context);
       } else if (node instanceof BaseTypeExpression) {
@@ -329079,15 +329101,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   };
   function createUnaryOperation(type, returnType, operator, watSourceCode) {
     const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a"), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
     ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
     return op;
   }
   __name(createUnaryOperation, "createUnaryOperation");
   function createBinaryOperation(type, returnType, operator, watSourceCode) {
     const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a"), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b"), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
     ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
     return op;
   }
@@ -329224,7 +329246,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     for (const opName of SUPPORTED_BINARY_MATH_OPERATORS) {
       const inst = numberTypeToInstruction[numberType][opName];
-      let instructionString = `${wasmType}.${inst} ${wrappingValueString}`;
+      const instructionString = `${wasmType}.${inst} ${wrappingValueString}`;
       const op = createBinaryOperation(type, type, opName, instructionString);
       BUILT_IN_NUMERIC_OPERATIONS.push(op);
     }
@@ -329367,7 +329389,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.intersectInPlaceAndDontLink(other);
     }
     intersectInPlaceAndDontLink(other) {
-      let acceptableTypes = _AcceptableTypeSet.intersectTypes(this._acceptableTypes, other._acceptableTypes);
+      const acceptableTypes = _AcceptableTypeSet.intersectTypes(this._acceptableTypes, other._acceptableTypes);
       this.set(acceptableTypes);
     }
     intersect(other) {
@@ -329472,6 +329494,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     pipePipe: "PIPE_PIPE",
     equals: "EQUALS",
     semiColon: "SEMICOLON",
+    sizeOfKeyword: "SIZEOF",
     asKeyword: "AS",
     returnKeyword: "RETURN",
     constKeyword: "CONST",
@@ -329550,13 +329573,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     fieldAccessSuffix: "fieldAccessSuffix",
     dotThenIdentifier: "dotThenIdentifier",
     typecastingExpression: "typecastingExpression",
+    compilerBuiltInFunctions: "compilerBuiltInFunctions",
     callExpression: "callExpression",
     indexingExpression: "indexingExpression",
     callIndexingOrFieldExpression: "callIndexingOrDereference",
     functionCallExpression: "functionCallExpression",
+    builtInFunctionArgumentList: "builtInFunctionArgumentList",
     callExpressionArgumentList: "callExpressionArgumentList",
     indexingExpressionArgumentList: "indexingExpressionArgumentList",
     functionArgumentList: "functionCallArgumentList",
+    compilerBuiltInFunctionNames: "compilerBuiltInFunctionNames",
     callExpressionMultiMatch: "callOneOrMore",
     callExpressionTail: "callExpressionTail",
     indexingExpressionMultiMatch: "indexingExpressionMultiMatch",
@@ -329758,7 +329784,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   function mapExpressionToDefinition(symbolTable, typeExpression) {
     if (typeExpression instanceof BaseTypeExpression) {
       const symbolName = typeExpression.symbolName;
-      const symbol = symbolTable.findSymbolWithKind(
+      const symbol = symbolTable.findSymbolWithType(
         symbolName,
         "Type"
         /* SymbolType.Type */
@@ -329781,7 +329807,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     } else if (typeExpression instanceof PointerTypeExpression) {
       const symbolName = typeExpression.symbolName;
-      const symbol = symbolTable.findSymbolWithKind(
+      const symbol = symbolTable.findSymbolWithType(
         symbolName,
         "Type"
         /* SymbolType.Type */
@@ -329835,14 +329861,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     /**
      * Finds a symbol by name and kind.
      */
-    findSymbolWithKind(name, kind) {
+    findSymbolWithType(name, kind) {
       const res = this._backingMap.get(name);
       if (res != void 0 && res.symbolDefinition.symbolType == kind) {
         return res;
       } else if (res != void 0 && res.symbolDefinition.symbolType != kind) {
         return void 0;
       } else if (this.parent != void 0) {
-        const out = this.parent.findSymbolWithKind(name, kind);
+        const out = this.parent.findSymbolWithType(name, kind);
         return out;
       }
       return void 0;
@@ -330032,7 +330058,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const rhsSymbols = rhs.getReferencedTypeSymbols();
       if (!isBuiltIn) {
         for (const symbol2 of rhsSymbols) {
-          const lookup = this.findSymbolWithKind(
+          const lookup = this.findSymbolWithType(
             symbol2,
             "Type"
             /* SymbolType.Type */
@@ -330132,14 +330158,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.setSymbol(node.symbolName, symbol);
       return void 0;
     }
-    findOperatorOverloads(name) {
+    findCallableOverloads(name) {
       const out = [];
-      return this.findDefinitionsByNameAndType(name, "Operator", out);
-    }
-    findFunctionOverloads(name) {
-      const out = [];
-      const temp = this.findDefinitionsByNameAndType(name, "Function", out);
-      return temp;
+      this.findDefinitionsByNameAndType(name, "Operator", out);
+      this.findDefinitionsByNameAndType(name, "Function", out);
+      return out;
     }
     /**
      * Walks from the current scope into each child-scope and finds all entries with the input type.
@@ -330164,7 +330187,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      */
     resolveTypeDefinition(typeExpression) {
       const symbolName = typeExpression.symbolName;
-      const typeSymbol = this.findSymbolWithKind(
+      const typeSymbol = this.findSymbolWithType(
         symbolName,
         "Type"
         /* SymbolType.Type */
@@ -330175,7 +330198,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return mapExpressionToDefinition(this, typeExpression);
     }
     resolveVariableTypeDefinition(variableName) {
-      const variableSymbol = this.findSymbolWithKind(
+      const variableSymbol = this.findSymbolWithType(
         variableName,
         "Variable"
         /* SymbolType.Variable */
@@ -330442,7 +330465,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return context;
       }
       const fieldNameCounter = /* @__PURE__ */ new Map();
-      typeInfo.fields.forEach((f) => fieldNameCounter.set(f.identifier.name, 0));
+      typeInfo.fields.forEach((f) => fieldNameCounter.set(f.variable.name, 0));
       for (const assignment of node.assignments) {
         const lhs = assignment.lhs;
         const name = lhs.name;
@@ -330570,6 +330593,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseCallExpression(node, context) {
       throw new Error("Method not implemented.");
     }
+    traverseBuiltInFunction(node, context) {
+      node.args.forEach((arg) => {
+        this.traverse(arg, context);
+      });
+      return context;
+    }
     traverseFieldAccessExpression(node, context) {
       this.traverse(node.left, context);
       return context;
@@ -330642,7 +330671,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const fields = node.fields;
       const seenFieldNames = /* @__PURE__ */ new Set();
       for (const field of fields) {
-        const name = field.identifier.name;
+        const name = field.variable.name;
         if (seenFieldNames.has(name)) {
           const error = {
             firstToken: node.firstToken,
@@ -330713,17 +330742,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseVariableDeclaration(node, context) {
+      if (node.expression != void 0) {
+        this.traverse(node.expression, context);
+      }
+      if (node.variable.type) {
+        this.traverse(node.variable.type, context);
+      }
       const error = context.table.bindVariableDeclaration(node);
       if (error != void 0) {
         context.violations.push(error);
         return context;
       }
-      if (node.variable.type) {
-        this.traverse(node.variable.type, context);
-      }
-      if (node.expression != void 0) {
-        this.traverse(node.expression, context);
-      }
+      node.variable.augmentedProperties.scope = context.table;
+      node.variable;
       return context;
     }
     traverseReturnStatement(node, context) {
@@ -330855,7 +330886,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (functionDeclaration == void 0 || functionDeclaration.symbolDefinition == void 0 || functionDeclaration.symbolDefinition.symbolType != expectedSymbolType) {
         throw new Error(`The function '${node.symbolName}' should have an entry in the symbol table but it doesn't. Raising an error.`);
       }
-      const newTable = new SymbolTable(node.identifier.name, context.table);
+      const newTable = new SymbolTable(node.variable.name, context.table);
       const newContext = {
         table: newTable,
         violations: context.violations
@@ -331033,7 +331064,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseArrayLiteral(node, context) {
       const values = node.values.map((v) => this.traverse(v, context));
-      let runningTypes = values[0];
+      const runningTypes = values[0];
       for (let i = 0; i < values.length; i++) {
         const current = values[i];
         runningTypes.linkAndIntersect(current);
@@ -331108,70 +331139,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return AcceptableTypeSet.fromSingleType(typeDefinition.dereferencedType.expression);
         }
       }
-      return this.getOperator(node, context);
+      return this.dispatchToFunctionLike(node, context);
     }
     traverseBinaryOperation(node, context) {
-      return this.getOperator(node, context);
-    }
-    getOperator(node, context) {
-      let argumentTypeParams;
-      if (node instanceof AstBinaryOperation) {
-        argumentTypeParams = [this.traverse(node.lhs, context), this.traverse(node.rhs, context)];
-      } else if (node instanceof AstUnaryOperation) {
-        argumentTypeParams = [this.traverse(node.operand, context)];
-      } else {
-        throw new Error("Should not happen");
-      }
-      const remapped = crossJoin(argumentTypeParams);
-      const operatorArgumentMatchingSignatures = remapped.map((a) => new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, a.acceptableTypes, void 0));
-      const nodeScope = node.augmentedProperties.scope;
-      if (nodeScope == void 0) {
-        throw new Error(`Failed to find scope for node: ${node.tokens.map((t) => t.lexeme)}. 
-        Declared on ${node.firstToken.createTokenSourceString()}`);
-      }
-      const operatorOverloads = nodeScope.findOperatorOverloads(node.symbolName);
-      const acceptableFunctionSignatures = operatorOverloads.map((op) => {
-        if (op.symbolDefinition.symbolType != "Operator") {
-          return void 0;
-        }
-        const overloads = op.symbolDefinition.overloads;
-        const filteredOverloads = overloads.filter((overload) => {
-          const overloadFunctionTypeExpression = new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, overload.params.map((t) => t.type), overload.returnType);
-          return operatorArgumentMatchingSignatures.some((a) => functionParamsMatch(a, overloadFunctionTypeExpression));
-        });
-        return filteredOverloads;
-      }).filter((x) => x != void 0).map((x) => x);
-      const flattened = acceptableFunctionSignatures.flat().map((x) => x.node);
-      if (flattened.length > 1) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "NoMatchingFunctionSignature",
-          message: formatErrorMessage(`Multiple matching operator signature could be found for operator named: '${node.symbolName}'
-        For inputs with types: [${operatorArgumentMatchingSignatures.map((s) => s.toString())}].
-        Call on: ${node.firstToken.createTokenSourceString()}`)
-        };
-        context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
-      } else if (flattened.length <= 0) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "NoMatchingFunctionSignature",
-          message: formatErrorMessage(`No matching operator signature could be found for operator named: '${node.symbolName}'
-        For inputs with types: [${operatorArgumentMatchingSignatures.map((s) => s.toString())}].
-        Call on: ${node.firstToken.createTokenSourceString()}`)
-        };
-        context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
-      }
-      const selected = flattened[0];
-      for (let i = 0; i < argumentTypeParams.length; i++) {
-        const argType = selected.functionSignature.params[i];
-        const argTypeParam = argumentTypeParams[i];
-        const coercedType = AcceptableTypeSet.fromSingleType(argType);
-        argTypeParam.intersectInPlaceAndDontLink(coercedType);
-      }
-      node.augmentedProperties.resolvedFunctionDefinition = selected;
-      return AcceptableTypeSet.fromSingleType(selected.returnType);
+      return this.dispatchToFunctionLike(node, context);
     }
     traverseFieldAccessExpression(node, context) {
       const left = node.left;
@@ -331193,7 +331164,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return AcceptableTypeSet.noAllowableTypes();
       }
       if (leftType instanceof BaseTypeExpression) {
-        const leftTypeDefinition = context.table.findSymbolWithKind(
+        const leftTypeDefinition = context.table.findSymbolWithType(
           leftType.identifier.name,
           "Type"
           /* SymbolType.Type */
@@ -331270,10 +331241,26 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return thisType;
     }
     traverseFunctionCall(node, context) {
-      const argumentTypeParams = node.args.astNodes.map((n) => this.traverse(n, context));
+      return this.dispatchToFunctionLike(node, context);
+    }
+    dispatchToFunctionLike(node, context) {
+      let argumentTypeParams;
+      let isFunction2;
+      if (node instanceof AstFunctionCallExpression) {
+        argumentTypeParams = node.args.astNodes.map((n) => this.traverse(n, context));
+        isFunction2 = true;
+      } else if (node instanceof AstBinaryOperation) {
+        argumentTypeParams = [this.traverse(node.lhs, context), this.traverse(node.rhs, context)];
+        isFunction2 = false;
+      } else if (node instanceof AstUnaryOperation) {
+        argumentTypeParams = [this.traverse(node.operand, context)];
+        isFunction2 = false;
+      } else {
+        throw new Error("Should not happen");
+      }
       const remapped = crossJoin(argumentTypeParams);
       let functionArgumentMatchingSignatures;
-      if (node.args.astNodes.length == 0) {
+      if (argumentTypeParams.length == 0) {
         functionArgumentMatchingSignatures = [new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, [], void 0)];
       } else {
         functionArgumentMatchingSignatures = remapped.map((a) => new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, a.acceptableTypes, void 0));
@@ -331282,13 +331269,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (nodeScope == void 0) {
         throw new Error(`Failed to find scope for node: ${node.tokens.map((t) => t.lexeme)}. Declared on ${node.firstToken.createTokenSourceString()}`);
       }
-      const functionOverloads = nodeScope.findFunctionOverloads(node.identifier.name);
-      const acceptableFunctionSignatures = functionOverloads.map((op) => {
-        if (op.symbolDefinition.symbolType != "Function") {
+      const overloads = nodeScope.findCallableOverloads(node.symbolName);
+      const acceptableFunctionSignatures = overloads.map((callable) => {
+        if (callable.symbolDefinition.symbolType != "Function" && callable.symbolDefinition.symbolType != "Operator") {
           return void 0;
         }
-        const overloads = op.symbolDefinition.overloads;
-        const filteredOverloads = overloads.filter((overload) => {
+        const overloads2 = callable.symbolDefinition.overloads;
+        const filteredOverloads = overloads2.filter((overload) => {
           const overloadFunctionTypeExpression = new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, overload.params.map((t) => t.type), overload.returnType);
           return functionArgumentMatchingSignatures.some((a) => functionParamsMatch(a, overloadFunctionTypeExpression));
         });
@@ -331298,8 +331285,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (flattened.length > 1) {
         const error = {
           firstToken: node.firstToken,
-          type: "NoMatchingFunctionSignature",
-          message: `Multiple matching function signature could be found for function named: '${node.identifier.name}'
+          type: "MultipleMatchingFunctionSignatures",
+          message: `Multiple matching function signature could be found for function named: '${node.symbolName}'
         For inputs with types: [${functionArgumentMatchingSignatures.map((s) => s.toString())}].
         Call on: ${node.firstToken.createTokenSourceString()}
         `
@@ -331310,7 +331297,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const error = {
           firstToken: node.firstToken,
           type: "NoMatchingFunctionSignature",
-          message: `No matching function signature could be found for function named: '${node.identifier.name}'
+          message: `No matching function signature could be found for function named: '${node.symbolName}'
         For inputs with types: [${functionArgumentMatchingSignatures.map((s) => s.toString())}].
         Call on: ${node.firstToken.createTokenSourceString()}
         `
@@ -331327,6 +331314,35 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       node.augmentedProperties.resolvedFunctionDefinition = selected;
       return AcceptableTypeSet.fromSingleType(selected.returnType);
+    }
+    traverseBuiltInFunction(node, context) {
+      const out = AcceptableTypeSet.from([createTypeExpression("u32")]);
+      if (node.builtInFunction == "SizeOf") {
+        if (node.args.length != 1) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "IncorrectNumberOfArgs",
+            message: `Sizeof takes in only 1 argument and it must be a type. 
+          Referenced on: ${node.firstToken.createTokenSourceString()}`
+          };
+          context.typeMismatches.push(error);
+          return out;
+        }
+        const symbol = context.table.findSymbol(node.args[0].symbolName);
+        if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Type") {
+          const error = {
+            firstToken: node.firstToken,
+            type: "NoMatchingFunctionSignature",
+            message: `Sizeof's argument must be a type but instead the resolved symbol type was '${symbol?.symbolDefinition.symbolType}'. 
+          Referenced on: ${node.firstToken.createTokenSourceString()}`
+          };
+          context.typeMismatches.push(error);
+          return out;
+        }
+        return out;
+      } else {
+        throw new Error(`Checker not yet implemented for built-in function: ${node.builtInFunction}`);
+      }
     }
     // type expressions
     traverseUnitTypeExpression(node, context) {
@@ -331449,7 +331465,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
-            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
+            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.variable.name}'. 
         Function expects: ${parentFunction.returnType.toString()}, but returning any of: ${expTypes?.acceptableTypes?.map((t) => t.toString())}.
         Function declared on ${parentFunction.firstToken.createTokenSourceString()}
         Return on ${node.firstToken.createTokenSourceString()}`)
@@ -331465,7 +331481,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
-            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
+            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.variable.name}'. 
           Function expects: ${parentFunction.returnType.toString()} but the return statement has no expression.
           Function declared on ${parentFunction.firstToken.createTokenSourceString()}
           Return on ${node.firstToken.createTokenSourceString()}`)
@@ -331551,8 +331567,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (variableTypes == void 0) {
         variableTypes = AcceptableTypeSet.noAllowableTypes();
       }
-      for (let acceptableType of variableTypes.acceptableTypes ?? []) {
-        for (let builtInPointerType of BUILT_IN_POINTER_TYPE_EXPRESSIONS) {
+      for (const acceptableType of variableTypes.acceptableTypes ?? []) {
+        for (const builtInPointerType of BUILT_IN_POINTER_TYPE_EXPRESSIONS) {
           if (acceptableType.equals(builtInPointerType.baseTypeExpression)) {
             const error = {
               firstToken: node.firstToken,
@@ -331609,14 +331625,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseStructDefinition(node, context) {
       const stack = node.fields.map((f) => {
-        return { name: f.identifier.name, type: f.type };
+        return { name: f.variable.name, type: f.type };
       });
       const alreadyExplored = /* @__PURE__ */ new Set();
       while (stack.length > 0) {
         const current = stack.pop();
         if (current.type instanceof AstStructDefinition) {
           const fields = current.type.fields.map((f) => {
-            return { name: f.identifier.name, type: f.type };
+            return { name: f.variable.name, type: f.type };
           });
           stack.push({ name: current.name, type: new BaseTypeExpression(FAKE_PARSE_TREE_NODE, current.type.identifier) }, ...fields);
         } else if (current.type instanceof BaseTypeExpression) {
@@ -331634,7 +331650,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             context.typeMismatches.push(error);
             return AcceptableTypeSet.noAllowableTypes();
           }
-          const next = context.table.findSymbolWithKind(
+          const next = context.table.findSymbolWithType(
             currentName,
             "Type"
             /* SymbolType.Type */
@@ -331812,8 +331828,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       __name(this, "WatInstruction");
     }
     node;
-    constructor(node) {
+    otherArgs;
+    constructor(node, otherArgs) {
       this.node = node;
+      this.otherArgs = otherArgs;
     }
   };
   var WatConst = class extends WatInstruction {
@@ -331823,14 +331841,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     node;
     type;
     value;
-    constructor(node, type, value) {
-      super(node);
+    otherArgs;
+    constructor(node, type, value, otherArgs) {
+      super(node, otherArgs);
       this.node = node;
       this.type = type;
       this.value = value;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
-      return `${this.type}.const ${this.value}`;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `${this.type}.const ${this.value} ${comment}`.trim();
     }
   };
   var WatTypedStackInstruction = class extends WatInstruction {
@@ -331840,14 +331861,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     node;
     type;
     instruction;
-    constructor(node, type, instruction) {
-      super(node);
+    otherArgs;
+    constructor(node, type, instruction, otherArgs) {
+      super(node, otherArgs);
       this.node = node;
       this.type = type;
       this.instruction = instruction;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
-      return `${this.type}.${this.instruction}`;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `${this.type}.${this.instruction} ${comment}`.trim();
     }
   };
   var WatTypedMemoryInstruction = class extends WatInstruction {
@@ -331858,17 +331882,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     type;
     instruction;
     memargs;
-    constructor(node, type, instruction, memargs) {
-      super(node);
+    otherArgs;
+    constructor(node, type, instruction, memargs, otherArgs) {
+      super(node, otherArgs);
       this.node = node;
       this.type = type;
       this.instruction = instruction;
       this.memargs = memargs;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
       const offset = this.memargs?.offset ? `offset=${this.memargs.offset}` : "";
       const align = this.memargs?.align ? `align=${this.memargs.align}` : "";
-      return `${this.type}.${this.instruction} ${offset} ${align} `;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `${this.type}.${this.instruction} ${offset} ${align} ${comment}`.trim();
     }
   };
   var WatControlInstruction = class extends WatInstruction {
@@ -331891,7 +331918,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (this.label == void 0) {
         return `${this.instruction}`;
       }
-      return `${this.instruction} ${this.label}`;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `${this.instruction} ${this.label} ${comment}`.trim();
     }
   };
   var WatVariableInstruction = class extends WatInstruction {
@@ -331901,7 +331929,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     node;
     instruction;
     label;
-    constructor(node, instruction, label) {
+    otherArgs;
+    constructor(node, instruction, label, otherArgs) {
       if (!label.startsWith("$")) {
         throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
       }
@@ -331909,9 +331938,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.node = node;
       this.instruction = instruction;
       this.label = label;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
-      return `${this.instruction} ${this.label}`;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `${this.instruction} ${this.label} ${comment}`.trim();
     }
   };
   var WatIfInstruction = class extends WatInstruction {
@@ -331920,10 +331951,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     thenInstructions;
     elseInstructions;
-    constructor(node, thenInstructions, elseInstructions) {
+    otherArgs;
+    constructor(node, thenInstructions, elseInstructions, otherArgs) {
       super(node);
       this.thenInstructions = thenInstructions;
       this.elseInstructions = elseInstructions;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
       const thenBlock = this.thenInstructions.map((i) => i.toWatJson(options2));
@@ -331962,16 +331995,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     node;
     label;
-    constructor(node, label) {
+    otherArgs;
+    constructor(node, label, otherArgs) {
       if (!label.startsWith("$")) {
         throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
       }
       super(node);
       this.node = node;
       this.label = label;
+      this.otherArgs = otherArgs;
     }
     toWatJson(options2) {
-      return `call ${this.label}`;
+      const comment = this.otherArgs?.comment ? ` ;; ${this.otherArgs.comment}` : "";
+      return `call ${this.label} ${comment}`.trim();
     }
   };
   var WatStringInstruction = class extends WatInstruction {
@@ -332126,18 +332162,36 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     whileLoopCounter = 0;
     constructor() {
     }
-    getWasmName(nodeName) {
-      return "$" + nodeName;
+    getWasmName(symbolInfo) {
+      const scope = symbolInfo.scope;
+      const shadow = symbolInfo.shadow;
+      let scopeString = "";
+      if (shadow != void 0) {
+        scopeString = `___${scope.id}`;
+      }
+      return "$" + symbolInfo.symbolName + `${scopeString}`;
     }
-    getStructFieldName(variableName, nestedFieldNames) {
-      const label = "$" + variableName + "_" + nestedFieldNames.join("_");
+    getStructFieldName(symbolInfo, nestedFieldNames) {
+      const scope = symbolInfo.scope;
+      const shadow = symbolInfo.shadow;
+      let scopeString = "";
+      if (shadow != void 0) {
+        scopeString = `___${scope.id}`;
+      }
+      const label = "$" + symbolInfo.symbolName + "_" + nestedFieldNames.join("_") + `${scopeString}`;
       return label;
     }
-    getWasmNameForOverload(func) {
-      if (func.getParamTypes().length == 0) {
-        return `$${func.identifier.name}`;
+    getWasmNameForOverload(func, isOperator) {
+      let funcName;
+      if (!isOperator) {
+        funcName = func.variable.name;
+      } else {
+        funcName = func.variable.name;
       }
-      const name = `$${func.identifier.name}_${func.getParamTypes().map((t) => t.toString()).join("_")}`;
+      if (func.getParamTypes().length == 0) {
+        return `$${funcName}`;
+      }
+      const name = `$${funcName}_${func.getParamTypes().map((t) => t.toString()).join("_")}`;
       return name;
     }
     getWhileLoopName() {
@@ -332191,7 +332245,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const typeDef = p.scope.resolveVariableTypeDefinition(name);
       if (typeDef instanceof ScalarTypeDefinition) {
         const wasmType = this.typeMapper.mapType(typeDef.expression);
-        const label = this.nameMapper.getWasmName(name);
+        const label = this.nameMapper.getWasmName(p);
         if (scopeType == "Param") {
           return [new WatFuncParam(node, label, wasmType)];
         } else if (scopeType == "Local") {
@@ -332224,7 +332278,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const flattenedFields = typeDef.flattenedFields();
         const outArray = new Array();
         for (const out of flattenedFields) {
-          const label = this.nameMapper.getStructFieldName(name, out[0]);
+          const label = this.nameMapper.getStructFieldName(p, out[0]);
           const wasmType = this.typeMapper.mapType(out[1].expression);
           if (scopeType == "Param") {
             const temp = new WatFuncParam(node, label, wasmType);
@@ -332247,10 +332301,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         "Function"
         /* SymbolType.Function */
       );
-      const watFunctions = functions.map((symbol) => {
+      const operators2 = globalScope.findAllSymbolsByType(
+        "Operator"
+        /* SymbolType.Operator */
+      );
+      const watFunctions = [...functions, ...operators2].map((symbol) => {
+        const type = symbol.symbolDefinition.symbolType;
         const definition = symbol.symbolDefinition;
         const overloads = definition.overloads;
-        return overloads.map((overload) => {
+        return overloads.filter((overload) => {
+          if (type != "Operator") {
+            return true;
+          }
+          const allTypesBuiltIn = overload.params.every((value) => context.table.findSymbol(value.type.symbolName)?.isBuiltIn);
+          return !allTypesBuiltIn;
+        }).map((overload) => {
           const bodyScope = overload.node.bodyScope;
           const variables = bodyScope.findAllSymbolsByType(
             "Variable"
@@ -332268,7 +332333,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           if (!overload.returnType.equals(new AstUnitTypeExpression(overload.node.parseTreeNode))) {
             const returnTypeDef = symbol.scope.resolveTypeDefinition(overload.returnType);
             if (returnTypeDef instanceof ScalarTypeDefinition) {
-              returnTypes = [new WatFuncReturn(overload.returnType, this.typeMapper.mapType(returnTypeDef.expression))];
+              returnTypes = [
+                new WatFuncReturn(overload.returnType, this.typeMapper.mapType(returnTypeDef.expression))
+              ];
             } else if (returnTypeDef instanceof StructTypeDefinition) {
               const flattenedFields = returnTypeDef.flattenedFields();
               returnTypes = flattenedFields.map((f) => {
@@ -332290,7 +332357,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             }
           };
           const instructions = this.instructionEmitter.traverse(overload.node, instructionEmitterContext);
-          return new WatFunction(overload.node, this.nameMapper.getWasmNameForOverload(overload.node), params, returnTypes, locals, instructions);
+          return new WatFunction(overload.node, this.nameMapper.getWasmNameForOverload(
+            overload.node,
+            type == "Operator"
+            /* SymbolType.Operator */
+          ), params, returnTypes, locals, instructions);
         });
       }).flat();
       const globals = context.table.getGlobalScope().findAllSymbolsByType(
@@ -332354,7 +332425,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseStructLiteral(node, context) {
       const out = [];
-      const definition = (context.table.findSymbolWithKind(
+      const definition = (context.table.findSymbolWithType(
         node.structSymbolName,
         "Type"
         /* SymbolType.Type */
@@ -332376,7 +332447,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const typeDef = context.table.resolveVariableTypeDefinition(node.symbolName);
       if (typeDef instanceof ScalarTypeDefinition) {
-        const wasmName = context.moduleContext.nameMapper.getWasmName(node.name);
+        const wasmName = context.moduleContext.nameMapper.getWasmName(symbolDef);
         return [
           new WatVariableInstruction(node, isGlobal ? "global.get" : "local.get", wasmName)
         ];
@@ -332384,7 +332455,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const flattenedFields = typeDef.flattenedFields();
         const varInst = isGlobal ? "global.get" : "local.get";
         return flattenedFields.map((field) => {
-          return new WatVariableInstruction(node, varInst, context.moduleContext.nameMapper.getStructFieldName(node.name, field[0]));
+          return new WatVariableInstruction(node, varInst, context.moduleContext.nameMapper.getStructFieldName(symbolDef, field[0]));
         });
       } else {
         throw new Error(`Identifier wasm emission not yet defined for type ${typeDef?.constructor?.name ?? void 0}`);
@@ -332430,22 +332501,37 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseBinaryOperation(node, context) {
       const lhs = this.traverse(node.lhs, context);
       const rhs = this.traverse(node.rhs, context);
-      const operatorFunctionName = context.moduleContext.nameMapper.getWasmName(node.symbolName);
       const operatorDefinition = node.augmentedProperties.resolvedFunctionDefinition;
-      if (operatorDefinition == void 0 || !(operatorDefinition instanceof AstWatOperatorDefinition)) {
-        throw new Error(`This is not yet supported. Received: ${operatorDefinition}`);
+      if (operatorDefinition instanceof AstWatOperatorDefinition) {
+        const operatorInstruction = new WatStringInstruction(node, operatorDefinition.watBody);
+        return [...lhs, ...rhs, operatorInstruction];
       }
-      const operatorInstruction = new WatStringInstruction(node, operatorDefinition.watBody);
-      return [...lhs, ...rhs, operatorInstruction];
+      const args = [node.lhs, node.rhs];
+      const argInstructions = args.map((arg) => this.traverse(arg, context));
+      const functionName = context.moduleContext.nameMapper.getWasmNameForOverload(node.augmentedProperties.resolvedFunctionDefinition, true);
+      const functionCall = new WatFunctionCall(node, functionName);
+      return [...argInstructions.flat(), functionCall];
     }
     traverseTypeCastingExpression(node, context) {
       return this.traverse(node.expression, context);
     }
     traverseFunctionCall(node, context) {
       const argInstructions = node.args.astNodes.map((arg) => this.traverse(arg, context));
-      const functionName = context.moduleContext.nameMapper.getWasmNameForOverload(node.augmentedProperties.resolvedFunctionDefinition);
+      const functionName = context.moduleContext.nameMapper.getWasmNameForOverload(node.augmentedProperties.resolvedFunctionDefinition, false);
       const functionCall = new WatFunctionCall(node, functionName);
       return [...argInstructions.flat(), functionCall];
+    }
+    traverseBuiltInFunction(node, context) {
+      if (node.builtInFunction == "SizeOf") {
+        const typeExpression = new BaseTypeExpression(node.parseTreeNode, node.args[0]);
+        const typeDef = context.table.resolveTypeDefinition(typeExpression);
+        if (typeDef == void 0) {
+          throw new Error(`TypeDef for ${typeExpression.toString()} could not be resolved.`);
+        }
+        const size2 = typeDef.sizeInBytes();
+        return [new WatConst(node, PtrWasmNumberType, size2, { comment: `sizeof ${node.args[0].name}` })];
+      }
+      throw new Error(`Built in function: ${node.builtInFunction} is not yet defined in the emitter`);
     }
     traverseCallExpression(node, context) {
       throw new Error("Method not implemented.");
@@ -332461,12 +332547,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.traverse(field, context);
       } else if (lhs instanceof AstIdentifierNode) {
         const typeDef = context.table.resolveVariableTypeDefinition(lhs.name);
+        const symbolInfo = context.table.findSymbolWithType(
+          lhs.name,
+          "Variable"
+          /* SymbolType.Variable */
+        );
         const flattenedFields = typeDef.flattenedFields();
         return flattenedFields.filter((field) => {
           const prefix = field[0][0];
           return prefix == rhs.name;
         }).map((field) => {
-          return new WatVariableInstruction(node, "local.get", context.moduleContext.nameMapper.getStructFieldName(lhs.name, field[0]));
+          return new WatVariableInstruction(node, "local.get", context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field[0]));
         });
       } else if (lhs instanceof AstAbstractExpressionNode) {
         const internalInstructions = this.traverse(lhs, context);
@@ -332516,29 +332607,34 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error("Method not implemented.");
     }
     traverseAssignmentStatement(node, context) {
-      const expressionInstructions = this.traverse(node.rhs, context);
-      const typeDefinition = context.table.resolveVariableTypeDefinition(node.lhs.name);
-      const response = parseAssignmentVariable(node.lhs, context, typeDefinition);
-      const isGlobal = (context.table.findSymbolWithKind(
-        node.symbolName,
+      return this.handleAssignment(node.lhs, node.rhs, context);
+    }
+    // used in both assignment and declaration statements
+    handleAssignment(variableNode, expression, context) {
+      const expressionInstructions = this.traverse(expression, context);
+      const typeDefinition = context.table.resolveVariableTypeDefinition(variableNode.name);
+      const response = parseAssignmentVariable(variableNode, context, typeDefinition);
+      const symbolInfo = context.table.findSymbolWithType(
+        variableNode.symbolName,
         "Variable"
         /* SymbolType.Variable */
-      )?.symbolDefinition).scopeType == "Global";
+      );
+      const isGlobal = (symbolInfo?.symbolDefinition).scopeType == "Global";
       const fieldsToInstructions = response.fields.map((field) => {
-        const mappedName = field.fieldName.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(field.varName, field.fieldName) : context.moduleContext.nameMapper.getWasmName(field.varName);
+        const mappedName = field.fieldName.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field.fieldName) : context.moduleContext.nameMapper.getWasmName(symbolInfo);
         if (field instanceof ValueFieldAssignment) {
           const varInstruction = isGlobal ? "global.set" : "local.set";
-          const setInstruction = new WatVariableInstruction(node, varInstruction, mappedName);
+          const setInstruction = new WatVariableInstruction(variableNode, varInstruction, mappedName);
           return [setInstruction];
         } else if (field instanceof ReferenceFieldAssignment) {
           const getAddrGlobalness = isGlobal ? "global.get" : "local.get";
           const mappedType = context.moduleContext.typeMapper.mapType(field.internal.type.expression);
-          const generateStructStoreFunctionCall = context.moduleContext.helperFunctionGenerator.generateStructStoreInstructions(node, PtrWasmNumberType, [mappedType], field.memOffset);
+          const generateStructStoreFunctionCall = context.moduleContext.helperFunctionGenerator.generateStructStoreInstructions(variableNode, PtrWasmNumberType, [mappedType], field.memOffset);
           if (!context.moduleContext.generatedFunctionMap.has(generateStructStoreFunctionCall.definition.label)) {
             context.moduleContext.generatedFunctionMap.set(generateStructStoreFunctionCall.definition.label, generateStructStoreFunctionCall.definition);
           }
-          const memAddressName = field.variable.fields.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(field.variable.varName, field.variable.fields) : context.moduleContext.nameMapper.getWasmName(field.variable.varName);
-          const getAddrInstruction = new WatVariableInstruction(node, getAddrGlobalness, memAddressName);
+          const memAddressName = field.variable.fields.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field.variable.fields) : context.moduleContext.nameMapper.getWasmName(symbolInfo);
+          const getAddrInstruction = new WatVariableInstruction(variableNode, getAddrGlobalness, memAddressName);
           return [getAddrInstruction, generateStructStoreFunctionCall.call];
         } else {
           throw new Error(`Unexpected store instruction of type: ${field.constructor.name}`);
@@ -332636,8 +332732,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error("Method not implemented.");
     }
     traverseVariableDeclaration(node, context) {
-      const assignment = node.toAssignmentStatement();
-      return this.traverse(assignment, context);
+      return this.handleAssignment(node.variable.variable, node.expression, context);
     }
     traverseFunctionDefinition(node, context) {
       const body = node.body;
@@ -332648,10 +332743,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return this.watBodyToWatInstructions(node.params, node.watBody, context);
     }
     traverseOperatorDefinition(node, context) {
-      throw new Error("Method not implemented.");
+      const body = node.body;
+      const instructions = body.astNodes.map((n) => this.traverse(n, context)).flat();
+      return instructions;
     }
     traverseWatOperatorDefinition(node, context) {
-      throw new Error("Method not implemented.");
+      return this.watBodyToWatInstructions(node.params, node.watBody, context);
     }
     traverseTypeDefinition(node, context) {
       throw new Error("Method not implemented.");
@@ -332672,7 +332769,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     watBodyToWatInstructions(functionParams, watBody, context) {
       for (const param of functionParams) {
-        watBody = watBody.replaceAll(`{${param.identifier.name}}`, context.moduleContext.nameMapper.getWasmName(param.identifier.name));
+        watBody = watBody.replaceAll(`{${param.variable.name}}`, `$${param.variable.name}`);
       }
       const lines = watBody.split("\n").map((line) => line.trim()).filter((line) => line.length > 0);
       return lines.map((line) => new WatStringInstruction(void 0, line));
@@ -333100,8 +333197,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseParamWithType(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.paramWithType);
       const iden = this.parseIdentifier(root.children[0]);
+      const variable = new AstSimpleVariableAccess(root, iden);
       const type = this.parseTypeExpression(root.children[1].children[1]);
-      return new AstVariableWithRequiredType(root, false, iden, type);
+      return new AstVariableWithRequiredType(root, false, variable, type);
     }
     parseSimpleStatement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.simpleStatements);
@@ -333138,7 +333236,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const expression = root.children[4];
       const identifier3 = this.parseIdentifier(variableNameMatcher);
       const type = this.parseOptionalTypeAnnotation(optVariableType);
-      const varWithType = new AstVariableWithType(root, isConstant, identifier3, type);
+      const variable = new AstSimpleVariableAccess(root, identifier3);
+      const varWithType = new AstVariableWithType(root, isConstant, variable, type);
       const expressionAst = this.parseExpressionToAst(expression);
       return new AstVariableDeclarationStatement(root, varWithType, expressionAst);
     }
@@ -333259,6 +333358,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const name = this.parseIdentifier(root.children[0]);
       const args = this.parseFunctionArgs(root.children[2]);
       return new AstFunctionCallExpression(root, name, new GroupAstNode(root.children[2], args));
+    }
+    parseIdentifierList(root) {
+      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.builtInFunctionArgumentList}`);
+      if (root.children.length == 0) {
+        return [];
+      }
+      const functionCallIdentifiersList = root.children[0];
+      this.expectNumberOfChildren(functionCallIdentifiersList, 3);
+      const firstExpressionParse = functionCallIdentifiersList.children[0];
+      const firstIdentifier = this.parseIdentifier(firstExpressionParse);
+      const identifiers = [firstIdentifier];
+      const additionalArgs = functionCallIdentifiersList.children[1];
+      for (let i = 0; i < additionalArgs.children.length; i++) {
+        const exp = this.parseIdentifier(additionalArgs.children[i].children[1]);
+        identifiers.push(exp);
+      }
+      return identifiers;
     }
     parseFunctionArgs(root) {
       this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.functionArgumentList}`, `optional_${PARSER_RULE_NAMES.callExpressionArgumentList}`);
@@ -333400,7 +333516,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectParseRuleName(root, PARSER_RULE_NAMES.callIndexingOrFieldExpression);
       this.expectNumberOfChildren(root, 1);
       const child = root.children[0];
-      if (child.matchedRule?.name == PARSER_RULE_NAMES.callExpression) {
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.compilerBuiltInFunctions) {
+        return this.parseCompilerBuiltInFunction(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.callExpression) {
         return this.parseCallExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.indexingExpression) {
         return this.parseIndexingExpression(child);
@@ -333408,6 +333526,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.parseFieldAccessExpression(child);
       }
       throw new Error(`Parsing not implemented for ${child.matchedRule?.name}`);
+    }
+    parseCompilerBuiltInFunction(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.compilerBuiltInFunctions);
+      this.expectNumberOfChildren(root, 4);
+      this.expectParseRuleName(root.children[0], PARSER_RULE_NAMES.compilerBuiltInFunctionNames);
+      this.expectNumberOfChildren(root.children[0], 1);
+      const functionName = root.children[0].children[0].matchedRule?.name;
+      let functionNameEnum;
+      if (functionName == PARSER_RULE_NAMES.sizeOfKeyword) {
+        functionNameEnum = "SizeOf";
+      } else {
+        throw new Error(`Built in function with name: ${functionName} is not implemented.`);
+      }
+      const args = this.parseIdentifierList(root.children[2]);
+      const identifier3 = new AstIdentifierNode(root, functionName);
+      return new AstBuiltInFunctionCallExpression(root, functionNameEnum, identifier3, args);
     }
     parseCallExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.callExpression);
@@ -333857,6 +333991,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       ";"
       /* TokenType.SemiColon */
     );
+    const sizeOfKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.sizeOfKeyword,
+      "sizeof"
+      /* TokenType.Sizeof */
+    );
     const asKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.asKeyword,
       "as"
@@ -333996,9 +334135,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // has the zero-or-more so that it can match stuff like A.b.c;
       parser2.createZeroOrMore(PARSER_RULE_NAMES.fieldAccessSuffix, parser2.createSequence(PARSER_RULE_NAMES.dotThenIdentifier, dotMatcher, identifierMatcher))
     );
+    const compilerBuiltInFunction = parser2.createSequence(PARSER_RULE_NAMES.compilerBuiltInFunctions);
     const callExpression = parser2.createSequence(PARSER_RULE_NAMES.callExpression);
     const indexingExpression = parser2.createSequence(PARSER_RULE_NAMES.indexingExpression);
-    const callIndexingOrField = parser2.createOrderedChoice(PARSER_RULE_NAMES.callIndexingOrFieldExpression, callExpression, indexingExpression, fieldAccessExpression);
+    const callIndexingOrField = parser2.createOrderedChoice(PARSER_RULE_NAMES.callIndexingOrFieldExpression, compilerBuiltInFunction, callExpression, indexingExpression, fieldAccessExpression);
     const dereferencingExpression = parser2.createSequence(PARSER_RULE_NAMES.dereferencingExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.zeroOrMoreAsterisk, asterisk), callIndexingOrField);
     const typeCastingExpression = parser2.createSequence(PARSER_RULE_NAMES.typecastingExpression);
     const unaryOperator = parser2.createOrderedChoice(PARSER_RULE_NAMES.unaryOperator, exclaim, tilde, minus);
@@ -334038,6 +334178,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // this is oneOrMore so that I can do stuff like: A(1)(2)(3); Stuff like A(1, 2, 3) is also supported
       parser2.createSequence(PARSER_RULE_NAMES.callExpressionTail, leftParen, optionalCommaList(PARSER_RULE_NAMES.callExpressionArgumentList, expression), rightParen)
     ));
+    const compilerBuiltInFunctionNames = parser2.createOrderedChoice(PARSER_RULE_NAMES.compilerBuiltInFunctionNames, sizeOfKeyword);
+    compilerBuiltInFunction.symbols.push(compilerBuiltInFunctionNames, leftParen, optionalCommaList(PARSER_RULE_NAMES.builtInFunctionArgumentList, identifierMatcher), rightParen);
     indexingExpression.symbols.push(
       fieldAccessExpression,
       // this is oneOrMore so that I can do stuff like: A[1][2][3]; though A[(1, 2, 3)] (with a tuple) is also parse-able. Stuff like A[1, 2, 3] is not supported
@@ -334488,15 +334630,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.scannerRules = lexerRules.slice();
     }
     scanFiles(files) {
-      const out = { tokens: new Array(), errors: new Array() };
+      const startTimeMs = performance.now();
+      const out = { tokens: new Array(), errors: new Array(), timeTakenMs: -1 };
       for (const file of files) {
         const temp = this.scan(file[0], file[1]);
         out.tokens.push(...temp.tokens);
         out.errors.push(...temp.errors);
       }
+      const endTimeMs = performance.now();
+      out.timeTakenMs = endTimeMs - startTimeMs;
       return out;
     }
     scan(text2, filename) {
+      const startTimeMs = performance.now();
       if (filename == void 0) {
         filename = "";
       }
@@ -334555,7 +334701,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
         }
       }
-      return { tokens, errors };
+      const endTimeMs = performance.now();
+      return { tokens, errors, timeTakenMs: endTimeMs - startTimeMs };
     }
   };
   function parseFloat2(match2) {
@@ -334634,15 +334781,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       console.error(scanResult.errors);
       throw new Error(`Failed to scan file.`);
     }
+    const scanTimeMs = scanResult.timeTakenMs;
+    const parserStartTimeMs = performance.now();
     const parser2 = new Parser4();
     const parseResult = parser2.parse(new TokenStream(scanResult.tokens));
+    const parserEndTimeMs = performance.now();
+    const parseTimeMs = parserEndTimeMs - parserStartTimeMs;
+    const binderStartTimeMs = performance.now();
     const binder = new Binder();
     const violations = [];
     const binderContext = Binder.createContext(violations);
     binder.traverse(parseResult, binderContext);
+    const binderEndTimeMs = performance.now();
+    const binderTimeMs = binderEndTimeMs - binderStartTimeMs;
     if (binderContext.violations.length > 0) {
       console.log(binderContext.table.toMarkdownString(printDebugInfo?.printBuiltInSymbols));
-      console.log(violations);
       console.log(violations);
       for (const mismatch of violations) {
         const contents = values.filter((v) => v.filename == mismatch.firstToken.file)[0].contents;
@@ -334650,12 +334803,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       throw new Error(`Found semantic error while processing input`);
     }
+    const checkerStartTimeMs = performance.now();
     const checker = new Checker();
     const checkerContext = {
       typeMismatches: [],
       table: binderContext.table
     };
     checker.traverse(parseResult, checkerContext);
+    const checkerEndTimeMs = performance.now();
+    const checkerTimeMs = checkerEndTimeMs - checkerStartTimeMs;
     if (checkerContext.typeMismatches.length > 0) {
       console.log(checkerContext.table.toMarkdownString(printDebugInfo?.printBuiltInSymbols));
       console.log(checkerContext.typeMismatches);
@@ -334668,9 +334824,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     if (printDebugInfo && printDebugInfo.symbolTable) {
       console.log(checkerContext.table.toMarkdownString());
     }
+    const emitterStartTimeMs = performance.now();
     const emitter = new Emitter3();
     const watModule = emitter.emit(parseResult, binderContext.table);
-    return watModule;
+    const emitterEndTimeMs = performance.now();
+    const emitterTimeMs = emitterEndTimeMs - emitterStartTimeMs;
+    return {
+      module: watModule,
+      timingResults: {
+        scanner: scanTimeMs,
+        parser: parseTimeMs,
+        binder: binderTimeMs,
+        checker: checkerTimeMs,
+        emitter: emitterTimeMs
+      }
+    };
   }
   __name(compileFiles, "compileFiles");
   function compile2(contents, filename, printDebugInfo) {
@@ -334750,7 +334918,7 @@ function main(): f64 {
   document.querySelector("#compile-button").addEventListener("click", () => {
     const content2 = editor2.getValue();
     try {
-      const compilationOutput = compile2(content2);
+      const compilationOutput = compile2(content2).module;
       const formatted = format2(compilationOutput);
       compilerOutput.setValue(formatted);
       compileAndRunButDoNotSave("test", formatted).then((mainReturnValue) => {
