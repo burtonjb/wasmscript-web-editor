@@ -327848,7 +327848,7 @@ ${tagToString(tag)}`;
     }
     getParamTypes() {
       return this.params.map((p) => {
-        const type = p.type;
+        const type = p.typeExpression;
         if (type == void 0) {
           throw new Error("This shouldn't happen and if it does I should go back and fix the fact that I'm using VariableWithType as the type of the params");
         }
@@ -328039,12 +328039,12 @@ ${tagToString(tag)}`;
     }
     isConstant;
     variable;
-    type;
-    constructor(node, isConstant, variable, type) {
+    typeExpression;
+    constructor(node, isConstant, variable, typeExpression) {
       super(node);
       this.isConstant = isConstant;
       this.variable = variable;
-      this.type = type;
+      this.typeExpression = typeExpression;
     }
     get identifier() {
       return this.identifier;
@@ -328062,12 +328062,12 @@ ${tagToString(tag)}`;
     }
     isConstant;
     variable;
-    type;
-    constructor(node, isConstant, variable, type) {
-      super(node, isConstant, variable, type);
+    typeExpression;
+    constructor(node, isConstant, variable, typeExpression) {
+      super(node, isConstant, variable, typeExpression);
       this.isConstant = isConstant;
       this.variable = variable;
-      this.type = type;
+      this.typeExpression = typeExpression;
     }
   };
 
@@ -328877,9 +328877,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Var */
     ],
     [
-      "function",
-      "function"
-      /* TokenType.Function */
+      "type",
+      "type"
+      /* TokenType.Type */
+    ],
+    [
+      "opaque",
+      "opaque"
+      /* TokenType.Opaque */
     ],
     [
       "struct",
@@ -328887,9 +328892,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Struct */
     ],
     [
-      "inline",
-      "inline"
-      /* TokenType.Inline */
+      "size_of",
+      "size_of"
+      /* TokenType.Sizeof */
+    ],
+    [
+      "as",
+      "as"
+      /* TokenType.As */
+    ],
+    [
+      "unit",
+      "unit"
+      /* TokenType.Unit */
     ],
     [
       "for",
@@ -328910,21 +328925,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "else",
       "else"
       /* TokenType.Else */
-    ],
-    [
-      "true",
-      "true"
-      /* TokenType.True */
-    ],
-    [
-      "false",
-      "false"
-      /* TokenType.False */
-    ],
-    [
-      "null",
-      "null"
-      /* TokenType.Null */
     ],
     [
       "break",
@@ -328952,19 +328952,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Return */
     ],
     [
-      "type",
-      "type"
-      /* TokenType.Type */
+      "true",
+      "true"
+      /* TokenType.True */
     ],
     [
-      "opaque",
-      "opaque"
-      /* TokenType.Opaque */
+      "false",
+      "false"
+      /* TokenType.False */
     ],
     [
-      "sizeof",
-      "sizeof"
-      /* TokenType.Sizeof */
+      "null",
+      "null"
+      /* TokenType.Null */
+    ],
+    [
+      "function",
+      "function"
+      /* TokenType.Function */
     ],
     [
       "watfunction",
@@ -328990,26 +328995,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "watmethod",
       "watmethod"
       /* TokenType.WatMethod */
-    ],
-    [
-      "as",
-      "as"
-      /* TokenType.As */
-    ],
-    [
-      "extends",
-      "extends"
-      /* TokenType.Extends */
-    ],
-    [
-      "unit",
-      "unit"
-      /* TokenType.Unit */
-    ],
-    [
-      "packed",
-      "packed"
-      /* TokenType.Packed */
     ]
   ]);
   var Token4 = class {
@@ -329050,7 +329035,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/TypeConstants.js
+  // ../compiler/dist/src/compiler/ParserConstants.js
   var FAKE_TOKEN = new Token4("Identifier", "FAKE", void 0, "BUILT-IN", -1, -1, -1, -1);
   var FAKE_PARSE_TREE_NODE = new ParseTreeNode(new TokenStream([FAKE_TOKEN]), true, 0, 1, new TerminalSymbol(
     "",
@@ -329058,409 +329043,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     "Identifier"
     /* TokenType.Identifier */
   ), []);
-  function createTypeExpression(typeString) {
-    return new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, typeString));
-  }
-  __name(createTypeExpression, "createTypeExpression");
-  var BUILT_IN_SCALAR_TYPE_NAMES = ["bool", "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64", "f32", "f64"];
-  var BUILT_IN_SCALAR_TYPE_EXPRESSIONS = BUILT_IN_SCALAR_TYPE_NAMES.map((t) => {
-    const iden = new AstIdentifierNode(FAKE_PARSE_TREE_NODE, t);
-    const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, iden);
-    return typeExpression;
-  });
-  var BUILD_IN_SCALAR_TYPE_EXPRESSION_MAP = new Map(BUILT_IN_SCALAR_TYPE_EXPRESSIONS.map((t) => [t.identifier.name, t]));
-  var BUILT_IN_SCALAR_TYPE_DEFINITIONS = BUILT_IN_SCALAR_TYPE_EXPRESSIONS.map((t) => {
-    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, void 0, t.identifier, t);
-    return def;
-  });
-  var BUILT_IN_POINTER_TYPE_NAMES = ["null", "unknown"];
-  var BUILT_IN_POINTER_TYPE_EXPRESSIONS = BUILT_IN_POINTER_TYPE_NAMES.map((t) => {
-    const iden = new AstIdentifierNode(FAKE_PARSE_TREE_NODE, t);
-    const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, iden);
-    const pointerTypeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
-    return {
-      baseTypeExpression,
-      pointerTypeExpression
-    };
-  });
-  var BUILD_IN_POINTER_TYPE_EXPRESSION_MAP = new Map(BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => [t.baseTypeExpression.symbolName, t.pointerTypeExpression]));
-  var BUILT_IN_POINTER_TYPE_DEFINITIONS = BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => {
-    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, void 0, t.baseTypeExpression.identifier, t.pointerTypeExpression);
-    return def;
-  });
-  var SCALAR_TYPES_VALUE_RANGES = {
-    u8: { min: BigInt("0"), max: BigInt("255") },
-    u16: { min: BigInt("0"), max: BigInt("65535") },
-    u32: { min: BigInt("0"), max: BigInt("4294967295") },
-    u64: { min: BigInt("0"), max: BigInt("18446744073709551615") },
-    i8: { min: BigInt("-128"), max: BigInt("127") },
-    i16: { min: BigInt("-32768"), max: BigInt("32767") },
-    i32: { min: BigInt("-2147483646"), max: BigInt("2147483647") },
-    i64: { min: BigInt("-9223372036854775806"), max: BigInt("9223372036854775807") }
-    // TODO: float types. I'm just going to assume both f32 and f64 will work
-  };
-  function createUnaryOperation(type, returnType, operator, watSourceCode) {
-    const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
-    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
-    return op;
-  }
-  __name(createUnaryOperation, "createUnaryOperation");
-  function createBinaryOperation(type, returnType, operator, watSourceCode) {
-    const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
-    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
-    return op;
-  }
-  __name(createBinaryOperation, "createBinaryOperation");
-  var wasmScriptTypesToWasmTypes = {
-    bool: "i32",
-    u8: "i32",
-    u16: "i32",
-    u32: "i32",
-    u64: "i64",
-    i8: "i32",
-    i16: "i32",
-    i32: "i32",
-    i64: "i64",
-    f32: "f32",
-    f64: "f64"
-  };
-  var wasmScriptTypeWrappingValues = {
-    bool: "0x1",
-    u8: "0xFF",
-    u16: "0xFFFF",
-    i8: "0xFF",
-    i16: "0xFFFF"
-  };
-  var unsignedOperatorMapping = {
-    "-": "sub",
-    "+": "add",
-    "*": "mul",
-    "/": "div_u",
-    "%": "rem_u",
-    "<": "lt_u",
-    "<=": "le_u",
-    ">": "gt_u",
-    ">=": "ge_u",
-    "==": "eq",
-    "!=": "ne",
-    "&": "and",
-    "|": "or",
-    "^": "xor"
-  };
-  var signedOperatorMapping = {
-    "-": "sub",
-    "+": "add",
-    "*": "mul",
-    "/": "div_s",
-    "%": "rem_s",
-    "<": "lt_s",
-    "<=": "le_s",
-    ">": "gt_s",
-    ">=": "ge_s",
-    "==": "eq",
-    "!=": "ne",
-    "&": "and",
-    "|": "or",
-    "^": "xor"
-  };
-  var floatOperatorMapping = {
-    "-": "sub",
-    "+": "add",
-    "*": "mul",
-    "/": "div",
-    "<": "lt",
-    "<=": "le",
-    ">": "gt",
-    ">=": "ge",
-    "==": "eq",
-    // rust includes this as a built-in so I'll do the same, even though I think this is somewhat meaningless and can sometimes be confusing
-    "!=": "ne"
-  };
-  var numberTypeToInstruction = {
-    UnsignedInteger: unsignedOperatorMapping,
-    SignedInteger: signedOperatorMapping,
-    Float: floatOperatorMapping
-  };
-  var SUPPORTED_BINARY_MATH_OPERATORS = [
-    "+",
-    "-",
-    "*",
-    "/"
-  ];
-  var SUPPORT_BINARY_COMPARISON_OPERATORS = [
-    "<",
-    "<=",
-    ">",
-    ">=",
-    "==",
-    "!="
-  ];
-  var SUPPORTED_BINARY_BITWISE_OPERATORS = [
-    "&",
-    "|",
-    "^",
-    "%"
-    // this is not actually a bitwise operator, but its only supported on signed/unsigned its so its fine here
-  ];
-  var SUPPORTED_BINARY_LOGICAL_OPERATORS = [
-    "&&",
-    "||",
-    "=="
-  ];
-  var BUILT_IN_NUMERIC_OPERATIONS = [];
-  for (const type of BUILT_IN_SCALAR_TYPE_NAMES) {
-    const wasmType = wasmScriptTypesToWasmTypes[type];
-    if (wasmType == void 0) {
-      throw new Error(`Bug in the compiler, this should be defined`);
-    }
-    const wrappingValue = wasmScriptTypeWrappingValues[type];
-    const wrappingValueString = wrappingValue ? `    ${wasmType}.const ${wrappingValue}    ${wasmType}.and ` : "";
-    let numberType;
-    if (type.startsWith("u")) {
-      numberType = "UnsignedInteger";
-    } else if (type.startsWith("i")) {
-      numberType = "SignedInteger";
-    } else if (type.startsWith("f")) {
-      numberType = "Float";
-    } else {
-      for (const opName of SUPPORTED_BINARY_LOGICAL_OPERATORS) {
-        let inst;
-        if (opName == "&&") {
-          inst = "and";
-        } else if (opName == "||") {
-          inst = "or";
-        } else if (opName == "==") {
-          inst = "eq";
-        } else {
-          throw new Error(`Not implemented for operator: ${opName}`);
-        }
-        const op = createBinaryOperation(type, type, opName, `${wasmType}.${inst}`);
-        BUILT_IN_NUMERIC_OPERATIONS.push(op);
-      }
-      const unaryNot = createUnaryOperation(type, type, "!", `${wasmType}.eqz`);
-      BUILT_IN_NUMERIC_OPERATIONS.push(unaryNot);
-      continue;
-    }
-    for (const opName of SUPPORTED_BINARY_MATH_OPERATORS) {
-      const inst = numberTypeToInstruction[numberType][opName];
-      const instructionString = `${wasmType}.${inst} ${wrappingValueString}`;
-      const op = createBinaryOperation(type, type, opName, instructionString);
-      BUILT_IN_NUMERIC_OPERATIONS.push(op);
-    }
-    for (const opName of SUPPORT_BINARY_COMPARISON_OPERATORS) {
-      const inst = numberTypeToInstruction[numberType][opName];
-      const op = createBinaryOperation(type, "bool", opName, `${wasmType}.${inst}`);
-      BUILT_IN_NUMERIC_OPERATIONS.push(op);
-    }
-    if (numberType == "SignedInteger" || numberType == "UnsignedInteger") {
-      for (const opName of SUPPORTED_BINARY_BITWISE_OPERATORS) {
-        const inst = numberTypeToInstruction[numberType][opName];
-        const op = createBinaryOperation(type, type, opName, `${wasmType}.${inst}`);
-        BUILT_IN_NUMERIC_OPERATIONS.push(op);
-      }
-      const bitwiseNegateOp = createUnaryOperation(type, type, "~", `${wasmType}.const -1    ${wasmType}.xor    ${wrappingValueString}   ;; unary bitwise negate`);
-      BUILT_IN_NUMERIC_OPERATIONS.push(bitwiseNegateOp);
-    }
-    if (numberType == "SignedInteger") {
-      const negateOp = createUnaryOperation(type, type, "-", `${wasmType}.const -1    ${wasmType}.mul    ${wrappingValueString}    ;; unary negate`);
-      BUILT_IN_NUMERIC_OPERATIONS.push(negateOp);
-    } else if (numberType == "Float") {
-      const op = createUnaryOperation(type, type, "-", `${wasmType}.neg`);
-      BUILT_IN_NUMERIC_OPERATIONS.push(op);
-    }
-  }
-  function createGlobalSymbolTable() {
-    const table = new SymbolTable("global", void 0);
-    for (const t of BUILT_IN_SCALAR_TYPE_DEFINITIONS) {
-      const err = table.bindTypeDefinition(t, true);
-      if (err) {
-        console.log(err);
-        throw new Error("Error during bind!");
-      }
-    }
-    for (const t of BUILT_IN_POINTER_TYPE_DEFINITIONS) {
-      const err = table.bindTypeDefinition(t, true);
-      if (err) {
-        console.log(err);
-        throw new Error("Error during bind!");
-      }
-    }
-    for (const t of BUILT_IN_NUMERIC_OPERATIONS) {
-      const err = table.bindOperatorDefinition(t, true);
-      if (err) {
-        console.log(err);
-        throw new Error("Error during bind!");
-      }
-    }
-    return table;
-  }
-  __name(createGlobalSymbolTable, "createGlobalSymbolTable");
-
-  // ../compiler/dist/src/compiler/AcceptableTypeSet.js
-  var AcceptableTypeSet = class _AcceptableTypeSet {
-    static {
-      __name(this, "AcceptableTypeSet");
-    }
-    _acceptableTypes;
-    _linkedSets;
-    constructor(values) {
-      this._acceptableTypes = values?.slice() ?? void 0;
-      this._linkedSets = /* @__PURE__ */ new Set();
-    }
-    static from(types) {
-      return new _AcceptableTypeSet(types);
-    }
-    static fromSingleType(type) {
-      if (type == void 0) {
-        return _AcceptableTypeSet.unknownType();
-      }
-      return new _AcceptableTypeSet([type]);
-    }
-    static unknownType() {
-      return new _AcceptableTypeSet(void 0);
-    }
-    static noAllowableTypes() {
-      return new _AcceptableTypeSet([]);
-    }
-    static unitType() {
-      return new _AcceptableTypeSet([new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE)]);
-    }
-    /**
-     * Treats the two input arrays as sets and returns the intersection of the two.
-     */
-    static intersectTypes(a, b) {
-      let acceptableTypes;
-      if (a == void 0 && b == void 0) {
-        acceptableTypes = void 0;
-      } else if (a == void 0 && b != void 0) {
-        acceptableTypes = b.slice();
-      } else if (a != void 0 && b == void 0) {
-        acceptableTypes = a.slice();
-      } else if (a != void 0 && b != void 0) {
-        const out = [];
-        for (const x of a) {
-          for (const y of b) {
-            if (x.equals(y)) {
-              out.push(x);
-              break;
-            }
-          }
-        }
-        acceptableTypes = out;
-      } else {
-        throw new Error(`Should not happen`);
-      }
-      return acceptableTypes;
-    }
-    get isUnknown() {
-      return this._acceptableTypes == void 0;
-    }
-    get acceptableTypes() {
-      return this._acceptableTypes?.slice();
-    }
-    get hasAcceptableTypes() {
-      if (this._acceptableTypes == void 0) {
-        return true;
-      }
-      return this._acceptableTypes.length > 0;
-    }
-    /**
-     * Links two acceptable type sets together, so that in-place modifications to one set will be reflected on the other.
-     * @param other
-     */
-    link(other) {
-      this._linkedSets.add(other);
-      other._linkedSets.add(this);
-    }
-    /**
-     * Sets the acceptable types for this set and propagates the acceptable types to all other
-     * linked sets
-     * @param acceptableTypes
-     */
-    set(acceptableTypes) {
-      const explored = /* @__PURE__ */ new Set();
-      this.setAndPropagate(acceptableTypes, explored);
-    }
-    linkAndIntersect(other) {
-      this.link(other);
-      this.intersectInPlaceAndDontLink(other);
-    }
-    intersectInPlaceAndDontLink(other) {
-      const acceptableTypes = _AcceptableTypeSet.intersectTypes(this._acceptableTypes, other._acceptableTypes);
-      this.set(acceptableTypes);
-    }
-    intersect(other) {
-      return new _AcceptableTypeSet(_AcceptableTypeSet.intersectTypes(this._acceptableTypes, other._acceptableTypes));
-    }
-    createLinkedCopy() {
-      const out = _AcceptableTypeSet.from(this._acceptableTypes);
-      out.link(this);
-      out.intersectInPlaceAndDontLink(this);
-      return out;
-    }
-    setAndPropagate(acceptableTypes, alreadyChecked) {
-      if (!alreadyChecked.has(this)) {
-        alreadyChecked.add(this);
-        this._acceptableTypes = acceptableTypes;
-        for (const next of this._linkedSets) {
-          next.setAndPropagate(acceptableTypes, alreadyChecked);
-        }
-      }
-    }
-    toString() {
-      if (this._acceptableTypes == void 0) {
-        return "ANY";
-      }
-      if (this._acceptableTypes.length == 0) {
-        return "NONE";
-      }
-      return this._acceptableTypes.map((t) => t.toString()).join(" ");
-    }
-    map(mapper) {
-      return this.acceptableTypes?.map(mapper);
-    }
-    resolveTypeExpression() {
-      if (this._acceptableTypes != void 0 && this._acceptableTypes.length > 0) {
-        return this._acceptableTypes[0];
-      }
-      throw new Error(`Unable to resolve the type`);
-    }
-  };
-  function crossJoin(lists) {
-    const internal = lists.map((m) => m.acceptableTypes);
-    const fillUnknown = [];
-    for (let i = 0; i < internal.length; i++) {
-      let current = internal[i];
-      if (current == void 0) {
-        if (i > 0) {
-          const prev = fillUnknown[i - 1];
-          if (prev != void 0) {
-            current = prev;
-          } else {
-            let allUndef = true;
-            for (let j = 0; j < internal.length; j++) {
-              if (internal[j] != void 0) {
-                current = internal[j];
-                allUndef = false;
-              }
-            }
-            if (allUndef) {
-              return [AcceptableTypeSet.unknownType()];
-            }
-          }
-        }
-      }
-      fillUnknown.push(current);
-    }
-    const mapped = fillUnknown.reduce((acc, list) => acc.flatMap((accItem) => list.map((item) => [...accItem, item])), [[]]);
-    return mapped.map((m) => AcceptableTypeSet.from(m));
-  }
-  __name(crossJoin, "crossJoin");
-
-  // ../compiler/dist/src/compiler/ParserConstants.js
   var PARSER_RULE_NAMES = {
     comma: "COMMA",
     dot: "DOT",
@@ -329509,6 +329091,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     watOperatorKeyword: "WatOperator",
     typeKeyword: "typeKeyword",
     structKeyword: "structKeyword",
+    unitKeyword: "unit",
     breakKeyword: "break",
     continueKeyword: "continue",
     extendsKeyword: "extends",
@@ -329660,69 +329243,469 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var ASSIGNMENT_OPERATORS = {};
   ASSIGNMENT_OPERATORS[PARSER_RULE_NAMES.equals] = "=";
 
-  // ../compiler/dist/src/compiler/TypeDefinition.js
-  var ScalarTypeSizes = {
-    i32: 4,
-    u32: 4,
-    f32: 4,
-    i64: 8,
-    u64: 8,
-    f64: 8
+  // ../compiler/dist/src/compiler/TypesBuiltIn.js
+  var BUILT_IN_SCALAR_TYPE_NAMES = [
+    // TODO: usize/isize
+    "bool",
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "f32",
+    "f64"
+  ];
+  var BuiltInScalarConfig = {
+    // TODO: usize/isize numeric pointer types
+    // usize: {
+    //   name: "usize",
+    //   bytes: 4,
+    //   numberType: TypeKind.Pointer, // this is implemented as an i32 in the current version of wasm. It might eventually change to an i64, but the main reason I do this is because I don't want to allow ptr = ptr + i32 unless the i32 is cast to a ptr first.
+    // },
+    bool: {
+      name: "bool",
+      bytes: 1,
+      // There's no wasm instruction smaller than 1 byte even though a bool is technically 1 bit (1/8 byte)
+      numberType: "Boolean",
+      // 0 or 1
+      wrappingValue: "0x1",
+      // I don't think I actually need to wrap, but I'll include just in case
+      wasmNumberType: "i32",
+      astValues: createConfig("bool")
+    },
+    i8: {
+      name: "i8",
+      bytes: 1,
+      numberType: "SignedInteger",
+      wrappingValue: "0xFF",
+      wasmNumberType: "i32",
+      astValues: createConfig("i8")
+    },
+    i16: {
+      name: "i16",
+      bytes: 2,
+      numberType: "SignedInteger",
+      wrappingValue: "0xFFFF",
+      wasmNumberType: "i32",
+      astValues: createConfig("i16")
+    },
+    i32: {
+      name: "i32",
+      bytes: 4,
+      numberType: "SignedInteger",
+      wasmNumberType: "i32",
+      astValues: createConfig("i32")
+    },
+    i64: {
+      name: "i64",
+      bytes: 8,
+      numberType: "SignedInteger",
+      wasmNumberType: "i64",
+      astValues: createConfig("i64")
+    },
+    u8: {
+      name: "u8",
+      bytes: 1,
+      numberType: "UnsignedInteger",
+      wrappingValue: "0xFF",
+      wasmNumberType: "i32",
+      astValues: createConfig("u8")
+    },
+    u16: {
+      name: "u16",
+      bytes: 2,
+      numberType: "UnsignedInteger",
+      wrappingValue: "0xFFFF",
+      wasmNumberType: "i32",
+      astValues: createConfig("u16")
+    },
+    u32: {
+      name: "u32",
+      bytes: 4,
+      numberType: "UnsignedInteger",
+      wasmNumberType: "i32",
+      astValues: createConfig("u32")
+    },
+    u64: {
+      name: "u64",
+      bytes: 8,
+      numberType: "UnsignedInteger",
+      wasmNumberType: "i64",
+      astValues: createConfig("u64")
+    },
+    f32: {
+      name: "f32",
+      bytes: 4,
+      numberType: "Float",
+      wasmNumberType: "f32",
+      astValues: createConfig("f32")
+    },
+    f64: {
+      name: "f64",
+      bytes: 8,
+      numberType: "Float",
+      wasmNumberType: "f64",
+      astValues: createConfig("f64")
+    }
   };
-  var PointerAddressType = "i32";
-  var TypeDefinition = class {
-    static {
-      __name(this, "TypeDefinition");
+  var SCALAR_TYPES_VALUE_RANGES = {
+    u8: { min: BigInt("0"), max: BigInt("255") },
+    u16: { min: BigInt("0"), max: BigInt("65535") },
+    u32: { min: BigInt("0"), max: BigInt("4294967295") },
+    u64: { min: BigInt("0"), max: BigInt("18446744073709551615") },
+    i8: { min: BigInt("-128"), max: BigInt("127") },
+    i16: { min: BigInt("-32768"), max: BigInt("32767") },
+    i32: { min: BigInt("-2147483646"), max: BigInt("2147483647") },
+    i64: { min: BigInt("-9223372036854775806"), max: BigInt("9223372036854775807") }
+  };
+  var unsignedOperatorMapping = {
+    "-": "sub",
+    "+": "add",
+    "*": "mul",
+    "/": "div_u",
+    "%": "rem_u",
+    "<": "lt_u",
+    "<=": "le_u",
+    ">": "gt_u",
+    ">=": "ge_u",
+    "==": "eq",
+    "!=": "ne",
+    "&": "and",
+    "|": "or",
+    "^": "xor"
+  };
+  var signedOperatorMapping = {
+    "-": "sub",
+    "+": "add",
+    "*": "mul",
+    "/": "div_s",
+    "%": "rem_s",
+    "<": "lt_s",
+    "<=": "le_s",
+    ">": "gt_s",
+    ">=": "ge_s",
+    "==": "eq",
+    "!=": "ne",
+    "&": "and",
+    "|": "or",
+    "^": "xor"
+  };
+  var floatOperatorMapping = {
+    "-": "sub",
+    "+": "add",
+    "*": "mul",
+    "/": "div",
+    "<": "lt",
+    "<=": "le",
+    ">": "gt",
+    ">=": "ge",
+    "==": "eq",
+    // rust includes this as a built-in so I'll do the same, even though I think this is somewhat meaningless and can sometimes be confusing
+    "!=": "ne"
+  };
+  var CompilerDefaultTypes = {
+    PointerAddressType: "i32",
+    UnsignedPointerType: "u32",
+    IntLiteralDefaultType: "i32",
+    FloatLiteralDefaultType: "f64",
+    NullLiteralDefaultType: "unknown"
+  };
+  function createTypeExpression(typeString) {
+    return new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, typeString));
+  }
+  __name(createTypeExpression, "createTypeExpression");
+  function createAstTypeDefinition(t) {
+    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, void 0, t.identifier, t);
+    return def;
+  }
+  __name(createAstTypeDefinition, "createAstTypeDefinition");
+  function createConfig(typeString) {
+    const t = createTypeExpression(typeString);
+    const def = createAstTypeDefinition(t);
+    return {
+      typeExpression: t,
+      astTypeDefinition: def
+    };
+  }
+  __name(createConfig, "createConfig");
+  var BUILT_IN_POINTER_TYPE_NAMES = ["null", "unknown"];
+  var BUILT_IN_POINTER_TYPE_EXPRESSIONS = BUILT_IN_POINTER_TYPE_NAMES.map((t) => {
+    const iden = new AstIdentifierNode(FAKE_PARSE_TREE_NODE, t);
+    const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, iden);
+    const pointerTypeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
+    return {
+      baseTypeExpression,
+      pointerTypeExpression
+    };
+  });
+  var BUILD_IN_POINTER_TYPE_EXPRESSION_MAP = new Map(BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => [t.baseTypeExpression.symbolName, t.pointerTypeExpression]));
+  var BUILT_IN_POINTER_TYPE_DEFINITIONS = BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => {
+    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, void 0, t.baseTypeExpression.identifier, t.pointerTypeExpression);
+    return def;
+  });
+  function createUnaryOperation(type, returnType, operator, watSourceCode) {
+    const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
+    return op;
+  }
+  __name(createUnaryOperation, "createUnaryOperation");
+  function createBinaryOperation(type, returnType, operator, watSourceCode) {
+    const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
+    return op;
+  }
+  __name(createBinaryOperation, "createBinaryOperation");
+  var numberTypeToInstruction = {
+    UnsignedInteger: unsignedOperatorMapping,
+    SignedInteger: signedOperatorMapping,
+    Float: floatOperatorMapping
+  };
+  var SUPPORTED_BINARY_MATH_OPERATORS = [
+    "+",
+    "-",
+    "*",
+    "/"
+  ];
+  var SUPPORT_BINARY_COMPARISON_OPERATORS = [
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "==",
+    "!="
+  ];
+  var SUPPORTED_BINARY_BITWISE_OPERATORS = [
+    "&",
+    "|",
+    "^",
+    "%"
+    // this is not actually a bitwise operator, but its only supported on signed/unsigned its so its fine here
+  ];
+  var SUPPORTED_BINARY_LOGICAL_OPERATORS = [
+    "&&",
+    "||",
+    "=="
+  ];
+  var BUILT_IN_NUMERIC_OPERATIONS = [];
+  for (const type of BUILT_IN_SCALAR_TYPE_NAMES) {
+    const wasmType = BuiltInScalarConfig[type].wasmNumberType;
+    if (wasmType == void 0) {
+      throw new Error(`Bug in the compiler, this should be defined`);
     }
-    expression;
-    name;
-    symbol;
-    constructor(expression, name, symbol) {
-      this.expression = expression;
-      this.name = name;
-      this.symbol = symbol;
-      if (symbol.symbolDefinition.symbolType != "Type") {
-        throw new Error(`The type definitions need to be created with symbols of type Type, but for symbol '${name}' received symbol type: ${symbol.symbolDefinition.symbolType}`);
+    const wrappingValue = BuiltInScalarConfig[type].wrappingValue;
+    const wrappingInstructionString = wrappingValue ? `    ${wasmType}.const ${wrappingValue}    ${wasmType}.and ` : "";
+    let numberType;
+    if (type.startsWith("u")) {
+      numberType = "UnsignedInteger";
+    } else if (type.startsWith("i")) {
+      numberType = "SignedInteger";
+    } else if (type.startsWith("f")) {
+      numberType = "Float";
+    } else {
+      for (const opName of SUPPORTED_BINARY_LOGICAL_OPERATORS) {
+        let inst;
+        if (opName == "&&") {
+          inst = "and";
+        } else if (opName == "||") {
+          inst = "or";
+        } else if (opName == "==") {
+          inst = "eq";
+        } else {
+          throw new Error(`Not implemented for operator: ${opName}`);
+        }
+        const op = createBinaryOperation(type, type, opName, `${wasmType}.${inst}`);
+        BUILT_IN_NUMERIC_OPERATIONS.push(op);
       }
+      const unaryNot = createUnaryOperation(type, type, "!", `${wasmType}.eqz`);
+      BUILT_IN_NUMERIC_OPERATIONS.push(unaryNot);
+      continue;
     }
-    get symbolDefinition() {
-      return this.symbol.symbolDefinition;
+    for (const opName of SUPPORTED_BINARY_MATH_OPERATORS) {
+      const inst = numberTypeToInstruction[numberType][opName];
+      const instructionString = `${wasmType}.${inst} ${wrappingInstructionString}`;
+      const op = createBinaryOperation(type, type, opName, instructionString);
+      BUILT_IN_NUMERIC_OPERATIONS.push(op);
+    }
+    for (const opName of SUPPORT_BINARY_COMPARISON_OPERATORS) {
+      const inst = numberTypeToInstruction[numberType][opName];
+      const op = createBinaryOperation(type, "bool", opName, `${wasmType}.${inst}`);
+      BUILT_IN_NUMERIC_OPERATIONS.push(op);
+    }
+    if (numberType == "SignedInteger" || numberType == "UnsignedInteger") {
+      for (const opName of SUPPORTED_BINARY_BITWISE_OPERATORS) {
+        const inst = numberTypeToInstruction[numberType][opName];
+        const op = createBinaryOperation(type, type, opName, `${wasmType}.${inst}`);
+        BUILT_IN_NUMERIC_OPERATIONS.push(op);
+      }
+      const bitwiseNegateOp = createUnaryOperation(type, type, "~", `${wasmType}.const -1    ${wasmType}.xor    ${wrappingInstructionString}   ;; unary bitwise negate`);
+      BUILT_IN_NUMERIC_OPERATIONS.push(bitwiseNegateOp);
+    }
+    if (numberType == "SignedInteger") {
+      const negateOp = createUnaryOperation(type, type, "-", `${wasmType}.const -1    ${wasmType}.mul    ${wrappingInstructionString}    ;; unary negate`);
+      BUILT_IN_NUMERIC_OPERATIONS.push(negateOp);
+    } else if (numberType == "Float") {
+      const op = createUnaryOperation(type, type, "-", `${wasmType}.neg`);
+      BUILT_IN_NUMERIC_OPERATIONS.push(op);
+    }
+  }
+
+  // ../compiler/dist/src/compiler/TypeDefinition.js
+  var UndeterminedTypeTypeDefinition = class _UndeterminedTypeTypeDefinition {
+    static {
+      __name(this, "UndeterminedTypeTypeDefinition");
+    }
+    name = "UndeterminedType";
+    isBuiltIn = true;
+    static instance = new _UndeterminedTypeTypeDefinition();
+    constructor() {
+    }
+    resolveType() {
+      return void 0;
     }
     toString() {
-      return `${this.constructor.name}-${this.name}`;
+      return this.name;
     }
   };
-  var ScalarTypeDefinition = class extends TypeDefinition {
+  var ScalarLiteralType = class {
+    static {
+      __name(this, "ScalarLiteralType");
+    }
+    scope;
+    constructor(scope) {
+      this.scope = scope;
+    }
+    toString() {
+      return this.name;
+    }
+    isBuiltIn = true;
+  };
+  var IntegerLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "IntegerLiteralType");
+    }
+    value;
+    name = "IntegerLiteral";
+    // this value will be set if during an assignment the type of the LHS is specified.
+    // otherwise when resolving the type, it will fallback to the default type of the literal
+    resolvedType = void 0;
+    constructor(scope, value) {
+      super(scope);
+      this.value = value;
+    }
+    resolveType() {
+      if (this.resolvedType != void 0) {
+        return this.resolvedType;
+      }
+      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.IntLiteralDefaultType));
+      return this.scope.resolveTypeDefinition(typeExpression);
+    }
+  };
+  var FloatLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "FloatLiteralType");
+    }
+    value;
+    name = "FloatLiteral";
+    resolvedType;
+    constructor(scope, value) {
+      super(scope);
+      this.value = value;
+    }
+    resolveType() {
+      if (this.resolvedType != void 0) {
+        return this.resolvedType;
+      }
+      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.FloatLiteralDefaultType));
+      return this.scope.resolveTypeDefinition(typeExpression);
+    }
+  };
+  var NullLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "NullLiteralType");
+    }
+    name = "NullLiteral";
+    resolvedType = void 0;
+    // leave as undef for now
+    constructor(scope) {
+      super(scope);
+    }
+    resolveType() {
+      const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.NullLiteralDefaultType));
+      const typeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
+      return this.scope.resolveTypeDefinition(typeExpression);
+    }
+  };
+  var InstantiableTypeDefinition = class {
+    static {
+      __name(this, "InstantiableTypeDefinition");
+    }
+    scope;
+    name;
+    isBuiltIn;
+    constructor(scope, name, isBuiltIn) {
+      this.scope = scope;
+      this.name = name;
+      this.isBuiltIn = isBuiltIn;
+    }
+    resolveType() {
+      return this;
+    }
+    toString() {
+      return this.name;
+    }
+  };
+  var ScalarTypeDefinition = class _ScalarTypeDefinition extends InstantiableTypeDefinition {
     static {
       __name(this, "ScalarTypeDefinition");
     }
     expression;
     name;
-    symbol;
-    constructor(expression, name, symbol) {
-      super(expression, name, symbol);
+    scope;
+    isBuiltIn;
+    constructor(expression, name, scope, isBuiltIn) {
+      super(scope, name, true);
       this.expression = expression;
       this.name = name;
-      this.symbol = symbol;
+      this.scope = scope;
+      this.isBuiltIn = isBuiltIn;
     }
     resolveType() {
       return this;
     }
     sizeInBytes() {
-      const size2 = ScalarTypeSizes[this.name];
+      const size2 = BuiltInScalarConfig[this.name].bytes;
       if (size2 == void 0) {
         throw new Error(`Failed to lookup size for scalar with name: ${this.name}`);
       }
       return size2;
     }
+    equals(other) {
+      if (!(other instanceof _ScalarTypeDefinition)) {
+        return false;
+      }
+      return this.name == other.name && this.scope.id == other.scope.id;
+    }
   };
-  var StructTypeDefinition = class _StructTypeDefinition extends TypeDefinition {
+  var CompositeTypeDefinition = class extends InstantiableTypeDefinition {
+    static {
+      __name(this, "CompositeTypeDefinition");
+    }
+  };
+  var StructTypeDefinition = class _StructTypeDefinition extends CompositeTypeDefinition {
     static {
       __name(this, "StructTypeDefinition");
     }
+    expression;
     fields;
     constructor(expression, name, symbol, fields) {
-      super(expression, name, symbol);
+      super(symbol.scope, name, symbol.isBuiltIn);
+      this.expression = expression;
       this.fields = fields;
     }
     resolveType() {
@@ -329735,7 +329718,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const type = field[1];
         if (type instanceof ScalarTypeDefinition) {
           out.push([[name], type]);
-        } else if (type instanceof _StructTypeDefinition) {
+        } else if (type instanceof CompositeTypeDefinition) {
           const temp = type.flattenedFields();
           for (const inner of temp) {
             inner[0].unshift(name);
@@ -329749,14 +329732,119 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       let temp = super.toString();
-      temp += ": " + this.flattenedFields().map((p) => `(${p[0]},${p[1].toString()}) `);
+      temp += ":" + this.flattenedFields().map((p) => `(${p[0]},${p[1].toString()})`);
       return temp;
     }
     sizeInBytes() {
       return this.flattenedFields().reduce((acc, f) => acc + f[1].sizeInBytes(), 0);
     }
+    equals(other) {
+      if (!(other instanceof _StructTypeDefinition)) {
+        return false;
+      }
+      return this.name == other.name && this.scope.id == other.scope.id;
+    }
   };
-  var PointerTypeDefinition = class extends ScalarTypeDefinition {
+  var TupleTypeDefinition = class _TupleTypeDefinition extends CompositeTypeDefinition {
+    static {
+      __name(this, "TupleTypeDefinition");
+    }
+    scope;
+    types;
+    expression;
+    fields;
+    constructor(scope, types) {
+      const filtered = types.filter((f) => f.resolveType() != void 0).map((f) => f.resolveType());
+      const expression = new TupleTypeExpression(FAKE_PARSE_TREE_NODE, filtered.map((t) => t.expression));
+      const name = expression.toString();
+      const isBuiltIn = true;
+      super(scope, name, isBuiltIn);
+      this.scope = scope;
+      this.types = types;
+      this.expression = expression;
+      this.fields = /* @__PURE__ */ new Map();
+      for (let i = 0; i < filtered.length; i++) {
+        this.fields.set(`_${i}`, filtered[i]);
+      }
+    }
+    resolveType() {
+      return this;
+    }
+    flattenedFields() {
+      const out = [];
+      for (const entry of this.fields) {
+        const name = entry[0];
+        const type = entry[1];
+        if (type instanceof ScalarTypeDefinition) {
+          out.push([[name], type]);
+        } else if (type instanceof CompositeTypeDefinition) {
+          const temp = type.flattenedFields();
+          for (const inner of temp) {
+            inner[0].unshift(name);
+          }
+          out.push(...temp);
+        } else if (type instanceof ScalarLiteralType) {
+          out.push([[name], type.resolveType()]);
+        } else {
+          throw new Error("Not yet supported");
+        }
+      }
+      return out;
+    }
+    toString() {
+      const temp = super.toString();
+      return temp;
+    }
+    sizeInBytes() {
+      return this.flattenedFields().reduce((acc, f) => acc + f[1].sizeInBytes(), 0);
+    }
+    equals(other) {
+      if (!(other instanceof _TupleTypeDefinition)) {
+        return false;
+      }
+      if (other.fields.size != this.fields.size) {
+        return false;
+      }
+      const thisFields = [...this.fields.entries()].map((e) => e[1].resolveType());
+      const otherFields = [...other.fields.entries()].map((e) => e[1].resolveType());
+      for (let i = 0; i < this.fields.size; i++) {
+        const thisField = thisFields[i];
+        const otherField = otherFields[i];
+        if (!thisField.equals(otherField)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  };
+  var UnitTypeDefinition = class _UnitTypeDefinition extends TupleTypeDefinition {
+    static {
+      __name(this, "UnitTypeDefinition");
+    }
+    scope;
+    expression = new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE);
+    constructor(scope) {
+      super(scope, []);
+      this.scope = scope;
+      this.name = "unit";
+    }
+    sizeInBytes() {
+      return 0;
+    }
+    equals(other) {
+      if (other instanceof _UnitTypeDefinition) {
+        return true;
+      }
+      if (other instanceof TupleTypeDefinition) {
+        return this.fields.size == other.fields.size;
+      }
+      return false;
+    }
+    toString() {
+      return "unit";
+    }
+  };
+  var PointerTypeDefinition = class _PointerTypeDefinition extends ScalarTypeDefinition {
     static {
       __name(this, "PointerTypeDefinition");
     }
@@ -329766,7 +329854,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // A pointer itself is a scalar type (usually an i32, maybe an i64 if I eventually support 64-bit addressing)
     // The value it points to may not be a scalar though
     constructor(expression, name, symbol) {
-      super(expression, name, symbol);
+      super(expression, name, symbol.scope, symbol.isBuiltIn);
       this.expression = expression;
       this.name = name;
       this.symbol = symbol;
@@ -329778,45 +329866,150 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return this;
     }
     sizeInBytes() {
-      return ScalarTypeSizes[PointerAddressType];
+      const out = BuiltInScalarConfig[CompilerDefaultTypes.PointerAddressType].bytes;
+      if (out == void 0) {
+        throw new Error(`Failed to determine the default size in bytes for a pointer type. This is a big bug in the compiler`);
+      }
+      return out;
+    }
+    equals(other) {
+      if (!(other instanceof _PointerTypeDefinition)) {
+        return false;
+      }
+      return this.expression.equals(other.expression) && this.scope.id == other.scope.id;
     }
   };
-  function mapExpressionToDefinition(symbolTable, typeExpression) {
-    if (typeExpression instanceof BaseTypeExpression) {
-      const symbolName = typeExpression.symbolName;
-      const symbol = symbolTable.findSymbolWithType(
-        symbolName,
-        "Type"
-        /* SymbolType.Type */
-      );
-      if (symbol == void 0) {
-        throw new Error(`Lookup for symbol '${symbolName}' failed.`);
-      }
-      const symbolDef = symbol.symbolDefinition;
-      const type = symbolDef.type;
-      if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
-        return new ScalarTypeDefinition(typeExpression, symbolName, symbol);
-      } else if (type instanceof AstStructDefinition) {
-        const fields = type.fieldMap;
-        const transformedFields = /* @__PURE__ */ new Map();
-        for (const field of fields.entries()) {
-          const mappedType = mapExpressionToDefinition(symbolTable, field[1].type);
-          transformedFields.set(field[0], mappedType);
-        }
-        return new StructTypeDefinition(typeExpression, symbolName, symbol, transformedFields);
-      }
-    } else if (typeExpression instanceof PointerTypeExpression) {
-      const symbolName = typeExpression.symbolName;
-      const symbol = symbolTable.findSymbolWithType(
-        symbolName,
-        "Type"
-        /* SymbolType.Type */
-      );
-      return new PointerTypeDefinition(typeExpression, typeExpression.toString(), symbol);
+  var CallableTypeDefinition = class _CallableTypeDefinition extends InstantiableTypeDefinition {
+    static {
+      __name(this, "CallableTypeDefinition");
     }
-    throw new Error("Not yet implemented");
+    scope;
+    expression;
+    paramsTypes;
+    returnType;
+    constructor(scope, expression, paramsTypes, returnType) {
+      const name = expression.toString();
+      super(scope, name, false);
+      this.scope = scope;
+      this.expression = expression;
+      this.paramsTypes = paramsTypes;
+      this.returnType = returnType;
+    }
+    sizeInBytes() {
+      const out = BuiltInScalarConfig[CompilerDefaultTypes.PointerAddressType].bytes;
+      if (out == void 0) {
+        throw new Error(`Failed to determine the default size in bytes for a pointer type. This is a big bug in the compiler`);
+      }
+      return out;
+    }
+    equals(other) {
+      if (!(other instanceof _CallableTypeDefinition)) {
+        return false;
+      }
+      if (!this.returnType.equals(other.returnType)) {
+        return false;
+      }
+      if (this.paramsTypes.length != other.paramsTypes.length) {
+        return false;
+      }
+      for (let i = 0; i < this.paramsTypes.length; i++) {
+        if (!this.paramsTypes[i].equals(other.paramsTypes[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+  };
+  function mapExpressionToDefinition(scope, typeExpression) {
+    if (typeExpression instanceof PointerTypeExpression) {
+      const symbolName2 = typeExpression.symbolName;
+      const symbol2 = scope.findSymbolWithType(
+        symbolName2,
+        "Type"
+        /* SymbolType.Type */
+      );
+      return new PointerTypeDefinition(typeExpression, typeExpression.toString(), symbol2);
+    }
+    const symbolName = typeExpression.symbolName;
+    const symbol = scope.findSymbolWithType(
+      symbolName,
+      "Type"
+      /* SymbolType.Type */
+    );
+    if (symbol == void 0) {
+      throw new Error(`Lookup for symbol '${symbolName}' failed.`);
+    }
+    const symbolDef = symbol.symbolDefinition;
+    if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
+      return new ScalarTypeDefinition(typeExpression, symbolName, symbol.scope, false);
+    } else if (symbolDef.astCompositeDefinitionNode instanceof AstStructDefinition) {
+      const structDef = symbolDef.astCompositeDefinitionNode;
+      const fields = structDef.fieldMap;
+      const transformedFields = /* @__PURE__ */ new Map();
+      for (const field of fields.entries()) {
+        const mappedType = mapExpressionToDefinition(scope, field[1].typeExpression);
+        transformedFields.set(field[0], mappedType);
+      }
+      return new StructTypeDefinition(typeExpression, symbolName, symbol, transformedFields);
+    }
+    throw new Error(`Not yet implemented for type: ${symbolDef.typeExpression.toString()}`);
   }
   __name(mapExpressionToDefinition, "mapExpressionToDefinition");
+  function areTypesAssignable(lhsType, rhsType) {
+    if (lhsType instanceof UndeterminedTypeTypeDefinition && rhsType instanceof ScalarLiteralType) {
+      return {
+        isAcceptable: true,
+        resolvedLhsType: rhsType.resolveType(),
+        resolvedRhsType: rhsType.resolveType()
+      };
+    } else if (lhsType instanceof UndeterminedTypeTypeDefinition && rhsType instanceof InstantiableTypeDefinition) {
+      return {
+        isAcceptable: true,
+        resolvedLhsType: rhsType.resolveType(),
+        resolvedRhsType: rhsType.resolveType()
+      };
+    } else if (lhsType instanceof InstantiableTypeDefinition && rhsType instanceof NullLiteralType) {
+      return {
+        isAcceptable: true,
+        resolvedLhsType: lhsType.resolveType(),
+        resolvedRhsType: lhsType.resolveType()
+      };
+    } else if (lhsType instanceof ScalarTypeDefinition && rhsType instanceof ScalarLiteralType && !(lhsType instanceof PointerTypeDefinition || rhsType instanceof PointerTypeDefinition)) {
+      const config = BuiltInScalarConfig[lhsType.name];
+      const numberType = config.numberType;
+      const range3 = SCALAR_TYPES_VALUE_RANGES[lhsType.name];
+      if (range3 != void 0 && rhsType instanceof IntegerLiteralType) {
+        if (rhsType.value < range3.min || rhsType.value > range3.max) {
+          return {
+            isAcceptable: false,
+            resolvedLhsType: lhsType.resolveType(),
+            resolvedRhsType: rhsType.resolveType(),
+            errorMessage: `Unable to assign to type: '${lhsType.name}' with literal value: '${rhsType.value}' as the valid range for the type is [${range3.min}, ${range3.max}]`
+          };
+        }
+      }
+      rhsType.resolvedType = lhsType.resolveType();
+      return {
+        isAcceptable: numberType == "SignedInteger" && rhsType instanceof IntegerLiteralType || numberType == "UnsignedInteger" && rhsType instanceof IntegerLiteralType || numberType == "Float" && rhsType instanceof FloatLiteralType,
+        resolvedLhsType: lhsType.resolveType(),
+        resolvedRhsType: rhsType.resolveType()
+      };
+    } else if (lhsType instanceof InstantiableTypeDefinition && rhsType instanceof InstantiableTypeDefinition) {
+      const resolvedLhsType = lhsType.resolveType();
+      const resolvedRhsType = rhsType.resolveType();
+      return {
+        isAcceptable: resolvedLhsType.equals(resolvedRhsType),
+        resolvedLhsType,
+        resolvedRhsType
+      };
+    }
+    return {
+      isAcceptable: false,
+      resolvedLhsType: lhsType.resolveType(),
+      resolvedRhsType: rhsType.resolveType()
+    };
+  }
+  __name(areTypesAssignable, "areTypesAssignable");
 
   // ../compiler/dist/src/compiler/SymbolTable.js
   var scopeId = 0;
@@ -329899,13 +330092,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // Methods used to bind a node into the Symbol table.
     // They will do validation and return an error if one happens
     bindFunctionDefinition(node, isBuiltIn = false) {
-      const existingInThisScope = this.findSymbolInThisScope(node.symbolName);
+      return this.bindCallable({ type: "Function", node }, isBuiltIn);
+    }
+    bindOperatorDefinition(node, isBuiltIn = false) {
+      return this.bindCallable({ type: "Operator", node }, isBuiltIn);
+    }
+    bindCallable(input, isBuiltIn = false) {
+      const node = input.node;
+      const existingInThisScope = this.findSymbolInThisScope(input.node.symbolName);
       if (existingInThisScope != void 0) {
-        if (existingInThisScope.symbolDefinition.symbolType != "Function") {
+        if (existingInThisScope.symbolDefinition.symbolType != input.type) {
           const error = {
             firstToken: node.firstToken,
             type: "NameReusedInScopeForDifferingTypes",
-            message: `Attempting to bind '${node.symbolName}' to a Function and its already used for a '${existingInThisScope.symbolDefinition.symbolType}'. 
+            message: `Attempting to bind '${node.symbolName}' to a ${input.type} and its already used for a '${existingInThisScope.symbolDefinition.symbolType}'. 
           Referenced starting at: ${node.firstToken.createTokenSourceString()}`
           };
           return error;
@@ -329917,7 +330117,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             for (let i = 0; i < node.params.length; i++) {
               const a = node.params[i];
               const b = overload2.params[i];
-              if (!b.type?.equals(a.type)) {
+              if (!b.typeExpression?.equals(a.typeExpression)) {
                 alreadyDeclaredWithSameSignature = false;
                 break;
               }
@@ -329926,7 +330126,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
               const error = {
                 firstToken: node.firstToken,
                 type: "FunctionSignatureAlreadyDefined",
-                message: `Attempting to bind function: '${node.symbolName}' with signature '${node.params.map((p) => p.type?.toString())}' but its already defined. 
+                message: `Attempting to bind ${input.type}: '${node.symbolName}' with signature '${node.params.map((p) => p.typeExpression?.toString())}' but its already defined. 
               First declared at: ${overload2.node.firstToken.startPositionAtLine}:${overload2.node.firstToken.line}.
               Referenced starting at: ${node.firstToken.createTokenSourceString()}`
               };
@@ -329936,7 +330136,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
       }
       const shadow = this.findSymbolAndScope(node.symbolName);
-      if (shadow != void 0 && !shadow.info.isShadowable) {
+      if (input.type != "Operator" && shadow != void 0 && !shadow.info.isShadowable) {
         const error = {
           firstToken: node.firstToken,
           type: "ShadowingDisallowed",
@@ -329945,17 +330145,62 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         return error;
       }
+      if (input.type == "Operator") {
+        const op = input.node.operator;
+        const allowedNumberOfArgs = [];
+        if ([...Object.values(BINARY_OPERATORS)].indexOf(op) >= 0) {
+          allowedNumberOfArgs.push(2);
+        }
+        if ([...Object.values(UNARY_OPERATORS)].indexOf(op) >= 0) {
+          allowedNumberOfArgs.push(1);
+        }
+        if (!allowedNumberOfArgs.includes(node.params.length)) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "ReferencedBeforeDefined",
+            message: `Attempting to create an operator: '${node.symbolName}', with params: '${node.params.map((p) => p.typeExpression?.toString())}' 
+          with ${node.params.length} args but expecting ${allowedNumberOfArgs}.
+          Referenced starting at: ${node.firstToken.createTokenSourceString()}`
+          };
+          return error;
+        }
+      }
+      for (const type of [...node.params.map((p) => p.typeExpression), node.returnType]) {
+        if (type.symbolName == void 0) {
+          continue;
+        }
+        const resolved = this.findSymbolWithType(
+          type.symbolName,
+          "Type"
+          /* SymbolType.Type */
+        );
+        if (resolved != void 0) {
+          continue;
+        }
+        const error = {
+          firstToken: node.firstToken,
+          type: "ReferencedBeforeDefined",
+          message: `During binding of ${input.type} with name: ${node.symbolName}, failed to resolve type with name: '${type.symbolName}' 
+        Referenced starting at: ${node.firstToken.createTokenSourceString()}`
+        };
+        return error;
+      }
+      const typeExpression = new FunctionTypeExpression(node.parseTreeNode, node.params.map((p) => p.typeExpression), node.returnType);
+      const returnTypeDef = node.returnType == void 0 ? new UnitTypeDefinition(this) : this.resolveTypeDefinition(node.returnType);
+      const typeDefinition = new CallableTypeDefinition(this, typeExpression, typeExpression.params.map((t) => this.resolveTypeDefinition(t)), returnTypeDef);
       const overload = {
         params: node.params.map((p) => p),
         returnType: node.returnType,
         node,
-        declaredScope: this
+        declaredScope: this,
+        typeExpression,
+        typeDefinition
       };
       if (existingInThisScope != void 0) {
         existingInThisScope.symbolDefinition.overloads.push(overload);
       } else {
         const functionDefinition = {
-          symbolType: "Function",
+          symbolType: input.type,
           overloads: [overload]
         };
         const symbolInfo = {
@@ -329971,89 +330216,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return void 0;
     }
-    bindOperatorDefinition(node, isBuiltIn = false) {
-      const existingInThisScope = this.findSymbolInThisScope(node.symbolName);
-      if (existingInThisScope != void 0) {
-        if (existingInThisScope.symbolDefinition.symbolType != "Operator") {
-          const error = {
-            firstToken: node.firstToken,
-            type: "NameReusedInScopeForDifferingTypes",
-            message: `Attempting to bind '${node.symbolName}' to a Operation and its already used for a '${existingInThisScope.symbolDefinition.symbolType}'.
-          Referenced starting at: ${node.firstToken.createTokenSourceString()}`
-          };
-          return error;
-        }
-        const overloads = existingInThisScope.symbolDefinition.overloads;
-        for (const overload2 of overloads) {
-          if (node.params.length == overload2.params.length) {
-            let alreadyDeclaredWithSameSignature = true;
-            for (let i = 0; i < node.params.length; i++) {
-              const a = node.params[i];
-              const b = overload2.params[i];
-              if (!b.type?.equals(a.type)) {
-                alreadyDeclaredWithSameSignature = false;
-                break;
-              }
-            }
-            if (alreadyDeclaredWithSameSignature) {
-              const error = {
-                firstToken: node.firstToken,
-                type: "FunctionSignatureAlreadyDefined",
-                message: `Attempting to bind operator: '${node.symbolName}' with signature '${node.params.map((p) => p.type?.toString())}' but its already defined.
-              Referenced starting at: ${node.firstToken.createTokenSourceString()}`
-              };
-              return error;
-            }
-          }
-        }
-      }
-      const shadow = this.findSymbolAndScope(node.symbolName);
-      const op = node.operator;
-      const allowedNumberOfArgs = [];
-      if ([...Object.values(BINARY_OPERATORS)].indexOf(op) >= 0) {
-        allowedNumberOfArgs.push(2);
-      }
-      if ([...Object.values(UNARY_OPERATORS)].indexOf(op) >= 0) {
-        allowedNumberOfArgs.push(1);
-      }
-      if (!allowedNumberOfArgs.includes(node.params.length)) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "IncorrectNumberOfArgumentsForOperatorOverload",
-          message: `Attempting to create an operator: '${node.symbolName}', with params: '${node.params.map((p) => p.type?.toString())}' 
-        with ${node.params.length} args but expecting ${allowedNumberOfArgs}.
-        Referenced starting at: ${node.firstToken.createTokenSourceString()}`
-        };
-        return error;
-      }
-      const overload = {
-        params: node.params.map((p) => p),
-        returnType: node.returnType,
-        node,
-        declaredScope: this
-      };
-      if (existingInThisScope != void 0) {
-        existingInThisScope.symbolDefinition.overloads.push(overload);
-      } else {
-        const operatorSymbol = {
-          symbolType: "Operator",
-          overloads: [overload]
-        };
-        const symbolInfo = {
-          symbolName: node.symbolName,
-          scope: this,
-          symbolDefinition: operatorSymbol,
-          isConst: true,
-          shadow,
-          isShadowable: true,
-          // operators always need to be shadow-able since I don't have that many unique names
-          isBuiltIn
-        };
-        this.setSymbol(node.symbolName, symbolInfo);
-      }
-      return void 0;
-    }
-    bindTypeDefinition(node, isBuiltIn = false) {
+    bindTypeDefinition(node, isBuiltIn = false, typeDefinition) {
       const rhs = node.typeExpression;
       const rhsSymbols = rhs.getReferencedTypeSymbols();
       if (!isBuiltIn) {
@@ -330081,7 +330244,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const t = {
         symbolType: "Type",
-        type: node.typeExpression,
+        typeExpression: node.typeExpression,
         node
       };
       const symbol = {
@@ -330101,11 +330264,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (error != void 0) {
         return error;
       }
+      const typeExpression = new BaseTypeExpression(node.parseTreeNode, node.identifier);
       const t = {
         symbolType: "Type",
-        type: node,
-        // FIXME: This is probably the incorrect type
-        node
+        typeExpression,
+        node,
+        astCompositeDefinitionNode: node
       };
       const symbol = {
         symbolName: node.symbolName,
@@ -330132,7 +330296,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else {
         throw new Error("Not yet implemented");
       }
-      const acceptableTypes = AcceptableTypeSet.fromSingleType(variable.type);
+      let type;
+      if (variable.typeExpression != void 0) {
+        type = this.resolveTypeDefinition(variable.typeExpression);
+      } else {
+        type = void 0;
+      }
       let scopeType;
       if (inputScopeType == void 0) {
         scopeType = this.isGlobal ? "Global" : "Local";
@@ -330141,8 +330310,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const t = {
         symbolType: "Variable",
-        declaredType: variable.type,
-        acceptableTypes,
+        declaredType: variable.typeExpression,
+        type,
         scopeType,
         node
       };
@@ -330157,6 +330326,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       };
       this.setSymbol(node.symbolName, symbol);
       return void 0;
+    }
+    // This is to be called in the checker if the variable did not have a type bound in the binder.
+    bindVariableType(name, type) {
+      const symbol = this.findSymbolWithType(
+        name,
+        "Variable"
+        /* SymbolType.Variable */
+      );
+      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Variable") {
+        throw new Error(`Should not happen. Failed to lookup variable with name: ${name} when binding the type to the variable`);
+      }
+      if (symbol.symbolDefinition.type != void 0) {
+        throw new Error(`Attempting to rebind type to variable ${name}. Existing type: ${symbol.symbolDefinition.type.toString()}, new type: ${type.toString()}`);
+      }
+      symbol.symbolDefinition.type = type;
     }
     findCallableOverloads(name) {
       const out = [];
@@ -330187,13 +330371,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      */
     resolveTypeDefinition(typeExpression) {
       const symbolName = typeExpression.symbolName;
-      const typeSymbol = this.findSymbolWithType(
-        symbolName,
-        "Type"
-        /* SymbolType.Type */
-      );
+      if (symbolName == void 0) {
+        if (typeExpression instanceof AstUnitTypeExpression) {
+          return new UnitTypeDefinition(this);
+        } else if (typeExpression instanceof TupleTypeExpression) {
+          return new TupleTypeDefinition(this, typeExpression.types.map((typeExp) => this.resolveTypeDefinition(typeExp)));
+        } else {
+          throw new Error(`Resolving type for expression: ${typeExpression.toString()} is not yet defined`);
+        }
+      }
+      const typeSymbol = this.findSymbol(symbolName);
       if (typeSymbol == void 0) {
-        throw new Error(`Type lookup failed for type with name '${symbolName}' as the type cannot be found`);
+        throw new Error(`Type lookup failed for type with name '${symbolName}' as the type cannot be found in scope: ${this.scopeName}`);
+      }
+      if (typeSymbol.symbolDefinition.symbolType != "Type") {
+        throw new Error(`Type lookup for name ${symbolName} failed in scope: ${this.scopeName} as the symbol is of type: ${typeSymbol.symbolDefinition.symbolType}`);
       }
       return mapExpressionToDefinition(this, typeExpression);
     }
@@ -330207,22 +330399,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Type lookup failed for variable with name '${variableName}' as the variable cannot be found`);
       }
       const variableDef = variableSymbol.symbolDefinition;
-      const declaredType = variableDef.declaredType;
-      const inferredTypes = variableDef.acceptableTypes;
-      const inferredType = inferredTypes.acceptableTypes[0];
-      let typeExpression;
-      if (declaredType == void 0 && inferredType == void 0) {
-        throw new Error("Should not happen");
-      }
-      if (declaredType != void 0) {
-        typeExpression = declaredType;
-      } else {
-        typeExpression = inferredType;
-      }
-      if (declaredType != void 0 && inferredType != void 0 && !declaredType.equals(inferredType)) {
-        console.warn(`Declared type and inferred type are not the same. Declared: ${declaredType?.toString()}, Inferred: ${inferredType.toString()}`);
-      }
-      return this.resolveTypeDefinition(typeExpression);
+      const type = variableDef.type;
+      return type;
     }
     findDefinitionsByNameAndType(name, kind, out) {
       const functionDefinition = this.findSymbolInThisScope(name);
@@ -330330,7 +330508,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const scopeNamePadded = (this.scopeName + ` (${this.id})`).padEnd(15);
         let typeChecked;
         if (value.symbolDefinition.symbolType == "Variable") {
-          typeChecked = value.symbolDefinition.acceptableTypes.toString().padEnd(30);
+          typeChecked = (value.symbolDefinition.type?.toString() ?? "undeclared").padEnd(30);
         } else {
           typeChecked = "".padEnd(30);
         }
@@ -330348,18 +330526,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           content2 += `|${keyPadded} |${kindPadded} |${typeString} |${scopeNamePadded} | ${typeChecked} |`;
           content2 += "\n";
         } else if (value.symbolDefinition.symbolType == "Type") {
-          const typeString = formatTypeString(value.symbolDefinition.type);
+          const typeString = formatTypeString(value.symbolDefinition.typeExpression);
           content2 += `|${keyPadded} |${kindPadded} |${typeString} |${scopeNamePadded} | ${typeChecked} |`;
           content2 += "\n";
         } else if (value.symbolDefinition.symbolType == "Function") {
           for (const p of value.symbolDefinition.overloads) {
-            const typeString = formatTypes(p.params.map((p2) => p2.type), p.returnType);
+            const typeString = formatTypes(p.params.map((p2) => p2.typeExpression), p.returnType);
             content2 += `|${keyPadded} |${kindPadded} |${typeString} |${scopeNamePadded} | ${typeChecked} |`;
             content2 += "\n";
           }
         } else if (value.symbolDefinition.symbolType == "Operator") {
           for (const p of value.symbolDefinition.overloads) {
-            const typeString = formatTypes(p.params.map((p2) => p2.type), p.returnType);
+            const typeString = formatTypes(p.params.map((p2) => p2.typeExpression), p.returnType);
             content2 += `|${keyPadded} |${kindPadded} |${typeString} |${scopeNamePadded} | ${typeChecked} |`;
             content2 += "\n";
           }
@@ -330371,7 +330549,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (!includeHeader) {
         return content2;
       } else {
-        const header = `|${"identifier".padEnd(15)} |${"kind".padEnd(10)} |${"types".padEnd(20)} |${"scope".padEnd(15)} | ${"accepted types".padEnd(30)}
+        const header = `|${"identifier".padEnd(15)} |${"kind".padEnd(10)} |${"type expression".padEnd(20)} |${"scope".padEnd(15)} | ${"type".padEnd(30)}
 `;
         const split = `|${"-".repeat(16)}|${"-".repeat(11)}|${"-".repeat(21)}|${"-".repeat(16)}|${"-".repeat(31)}|
 `;
@@ -330379,6 +330557,35 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
   };
+  function createGlobalSymbolTable() {
+    const table = new SymbolTable("global", void 0);
+    for (const t of BUILT_IN_SCALAR_TYPE_NAMES) {
+      const config = BuiltInScalarConfig[t];
+      const astTypeDefinition = config.astValues.astTypeDefinition;
+      const typeDefinition = new ScalarTypeDefinition(config.astValues.typeExpression, config.name, table, true);
+      const err = table.bindTypeDefinition(astTypeDefinition, true, typeDefinition);
+      if (err) {
+        console.log(err);
+        throw new Error("Error during bind!");
+      }
+    }
+    for (const t of BUILT_IN_POINTER_TYPE_DEFINITIONS) {
+      const err = table.bindTypeDefinition(t, true);
+      if (err) {
+        console.log(err);
+        throw new Error("Error during bind!");
+      }
+    }
+    for (const t of BUILT_IN_NUMERIC_OPERATIONS) {
+      const err = table.bindOperatorDefinition(t, true);
+      if (err) {
+        console.log(err);
+        throw new Error("Error during bind!");
+      }
+    }
+    return table;
+  }
+  __name(createGlobalSymbolTable, "createGlobalSymbolTable");
 
   // ../compiler/dist/src/compiler/Binder.js
   var Binder = class extends AstNodeTraverser {
@@ -330451,8 +330658,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.violations.push(error);
         return context;
       }
-      const typeInfo = info.type;
-      if (!(typeInfo instanceof AstStructDefinition)) {
+      const typeInfo = context.table.resolveTypeDefinition(info.typeExpression);
+      if (!(typeInfo instanceof StructTypeDefinition)) {
         const error = {
           // for example, attempting to create a struct on like i32 or something
           firstToken: node.firstToken,
@@ -330465,7 +330672,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return context;
       }
       const fieldNameCounter = /* @__PURE__ */ new Map();
-      typeInfo.fields.forEach((f) => fieldNameCounter.set(f.variable.name, 0));
+      for (const field of typeInfo.fields) {
+        const name = field[0];
+        fieldNameCounter.set(name, 0);
+      }
       for (const assignment of node.assignments) {
         const lhs = assignment.lhs;
         const name = lhs.name;
@@ -330638,60 +330848,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     // statements
-    traverseBreakStatement(node, context) {
-      const wrappedControlBlock = node.getParentControlStatement();
-      if (wrappedControlBlock != void 0) {
-        return context;
-      }
-      const error = {
-        firstToken: node.firstToken,
-        type: "ControlFlowStatementNotInControlBlock",
-        message: formatErrorMessage(`Break from a non-control flow statement. 
-      Referenced ${node.firstToken.createTokenSourceString()}`)
-      };
-      context.violations.push(error);
-      return context;
-    }
-    traverseContinueStatement(node, context) {
-      const wrappedControlBlock = node.getParentControlStatement();
-      if (wrappedControlBlock != void 0) {
-        return context;
-      }
-      const error = {
-        firstToken: node.firstToken,
-        type: "ControlFlowStatementNotInControlBlock",
-        message: formatErrorMessage(`Break from a non-control flow statement. 
-      Referenced ${node.firstToken.createTokenSourceString()}`)
-      };
-      context.violations.push(error);
-      return context;
-    }
-    // definitions
-    traverseStructDefinition(node, context) {
-      const fields = node.fields;
-      const seenFieldNames = /* @__PURE__ */ new Set();
-      for (const field of fields) {
-        const name = field.variable.name;
-        if (seenFieldNames.has(name)) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "StructFieldDuplicateName",
-            message: formatErrorMessage(`The struct has a field with a duplicate name. 
-          The duplicated name is '${name}'. 
-          Referenced ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.violations.push(error);
-          return context;
-        }
-        seenFieldNames.add(name);
-      }
-      for (const field of fields) {
-        if (field.type != void 0) {
-          this.traverse(field.type, context);
-        }
-      }
-      return context;
-    }
     traverseAssignmentStatement(node, context) {
       if (!context.table.isInFunction) {
         const error = {
@@ -330745,8 +330901,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.expression != void 0) {
         this.traverse(node.expression, context);
       }
-      if (node.variable.type) {
-        this.traverse(node.variable.type, context);
+      if (node.variable.typeExpression) {
+        const errCount = context.violations.length;
+        this.traverse(node.variable.typeExpression, context);
+        if (context.violations.length != errCount) {
+          return context;
+        }
       }
       const error = context.table.bindVariableDeclaration(node);
       if (error != void 0) {
@@ -330843,6 +331003,60 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return context;
     }
+    traverseBreakStatement(node, context) {
+      const wrappedControlBlock = node.getParentControlStatement();
+      if (wrappedControlBlock != void 0) {
+        return context;
+      }
+      const error = {
+        firstToken: node.firstToken,
+        type: "ControlFlowStatementNotInControlBlock",
+        message: formatErrorMessage(`Break from a non-control flow statement. 
+      Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+      context.violations.push(error);
+      return context;
+    }
+    traverseContinueStatement(node, context) {
+      const wrappedControlBlock = node.getParentControlStatement();
+      if (wrappedControlBlock != void 0) {
+        return context;
+      }
+      const error = {
+        firstToken: node.firstToken,
+        type: "ControlFlowStatementNotInControlBlock",
+        message: formatErrorMessage(`Break from a non-control flow statement. 
+      Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+      context.violations.push(error);
+      return context;
+    }
+    // definitions
+    traverseStructDefinition(node, context) {
+      const fields = node.fields;
+      const seenFieldNames = /* @__PURE__ */ new Set();
+      for (const field of fields) {
+        const name = field.variable.name;
+        if (seenFieldNames.has(name)) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "StructFieldDuplicateName",
+            message: formatErrorMessage(`The struct has a field with a duplicate name. 
+          The duplicated name is '${name}'. 
+          Referenced ${node.firstToken.createTokenSourceString()}`)
+          };
+          context.violations.push(error);
+          return context;
+        }
+        seenFieldNames.add(name);
+      }
+      for (const field of fields) {
+        if (field.typeExpression != void 0) {
+          this.traverse(field.typeExpression, context);
+        }
+      }
+      return context;
+    }
     traverseFunctionDefinition(node, context) {
       const newContext = this.internalTraverseCallable(
         node,
@@ -330884,7 +331098,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     internalTraverseCallable(node, context, expectedSymbolType) {
       const functionDeclaration = context.table.findSymbol(node.symbolName);
       if (functionDeclaration == void 0 || functionDeclaration.symbolDefinition == void 0 || functionDeclaration.symbolDefinition.symbolType != expectedSymbolType) {
-        throw new Error(`The function '${node.symbolName}' should have an entry in the symbol table but it doesn't. Raising an error.`);
+        const error = {
+          firstToken: node.firstToken,
+          type: "ReferencedBeforeDefined",
+          message: formatErrorMessage(`Function with name: ${node.symbolName} was not properly bound. Check the other errors to see why 
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.violations.push(error);
+        return context;
       }
       const newTable = new SymbolTable(node.variable.name, context.table);
       const newContext = {
@@ -330893,7 +331114,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       };
       let hasError = false;
       node.params.forEach((param) => {
-        this.traverse(param.type, context);
+        this.traverse(param.typeExpression, context);
         const error = newTable.bindVariableDeclaration(
           param,
           "Param"
@@ -330911,33 +331132,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.bodyScope = newTable;
       return newContext;
     }
-    traverseGroupNode(node, context) {
-      node.astNodes.filter((n) => n instanceof AbstractFunctionDefinition).map((node2) => {
-        let error;
-        if (node2 instanceof AstFunctionDefinition || node2 instanceof AstWatFunctionDefinition) {
-          error = context.table.bindFunctionDefinition(node2);
-        } else if (node2 instanceof AstOperatorDefinition || node2 instanceof AstWatOperatorDefinition) {
-          error = context.table.bindOperatorDefinition(node2);
-        } else {
-          throw new Error(`Not implemented for type: ${node2.constructor.name}`);
-        }
-        if (error != void 0) {
-          context.violations.push(error);
+    traverseGroupNode(groupNode, context) {
+      groupNode.astNodes.forEach((node) => {
+        if (node instanceof AbstractFunctionDefinition) {
+          let error;
+          if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition) {
+            error = context.table.bindFunctionDefinition(node);
+          } else if (node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition) {
+            error = context.table.bindOperatorDefinition(node);
+          } else {
+            throw new Error(`Not implemented for type: ${node.constructor.name}`);
+          }
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+        } else if (node instanceof AstTypeDefinitionStatement) {
+          const error = context.table.bindTypeDefinition(node);
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+        } else if (node instanceof AstStructDefinition) {
+          const error = context.table.bindStructDefinition(node);
+          if (error != void 0) {
+            context.violations.push(error);
+          }
         }
       });
-      node.astNodes.filter((n) => n instanceof AstTypeDefinitionStatement).map((typeDefNode) => {
-        const error = context.table.bindTypeDefinition(typeDefNode);
-        if (error != void 0) {
-          context.violations.push(error);
-        }
-      });
-      node.astNodes.filter((n) => n instanceof AstStructDefinition).map((structDefNode) => {
-        const error = context.table.bindStructDefinition(structDefNode);
-        if (error != void 0) {
-          context.violations.push(error);
-        }
-      });
-      node.astNodes.forEach((n) => {
+      groupNode.astNodes.forEach((n) => {
         if (!(n instanceof AstTypeDefinitionStatement)) {
           this.traverse(n, context);
         }
@@ -330980,23 +331201,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   };
 
   // ../compiler/dist/src/compiler/Checker.js
-  function functionParamsMatch(a, b) {
-    if (a.params.length != b.params.length) {
-      return false;
-    }
-    if (a.params.length == 0 && b.params.length == 0) {
-      return true;
-    }
-    for (let i = 0; i < a.params.length; i++) {
-      const aType = a.params[i];
-      const bType = b.params[i];
-      if (!aType.equals(bType)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  __name(functionParamsMatch, "functionParamsMatch");
   var Checker = class extends AstNodeTraverser {
     static {
       __name(this, "Checker");
@@ -331014,76 +331218,50 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      */
     traverse(node, context) {
       const acceptableTypes = super.traverse(node, context);
-      if (node.augmentedProperties.acceptableTypes == void 0) {
-        node.augmentedProperties.acceptableTypes = acceptableTypes;
+      if (node.augmentedProperties.resolvedTypeDefinition == void 0) {
+        node.augmentedProperties.resolvedTypeDefinition = acceptableTypes;
       }
       return acceptableTypes;
     }
     // literals
     traverseNumberAtom(node, context) {
-      const out = [];
       if (node instanceof AstIntLiteral) {
-        const entries2 = Object.entries(SCALAR_TYPES_VALUE_RANGES);
-        for (const [key, value] of entries2) {
-          if (node.value >= value.min && node.value <= value.max) {
-            out.push(createTypeExpression(key));
-          }
-        }
+        return new IntegerLiteralType(context.table, node.value);
       } else if (node instanceof AstFloatLiteral) {
-        out.push(createTypeExpression("f32"), createTypeExpression("f64"));
+        return new FloatLiteralType(context.table, node.value);
       } else {
         throw new Error(`Failed to find types for number literal: ${node.constructor.name}`);
       }
-      return new AcceptableTypeSet(out);
-    }
-    traverseVariableAtom(node, context) {
-      const symbol = node.augmentedProperties.scope?.findSymbolInThisScopeOfKind(
-        node.identifier.name,
-        "Variable"
-        /* SymbolType.Variable */
-      );
-      if (symbol == void 0) {
-        throw new Error(`This probably shouldn't happen unless there's a bug. Lookup for ${node.identifier.name} failed`);
-      }
-      const type = symbol.symbolDefinition.declaredType;
-      if (type == void 0) {
-        return AcceptableTypeSet.unknownType();
-      }
-      return AcceptableTypeSet.fromSingleType(type);
     }
     traverseBoolLiteral(node, context) {
-      return AcceptableTypeSet.fromSingleType(createTypeExpression("bool"));
+      return context.table.resolveTypeDefinition(BuiltInScalarConfig.bool.astValues.typeExpression);
     }
     traverseTupleLiteral(node, context) {
       const tupleTypes = node.values.map((v) => {
         const typesForNode = this.traverse(v, context);
         return typesForNode;
       });
-      const expression = new TupleTypeExpression(FAKE_PARSE_TREE_NODE, tupleTypes.map((v) => v.acceptableTypes[0]));
-      return AcceptableTypeSet.fromSingleType(expression);
+      return new TupleTypeDefinition(context.table, tupleTypes);
     }
     traverseArrayLiteral(node, context) {
-      const values = node.values.map((v) => this.traverse(v, context));
-      const runningTypes = values[0];
-      for (let i = 0; i < values.length; i++) {
-        const current = values[i];
-        runningTypes.linkAndIntersect(current);
-      }
-      if (!runningTypes.hasAcceptableTypes) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "TypeMismatch",
-          message: `Array literal must have all values being the same type.`
-        };
-        context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
-      }
-      const typeExpressions = runningTypes.map((t) => new ArrayTypeExpression(FAKE_PARSE_TREE_NODE, t, values.length));
-      return new AcceptableTypeSet(typeExpressions);
+      throw new Error("Not yet implemented");
     }
     traverseStructLiteral(node, context) {
       const def = context.table.findSymbol(node.structSymbolName);
-      if (def == void 0 || def.symbolDefinition.symbolType != "Type" || !(def.symbolDefinition.type instanceof AstStructDefinition)) {
+      if (def == void 0 || def.symbolDefinition.symbolType != "Type" || !(context.table.resolveTypeDefinition(def.symbolDefinition.typeExpression).resolveType() instanceof StructTypeDefinition)) {
+        const error = {
+          firstToken: node.firstToken,
+          type: "StructLiteralOnNonStructType",
+          message: formatErrorMessage(`Struct literal found for something that's not a struct. 
+        The type of '${node.structSymbolName}' was '${def?.symbolDefinition?.symbolType}'
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const typeExpression = new BaseTypeExpression(node.parseTreeNode, node.identifier);
+      const structTypeDefinition = context.table.resolveTypeDefinition(typeExpression);
+      if (!(structTypeDefinition instanceof StructTypeDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "TypeMismatch",
@@ -331092,51 +331270,52 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
       const literalFields = node.assignments;
-      const structDefFields = def.symbolDefinition.type.fieldMap;
+      const structDefFields = structTypeDefinition.fields;
       for (const field of literalFields) {
         const structDefField = structDefFields.get(field.symbolName);
         if (structDefField == void 0) {
           throw new Error("Bug in type checking the struct literal's fields");
         }
-        const fieldAcceptableTypes = this.traverse(field.rhs, context);
-        const structDefAcceptableTypes = AcceptableTypeSet.fromSingleType(structDefField.type);
-        structDefAcceptableTypes.linkAndIntersect(fieldAcceptableTypes);
-        if (!structDefAcceptableTypes.hasAcceptableTypes) {
+        const fieldRhs = this.traverse(field.rhs, context);
+        const ans = areTypesAssignable(structDefField, fieldRhs);
+        if (!ans.isAcceptable) {
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
             message: formatErrorMessage(`Cannot assign value to Struct field: '${node.structSymbolName}.${field.symbolName}'. 
-          Expecting type of: (${structDefAcceptableTypes.toString()}) but received types: (${fieldAcceptableTypes.toString()})
+          Expecting type of: (${structDefField.toString()}) but received types: (${fieldRhs.toString()})
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
-          return AcceptableTypeSet.fromSingleType(new BaseTypeExpression(node.parseTreeNode, node.identifier));
+          return UndeterminedTypeTypeDefinition.instance;
         }
       }
-      return AcceptableTypeSet.fromSingleType(new BaseTypeExpression(node.parseTreeNode, node.identifier));
+      return structTypeDefinition;
     }
     traverseNullLiteral(node, context) {
-      return AcceptableTypeSet.fromSingleType(BUILD_IN_POINTER_TYPE_EXPRESSION_MAP.get("null"));
+      return new NullLiteralType(context.table);
     }
     // expressions
     traverseIdentifier(node, context) {
-      const scope = node.augmentedProperties.scope;
+      const scope = context.table;
       const symbol = scope.findSymbol(node.symbolName);
       if (symbol.symbolDefinition.symbolType != "Variable") {
         throw new Error(`Expected symbol kind for identifier '${node.symbolName}' to be Variable but was instead ${symbol.symbolDefinition.symbolType}`);
       }
-      const acceptableTypes = symbol.symbolDefinition.acceptableTypes;
-      return acceptableTypes;
+      const type = context.table.resolveVariableTypeDefinition(node.name);
+      if (type == void 0) {
+        throw new Error(`Failed to resolve type for '${node.name}'.`);
+      }
+      return type;
     }
     traverseUnaryOperation(node, context) {
       if (node.operator == "*") {
-        const resolvedType = this.traverse(node.operand, context);
-        const typeDefinition = context.table.resolveTypeDefinition(resolvedType.acceptableTypes[0]);
-        if (typeDefinition instanceof PointerTypeDefinition) {
-          return AcceptableTypeSet.fromSingleType(typeDefinition.dereferencedType.expression);
+        const type = this.traverse(node.operand, context);
+        if (type instanceof PointerTypeDefinition) {
+          return type.dereferencedType;
         }
       }
       return this.dispatchToFunctionLike(node, context);
@@ -331146,12 +331325,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseFieldAccessExpression(node, context) {
       const left = node.left;
-      const leftTypeSet = this.traverse(left, context);
-      if (leftTypeSet.acceptableTypes?.length != 1) {
-        throw new Error("Not yet implemented for multiple types (and it shouldn't happen with structs" + leftTypeSet.toString());
-      }
-      const leftType = leftTypeSet.acceptableTypes[0];
-      if (!(leftType instanceof BaseTypeExpression || leftType instanceof TupleTypeExpression)) {
+      const leftType = this.traverse(left, context);
+      if (!(leftType instanceof CompositeTypeDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "TypeMismatch",
@@ -331161,45 +331336,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         `)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      if (leftType instanceof BaseTypeExpression) {
-        const leftTypeDefinition = context.table.findSymbolWithType(
-          leftType.identifier.name,
-          "Type"
-          /* SymbolType.Type */
-        );
-        const typeDefinition = leftTypeDefinition?.symbolDefinition?.type;
-        if (!(typeDefinition instanceof AstStructDefinition)) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "TypeMismatch",
-            message: formatErrorMessage(`Attempting to access a field on a type that doesn't have fields. 
-          Type was: '${typeDefinition?.toString() ?? ""}'
-          Referenced on: ${node.firstToken.createTokenSourceString()} 
-          `)
-          };
-          context.typeMismatches.push(error);
-          return AcceptableTypeSet.noAllowableTypes();
-        }
-        const fields = typeDefinition.fieldMap;
-        const rhs = node.right;
-        const field = fields.get(rhs.name);
-        if (field == void 0) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "TypeMismatch",
-            message: formatErrorMessage(`Attempting to access field on struct, but struct doesn't have that field defined. 
-          Struct was: '${typeDefinition.identifier.name}' and field name was: '${rhs.name}'
-          Referenced on: ${node.firstToken.createTokenSourceString()} 
-          `)
-          };
-          context.typeMismatches.push(error);
-          return AcceptableTypeSet.noAllowableTypes();
-        }
-        return AcceptableTypeSet.fromSingleType(field.type);
+      const fields = leftType.fields;
+      const rhs = node.right;
+      const field = fields.get(rhs.name);
+      if (field == void 0) {
+        const error = {
+          firstToken: node.firstToken,
+          type: "TypeMismatch",
+          message: formatErrorMessage(`Attempting to access field on struct, but struct doesn't have that field defined. 
+        Struct was: '${leftType.name}' and field name was: '${rhs.name}'
+        Referenced on: ${node.firstToken.createTokenSourceString()} 
+        `)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      throw new Error("Not yet implemented for tuples");
+      return field;
     }
     traverseAstSimpleVariableAccess(node, context) {
       const variableType = context.table.resolveVariableTypeDefinition(node.identifier.name);
@@ -331212,58 +331366,54 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         `)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      return AcceptableTypeSet.fromSingleType(variableType.expression);
+      return variableType;
     }
     traverseVariableDereference(node, context) {
-      const internalTypeExpressions = this.traverse(node.internal, context);
-      const internalTypeDefinitions = internalTypeExpressions.map((e) => context.table.resolveTypeDefinition(e));
-      const pointerTypes = internalTypeDefinitions?.filter((t) => t instanceof PointerTypeDefinition) ?? [];
-      if (pointerTypes.length <= 0) {
+      const internalTypeDefinition = this.traverse(node.internal, context);
+      if (!(internalTypeDefinition instanceof PointerTypeDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "TypeMismatch",
           message: formatErrorMessage(`Attempting to dereference variable not of a pointer type. 
-        Variable name: '${node.identifier.name}', type: ${internalTypeExpressions.toString()}
+        Variable name: '${node.identifier.name}', type: ${internalTypeDefinition.toString()}
         Referenced on: ${node.firstToken.createTokenSourceString()} 
         `)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      const out = AcceptableTypeSet.from(pointerTypes.map((t) => t.expression.dereference()));
+      const out = internalTypeDefinition.dereferencedType;
       return out;
     }
     traverseTypeCastingExpression(node, context) {
       const internalType = this.traverse(node.expression, context);
-      const thisType = AcceptableTypeSet.fromSingleType(node.type);
+      const thisType = context.table.resolveTypeDefinition(node.type);
       return thisType;
     }
     traverseFunctionCall(node, context) {
       return this.dispatchToFunctionLike(node, context);
     }
+    // This handles mapping to the correct function - its a call expression
     dispatchToFunctionLike(node, context) {
       let argumentTypeParams;
+      let args;
       let isFunction2;
       if (node instanceof AstFunctionCallExpression) {
+        args = node.args.astNodes.slice();
         argumentTypeParams = node.args.astNodes.map((n) => this.traverse(n, context));
         isFunction2 = true;
       } else if (node instanceof AstBinaryOperation) {
+        args = [node.lhs, node.rhs];
         argumentTypeParams = [this.traverse(node.lhs, context), this.traverse(node.rhs, context)];
         isFunction2 = false;
       } else if (node instanceof AstUnaryOperation) {
+        args = [node.operand];
         argumentTypeParams = [this.traverse(node.operand, context)];
         isFunction2 = false;
       } else {
         throw new Error("Should not happen");
-      }
-      const remapped = crossJoin(argumentTypeParams);
-      let functionArgumentMatchingSignatures;
-      if (argumentTypeParams.length == 0) {
-        functionArgumentMatchingSignatures = [new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, [], void 0)];
-      } else {
-        functionArgumentMatchingSignatures = remapped.map((a) => new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, a.acceptableTypes, void 0));
       }
       const nodeScope = node.augmentedProperties.scope;
       if (nodeScope == void 0) {
@@ -331272,57 +331422,73 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const overloads = nodeScope.findCallableOverloads(node.symbolName);
       const acceptableFunctionSignatures = overloads.map((callable) => {
         if (callable.symbolDefinition.symbolType != "Function" && callable.symbolDefinition.symbolType != "Operator") {
-          return void 0;
+          throw new Error(`Found a non-callable symbol. This shouldn't happen`);
         }
         const overloads2 = callable.symbolDefinition.overloads;
         const filteredOverloads = overloads2.filter((overload) => {
-          const overloadFunctionTypeExpression = new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, overload.params.map((t) => t.type), overload.returnType);
-          return functionArgumentMatchingSignatures.some((a) => functionParamsMatch(a, overloadFunctionTypeExpression));
+          const overloadFunctionTypeExpression = overload.typeExpression;
+          if (overloadFunctionTypeExpression.params.length != argumentTypeParams.length) {
+            return false;
+          }
+          for (let i = 0; i < argumentTypeParams.length; i++) {
+            const functionDefinition_Type = overload.typeDefinition.paramsTypes[i];
+            const functionCall_Type = argumentTypeParams[i].resolveType();
+            if (functionCall_Type == void 0 || functionDefinition_Type == void 0) {
+              continue;
+            }
+            const ans = areTypesAssignable(functionDefinition_Type, functionCall_Type);
+            if (!ans.isAcceptable) {
+              return false;
+            }
+            if (functionCall_Type instanceof ScalarLiteralType) {
+              functionCall_Type.resolvedType = functionDefinition_Type;
+            }
+          }
+          return true;
         });
         return filteredOverloads;
       }).filter((x) => x != void 0).map((x) => x);
       const flattened = acceptableFunctionSignatures.flat().map((x) => x.node);
       if (flattened.length > 1) {
+        const errorMsgTypeStr = isFunction2 ? "function" : "operator";
         const error = {
           firstToken: node.firstToken,
           type: "MultipleMatchingFunctionSignatures",
-          message: `Multiple matching function signature could be found for function named: '${node.symbolName}'
-        For inputs with types: [${functionArgumentMatchingSignatures.map((s) => s.toString())}].
+          message: `Multiple matching signatures could be found for ${errorMsgTypeStr} named: '${node.symbolName}'
+        For inputs with types: (${argumentTypeParams.map((p) => p.toString())}).
+        Found: ${flattened.map((p) => p.params.map((t) => t.typeExpression.toString()))}
         Call on: ${node.firstToken.createTokenSourceString()}
         `
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
+        return UndeterminedTypeTypeDefinition.instance;
       } else if (flattened.length <= 0) {
+        const errorMsgTypeStr = isFunction2 ? "function" : "operator";
         const error = {
           firstToken: node.firstToken,
           type: "NoMatchingFunctionSignature",
-          message: `No matching function signature could be found for function named: '${node.symbolName}'
-        For inputs with types: [${functionArgumentMatchingSignatures.map((s) => s.toString())}].
+          message: `No matching signature could be found for ${errorMsgTypeStr} named: '${node.symbolName}'
+        For inputs with types:(${argumentTypeParams.map((p) => p.toString())}).
         Call on: ${node.firstToken.createTokenSourceString()}
         `
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
+        return UndeterminedTypeTypeDefinition.instance;
       }
       const selected = flattened[0];
-      for (let i = 0; i < argumentTypeParams.length; i++) {
-        const argType = selected.functionSignature.params[i];
-        const argTypeParam = argumentTypeParams[i];
-        const coercedType = AcceptableTypeSet.fromSingleType(argType);
-        argTypeParam.intersectInPlaceAndDontLink(coercedType);
-      }
       node.augmentedProperties.resolvedFunctionDefinition = selected;
-      return AcceptableTypeSet.fromSingleType(selected.returnType);
+      return context.table.resolveTypeDefinition(selected.returnType);
     }
     traverseBuiltInFunction(node, context) {
-      const out = AcceptableTypeSet.from([createTypeExpression("u32")]);
       if (node.builtInFunction == "SizeOf") {
+        const pointerTypeName = CompilerDefaultTypes.UnsignedPointerType;
+        const pointerTypeExpression = BuiltInScalarConfig[pointerTypeName].astValues.typeExpression;
+        const out = context.table.resolveTypeDefinition(pointerTypeExpression);
         if (node.args.length != 1) {
           const error = {
             firstToken: node.firstToken,
             type: "IncorrectNumberOfArgs",
-            message: `Sizeof takes in only 1 argument and it must be a type. 
+            message: `size_of takes in only 1 argument and it must be a type. 
           Referenced on: ${node.firstToken.createTokenSourceString()}`
           };
           context.typeMismatches.push(error);
@@ -331333,7 +331499,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "NoMatchingFunctionSignature",
-            message: `Sizeof's argument must be a type but instead the resolved symbol type was '${symbol?.symbolDefinition.symbolType}'. 
+            message: `size_of's argument must be a type but instead the resolved symbol type was '${symbol?.symbolDefinition.symbolType}'. 
           Referenced on: ${node.firstToken.createTokenSourceString()}`
           };
           context.typeMismatches.push(error);
@@ -331346,110 +331512,114 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     // type expressions
     traverseUnitTypeExpression(node, context) {
-      return AcceptableTypeSet.fromSingleType(node);
+      return new UnitTypeDefinition(context.table);
     }
     traverseBaseTypeExpression(node, context) {
-      return AcceptableTypeSet.fromSingleType(node);
+      return context.table.resolveTypeDefinition(node);
     }
     traversePointerTypeExpression(node, context) {
-      return AcceptableTypeSet.fromSingleType(node);
+      return context.table.resolveTypeDefinition(node);
     }
     traverseArrayTypeExpression(node, context) {
-      return AcceptableTypeSet.fromSingleType(node);
+      return context.table.resolveTypeDefinition(node);
     }
     traverseTupleTypeExpression(node, context) {
-      return AcceptableTypeSet.fromSingleType(node);
+      return context.table.resolveTypeDefinition(node);
     }
     // statements
     traverseAssignmentStatement(node, context) {
-      const rhsTypes = this.traverse(node.rhs, context);
-      const lhsTypes = this.traverse(node.lhs, context);
-      const intersect = lhsTypes.intersect(rhsTypes);
-      if (!intersect.hasAcceptableTypes) {
+      const rhsType = this.traverse(node.rhs, context);
+      const lhsType = this.traverse(node.lhs, context);
+      const ans = areTypesAssignable(lhsType, rhsType);
+      if (!ans.isAcceptable) {
         let error;
         if (node.lhs instanceof AstVariableFieldAccess) {
           error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
             message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name + "." + node.lhs.fields.map((f) => f.name).join(".")}' 
-                due to type mismatch. 
-                Expecting a type of (${lhsTypes.toString()}), but assignment RHS is of type (${rhsTypes.toString()}).
+                due to type mismatch. ${ans.errorMessage ?? ""}
+                Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
                 Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
         } else if (node.lhs instanceof AstVariableDereference) {
           error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
-            message: formatErrorMessage(`Unable to assign to dereferenced variable: '${node.lhs.identifier.name}' due to type mismatch. 
-                Expecting a type of (${lhsTypes.toString()}), but assignment RHS is of type (${rhsTypes.toString()}).
+            message: formatErrorMessage(`Unable to assign to dereferenced variable: '${node.lhs.identifier.name}' due to type mismatch. ${ans.errorMessage ?? ""}
+                Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
                 Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
         } else if (node.lhs instanceof AstSimpleVariableAccess) {
           error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
-            message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name}' due to type mismatch. 
-              Expecting a type of (${lhsTypes.toString()}), but assignment RHS is of type (${rhsTypes.toString()}).
+            message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name}' due to type mismatch. ${ans.errorMessage ?? ""}
+              Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
               Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
         } else {
           throw new Error(`Checking is not implemented for VariableAccess: ${node.lhs.constructor.name}`);
         }
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      rhsTypes.linkAndIntersect(lhsTypes);
-      return lhsTypes;
+      return lhsType;
     }
     traverseVariableFieldAccess(node, context) {
-      const lhsTypes = this.traverse(node.variable, context);
-      let variableName = node.identifier.symbolName;
-      const variableTypeDef = context.table.resolveTypeDefinition(lhsTypes.acceptableTypes[0]);
-      if (!(variableTypeDef instanceof StructTypeDefinition)) {
+      const lhsType = this.traverse(node.variable, context);
+      if (!(lhsType instanceof CompositeTypeDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "FieldAccessOnNonSupportingType",
           message: formatErrorMessage(`Attempting to access a field for '${node.identifier.name}' of type
-        '${variableTypeDef?.toString()}, but the type is not a struct-type. 
+        '${lhsType?.toString()}', but the type is not a composite type. 
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      let fieldType = variableTypeDef;
+      let fieldType = lhsType;
       let i = 0;
+      let typeString;
+      if (lhsType instanceof StructTypeDefinition) {
+        typeString = "struct";
+      } else if (lhsType instanceof TupleTypeDefinition) {
+        typeString = "tuple";
+      } else {
+        typeString = "Unimplemented type";
+      }
       while (i < node.fields.length - 1) {
         const fieldName = node.fields[i].name;
         const field = fieldType.fields.get(fieldName);
-        if (!(field instanceof StructTypeDefinition)) {
+        if (!(field instanceof CompositeTypeDefinition)) {
           const error = {
             firstToken: node.firstToken,
-            type: "TypeMismatch",
+            type: "StructFieldNotDefined",
             message: formatErrorMessage(`Attempting to access a field: '${fieldName}' on variable: '${node.identifier.name}' 
-          but field with that name is not defined on struct type: '${variableTypeDef.name}'. (Fields are ${node.fields.map((f) => f.name)})
+          but field with that name is not defined on ${typeString} type: '${fieldType.name}'. (Fields are: '{${[...fieldType.fields.entries()].map((f) => f[0])}"}')
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
-          return AcceptableTypeSet.noAllowableTypes();
+          return UndeterminedTypeTypeDefinition.instance;
         }
         fieldType = field;
-        variableName = fieldName;
         i++;
       }
       const finalFieldName = node.fields[node.fields.length - 1];
       const finalField = fieldType.fields.get(finalFieldName.name);
-      if (variableTypeDef == void 0 || fieldType == void 0 || finalField == void 0) {
+      if (fieldType == void 0 || finalField == void 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
-          message: formatErrorMessage(`Unable to determine type for name: '${node.identifier.name}'. 
-        This probably shouldn't happen.
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+          type: "StructFieldNotDefined",
+          message: formatErrorMessage(`Attempting to access a field: '${finalFieldName.name}' on variable: '${node.identifier.name}' 
+          but field with that name is not defined on ${typeString} type: '${fieldType.name}'. (Fields are: '{${[...fieldType.fields.entries()].map((f) => f[0])}"}')
+          Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      return AcceptableTypeSet.fromSingleType(finalField.expression);
+      return finalField;
     }
     traverseReturnStatement(node, context) {
       const parentFunction = node.augmentedProperties.parentControlStatement;
@@ -331458,23 +331628,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const functionReturnType = parentFunction.returnType;
       if (node.expression != void 0) {
-        const expTypes = this.traverse(node.expression, context);
-        const returnTypeSet = AcceptableTypeSet.fromSingleType(functionReturnType);
-        const intersection2 = returnTypeSet.intersect(expTypes);
-        if (intersection2 == void 0 || !intersection2.hasAcceptableTypes) {
+        const expressionType = this.traverse(node.expression, context);
+        const returnType = context.table.resolveTypeDefinition(functionReturnType);
+        const ans = areTypesAssignable(returnType, expressionType);
+        if (!ans.isAcceptable) {
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
             message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.variable.name}'. 
-        Function expects: ${parentFunction.returnType.toString()}, but returning any of: ${expTypes?.acceptableTypes?.map((t) => t.toString())}.
+        Function signature return type: ${parentFunction.returnType.toString()}, but returning type: ${expressionType.toString()}.
         Function declared on ${parentFunction.firstToken.createTokenSourceString()}
         Return on ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
-          return AcceptableTypeSet.unknownType();
+          return UndeterminedTypeTypeDefinition.instance;
         }
-        returnTypeSet.linkAndIntersect(expTypes);
-        return returnTypeSet;
+        return returnType;
       } else if (node.expression == void 0) {
         const isUnitReturn = parentFunction.returnType.equals(new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE));
         if (!isUnitReturn) {
@@ -331487,22 +331656,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           Return on ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
-          return AcceptableTypeSet.unknownType();
+          return UndeterminedTypeTypeDefinition.instance;
         }
       }
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseBreakStatement(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseContinueStatement(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseIfStatement(node, context) {
       const expressionType = this.traverse(node.condition, context);
-      const condition = AcceptableTypeSet.fromSingleType(BUILD_IN_SCALAR_TYPE_EXPRESSION_MAP.get("bool"));
-      const intersection2 = condition.intersect(expressionType);
-      if (!intersection2.hasAcceptableTypes) {
+      if (!(expressionType instanceof ScalarTypeDefinition) || expressionType.name != BuiltInScalarConfig.bool.name) {
         const error = {
           firstToken: node.condition.firstToken,
           type: "TypeMismatch",
@@ -331510,7 +331677,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         Referenced on: ${node.condition.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
+        return UndeterminedTypeTypeDefinition.instance;
       }
       const bodyContext = {
         typeMismatches: context.typeMismatches,
@@ -331527,13 +331694,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.elseIfStatements != void 0) {
         throw new Error(`If statement is not fully implemented in the checker.`);
       }
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseWhileStatement(node, context) {
       const expressionType = this.traverse(node.condition, context);
-      const condition = AcceptableTypeSet.fromSingleType(BUILD_IN_SCALAR_TYPE_EXPRESSION_MAP.get("bool"));
-      const intersection2 = condition.intersect(expressionType);
-      if (!intersection2.hasAcceptableTypes) {
+      if (!(expressionType instanceof ScalarTypeDefinition) || expressionType.name != BuiltInScalarConfig.bool.name) {
         const error = {
           firstToken: node.condition.firstToken,
           type: "TypeMismatch",
@@ -331541,139 +331706,186 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         Referenced on: ${node.condition.firstToken.createTokenSourceString()}`
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.unknownType();
+        return UndeterminedTypeTypeDefinition.instance;
       }
       const newContext = {
         typeMismatches: context.typeMismatches,
         table: node.body.augmentedProperties.scope
       };
       this.traverse(node.body, newContext);
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseForStatement(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      throw new Error("Not yet implemented");
     }
     traverseVariableDeclaration(node, context) {
-      let expressionTypes = AcceptableTypeSet.unknownType();
+      let expressionType = UndeterminedTypeTypeDefinition.instance;
       if (node.expression != void 0) {
-        expressionTypes = this.traverse(node.expression, context);
+        expressionType = this.traverse(node.expression, context);
       }
       const scope = node.augmentedProperties.scope;
       const symbol = scope.findSymbol(node.symbolName);
       if (symbol.symbolDefinition.symbolType != "Variable") {
         throw new Error(`Expected symbol kind for identifier '${node.symbolName}' to be Variable but was instead ${symbol.symbolDefinition.symbolType}`);
       }
-      let variableTypes = symbol.symbolDefinition.acceptableTypes;
-      if (variableTypes == void 0) {
-        variableTypes = AcceptableTypeSet.noAllowableTypes();
-      }
-      for (const acceptableType of variableTypes.acceptableTypes ?? []) {
-        for (const builtInPointerType of BUILT_IN_POINTER_TYPE_EXPRESSIONS) {
-          if (acceptableType.equals(builtInPointerType.baseTypeExpression)) {
-            const error = {
-              firstToken: node.firstToken,
-              type: "UnassignableType",
-              message: `Variable with name: '${node.symbolName}' cannot be defined with possible type: ${acceptableType.toString()}. 
-            ${acceptableType.toString()} cannot be used as a base-type, it must be used as a pointer type
-            Referenced on: ${node.firstToken.createTokenSourceString()}`
-            };
-            context.typeMismatches.push(error);
-            return AcceptableTypeSet.noAllowableTypes();
-          }
+      const variableType = symbol.symbolDefinition.type ?? UndeterminedTypeTypeDefinition.instance;
+      for (const builtInPointerType of BUILT_IN_POINTER_TYPE_EXPRESSIONS) {
+        if (variableType instanceof InstantiableTypeDefinition && variableType.name == builtInPointerType.baseTypeExpression.toString()) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "UnassignableType",
+            message: `Variable with name: '${node.symbolName}' cannot be defined with possible type: ${variableType.toString()}. 
+          ${variableType.toString()} cannot be used as a base-type, it must be used as a pointer type
+          Referenced on: ${node.firstToken.createTokenSourceString()}`
+          };
+          context.typeMismatches.push(error);
+          return UndeterminedTypeTypeDefinition.instance;
         }
       }
-      const intersection2 = variableTypes.intersect(expressionTypes);
-      if (!intersection2.hasAcceptableTypes) {
+      const ans = areTypesAssignable(variableType, expressionType);
+      if (!ans.isAcceptable) {
         const error = {
           firstToken: node.firstToken,
           type: "TypeMismatch",
-          message: `Unable to assign to variable '${node.symbolName}' due to type mismatch. 
-        Variable expecting type of (${variableTypes.toString()}) but RHS of the declaration is of types (${expressionTypes.toString()}).
+          message: `Unable to assign to variable '${node.symbolName}' due to type mismatch. ${ans.errorMessage ?? ""}
+        Declaration expecting type of '${variableType.toString()}' but RHS of the declaration is of type '${expressionType.toString()}'.
         Referenced on: ${node.firstToken.createTokenSourceString()}`
         };
         context.typeMismatches.push(error);
-        return AcceptableTypeSet.noAllowableTypes();
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      variableTypes.linkAndIntersect(expressionTypes);
-      symbol.symbolDefinition.acceptableTypes = variableTypes;
-      return variableTypes;
+      if (variableType instanceof UndeterminedTypeTypeDefinition) {
+        context.table.bindVariableType(node.symbolName, ans.resolvedLhsType);
+      }
+      for (const v of [node.variable, node.variable.variable]) {
+        if (v.augmentedProperties.resolvedTypeDefinition == void 0 || v.augmentedProperties.resolvedFunctionDefinition instanceof UndeterminedTypeTypeDefinition)
+          v.augmentedProperties.resolvedTypeDefinition = ans.resolvedLhsType;
+        if (node.expression != void 0) {
+          v.augmentedProperties.resolvedTypeDefinition = ans.resolvedRhsType;
+        }
+      }
+      return variableType;
     }
-    // definitions (function, struct, etc) don't actually have any acceptable types after they've been set up
+    // definition statements (function, struct, etc) don't actually have any types after they've been set up
+    // I might want to set up some kind of control-flow graph to ensure
+    // all code paths return a value, but not yet
     traverseFunctionDefinition(node, context) {
-      const paramTypes = node.getParamTypes();
-      const returnType = node.returnType;
-      const functionSignature = new FunctionTypeExpression(node.parseTreeNode, paramTypes, returnType);
       const newContext = {
         typeMismatches: context.typeMismatches,
         table: node.bodyScope
       };
       this.traverse(node.body, newContext);
-      return AcceptableTypeSet.fromSingleType(functionSignature);
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseWatFunctionDefinition(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseOperatorDefinition(node, context) {
-      this.traverse(node.body, context);
-      return AcceptableTypeSet.noAllowableTypes();
+      const newContext = {
+        typeMismatches: context.typeMismatches,
+        table: node.bodyScope
+      };
+      this.traverse(node.body, newContext);
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseWatOperatorDefinition(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseTypeDefinition(node, context) {
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseStructDefinition(node, context) {
-      const stack = node.fields.map((f) => {
-        return { name: f.variable.name, type: f.type };
+      const symbol = context.table.findSymbol(node.symbolName);
+      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Type") {
+        const error = {
+          firstToken: node.firstToken,
+          type: "TypeMismatch",
+          message: formatErrorMessage(`
+        Unable to resolve symbol '${node.symbolName} to struct type. Entry type in the symbol table was ${symbol?.symbolDefinition.symbolType}
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const astDefinition = symbol.symbolDefinition.astCompositeDefinitionNode;
+      if (!(astDefinition instanceof AstStructDefinition)) {
+        const error = {
+          firstToken: node.firstToken,
+          type: "StructOnNonStruct",
+          message: formatErrorMessage(`
+          Type with name: '${node.symbolName} is not a struct type. It is instead of type: '${symbol.symbolDefinition.typeExpression.toString()}'
+          Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const stack = [...astDefinition.fieldMap.entries()].map((entry) => {
+        return {
+          typeName: astDefinition.symbolName,
+          expression: entry[1].typeExpression
+        };
       });
       const alreadyExplored = /* @__PURE__ */ new Set();
       while (stack.length > 0) {
         const current = stack.pop();
-        if (current.type instanceof AstStructDefinition) {
-          const fields = current.type.fields.map((f) => {
-            return { name: f.variable.name, type: f.type };
-          });
-          stack.push({ name: current.name, type: new BaseTypeExpression(FAKE_PARSE_TREE_NODE, current.type.identifier) }, ...fields);
-        } else if (current.type instanceof BaseTypeExpression) {
-          const currentName = current.type.symbolName;
-          if (currentName == node.symbolName) {
-            const error = {
-              firstToken: node.firstToken,
-              type: "TypeMismatch",
-              // the message is only useful if there's a direct recursive relationship.
-              // if there's a mutual recursion, it will get found, but the message is not that useful.
-              message: formatErrorMessage(`Unable to create struct of name '${node.symbolName}' 
-            as the field '${current.name}' has the type '${current.type.toString()}' recursively references itself
-            Referenced on: ${node.firstToken.createTokenSourceString()}`)
-            };
-            context.typeMismatches.push(error);
-            return AcceptableTypeSet.noAllowableTypes();
-          }
-          const next = context.table.findSymbolWithType(
-            currentName,
+        if (current.expression instanceof BaseTypeExpression) {
+          const symbol2 = context.table.findSymbolWithType(
+            current.expression.symbolName,
             "Type"
             /* SymbolType.Type */
           );
-          if (!alreadyExplored.has(next.symbolName)) {
-            alreadyExplored.add(next.symbolName);
-            stack.push({ name: current.name, type: next.symbolDefinition.type });
+          const astDefinition2 = (symbol2?.symbolDefinition).astCompositeDefinitionNode;
+          if (astDefinition2 == void 0) {
+            continue;
           }
+          if (alreadyExplored.has(astDefinition2.symbolName)) {
+            const error = {
+              firstToken: node.firstToken,
+              type: "SelfReferentialStruct",
+              // the message is only useful if there's a direct recursive relationship.
+              // if there's a mutual recursion, it will get found, but the message is not that useful.
+              message: formatErrorMessage(`Unable to create struct of name '${node.symbolName}' 
+            as the field '${current.typeName}' has the type '${current.expression.toString()}' recursively references itself
+            Referenced on: ${node.firstToken.createTokenSourceString()}`)
+            };
+            context.typeMismatches.push(error);
+            return UndeterminedTypeTypeDefinition.instance;
+          }
+          const fields = [...astDefinition2.fieldMap.entries()].map((entry) => {
+            return {
+              typeName: astDefinition2.symbolName,
+              expression: entry[1].typeExpression
+            };
+          });
+          stack.push(...fields);
+          alreadyExplored.add(current.typeName);
+        }
+        if (stack.length > 5e4) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "SelfReferentialStruct",
+            message: formatErrorMessage(`
+          The struct will expand to over 50_000 scalar values. This will probably not work in most wasm runtimes,
+          which I think have a limit on the number of locals
+          Referenced on: ${node.firstToken.createTokenSourceString()}`)
+          };
+          context.typeMismatches.push(error);
+          return UndeterminedTypeTypeDefinition.instance;
         }
       }
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseBlockNode(node, context) {
       for (const n of node.astNodes) {
         this.traverse(n, context);
       }
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseGroupNode(node, context) {
       for (const n of node.astNodes) {
         this.traverse(n, context);
       }
-      return AcceptableTypeSet.noAllowableTypes();
+      return UndeterminedTypeTypeDefinition.instance;
     }
   };
 
@@ -332084,7 +332296,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           new WatVariableInstruction(sourceNode, "local.get", `$addr`),
           new WatTypedMemoryInstruction(sourceNode, field, "load", { offset: memOffsetAccumulator })
         ];
-        memOffsetAccumulator += ScalarTypeSizes[field];
+        const size2 = BuiltInScalarConfig[field].bytes;
+        if (size2 == void 0) {
+          throw new Error(`Failed to look up size for type: ${field}`);
+        }
+        memOffsetAccumulator += size2;
         instructions.push(...localIns);
       }
       const loadDataFunctionDefinition = new WatFunction(sourceNode, label, functionParams, functionReturns, [], instructions);
@@ -332126,7 +332342,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           new WatVariableInstruction(sourceNode, "local.get", `$_${i}`),
           new WatTypedMemoryInstruction(sourceNode, field, "store", { offset: memOffsetAccumulator })
         ];
-        memOffsetAccumulator += ScalarTypeSizes[field];
+        const size2 = BuiltInScalarConfig[field].bytes;
+        if (size2 == void 0) {
+          throw new Error(`Failed to look up size for type: ${field}`);
+        }
+        memOffsetAccumulator += size2;
         instructions.push(...localIns);
       }
       const storeFunctionDefinition = new WatFunction(sourceNode, label, functionParams, functionReturns, [], instructions);
@@ -332151,37 +332371,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   };
 
   // ../compiler/dist/src/compiler/Emitter.js
-  var PtrWasmNumberType = "i32";
+  var PtrWasmNumberType = BuiltInScalarConfig[CompilerDefaultTypes.PointerAddressType].wasmNumberType;
   var NameMapper = class {
     static {
       __name(this, "NameMapper");
     }
-    backingMap = /* @__PURE__ */ new Map();
-    // may eventually be used for tracking mapping, but not used right now
-    trackedFunctionNames = /* @__PURE__ */ new Set();
     whileLoopCounter = 0;
     constructor() {
     }
-    getWasmName(symbolInfo) {
-      const scope = symbolInfo.scope;
-      const shadow = symbolInfo.shadow;
-      let scopeString = "";
-      if (shadow != void 0) {
-        scopeString = `___${scope.id}`;
-      }
-      return "$" + symbolInfo.symbolName + `${scopeString}`;
+    mapScalarVarName(symbolInfo) {
+      return this.mapNestedFieldName(symbolInfo, []);
     }
-    getStructFieldName(symbolInfo, nestedFieldNames) {
+    mapNestedFieldName(symbolInfo, nestedFieldNames) {
       const scope = symbolInfo.scope;
       const shadow = symbolInfo.shadow;
       let scopeString = "";
       if (shadow != void 0) {
-        scopeString = `___${scope.id}`;
+        scopeString = `._${scope.id}_`;
       }
-      const label = "$" + symbolInfo.symbolName + "_" + nestedFieldNames.join("_") + `${scopeString}`;
+      let suffixStart = "";
+      if (nestedFieldNames.length > 0) {
+        suffixStart = ".";
+      }
+      const label = "$" + symbolInfo.symbolName + suffixStart + nestedFieldNames.join(".") + `${scopeString}`;
       return label;
     }
-    getWasmNameForOverload(func, isOperator) {
+    getWasmNameForCallableOverload(func, isOperator) {
       let funcName;
       if (!isOperator) {
         funcName = func.variable.name;
@@ -332191,7 +332406,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (func.getParamTypes().length == 0) {
         return `$${funcName}`;
       }
-      const name = `$${funcName}_${func.getParamTypes().map((t) => t.toString()).join("_")}`;
+      const name = `$${funcName}:${func.getParamTypes().map((t) => t.toString()).join(":")}`;
       return name;
     }
     getWhileLoopName() {
@@ -332209,7 +332424,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return PtrWasmNumberType;
       }
       const typeStr = typeExpression?.toString() ?? "UNDEFINED";
-      const out = wasmScriptTypesToWasmTypes[typeStr];
+      const out = BuiltInScalarConfig[typeStr].wasmNumberType;
       if (out == void 0) {
         throw new Error(`Type mapping is not implemented for ${typeStr}`);
       }
@@ -332243,13 +332458,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const node = def.node;
       const scope = p.scope;
       const typeDef = p.scope.resolveVariableTypeDefinition(name);
-      if (typeDef instanceof ScalarTypeDefinition) {
-        const wasmType = this.typeMapper.mapType(typeDef.expression);
-        const label = this.nameMapper.getWasmName(p);
+      let fields = [];
+      if (typeDef instanceof CompositeTypeDefinition) {
+        fields = typeDef.flattenedFields();
+      } else if (typeDef instanceof ScalarTypeDefinition) {
+        fields = [[[], typeDef]];
+      }
+      const out = [];
+      for (const field of fields) {
+        const wasmType = this.typeMapper.mapType(field[1].expression);
+        const label = this.nameMapper.mapNestedFieldName(p, field[0]);
         if (scopeType == "Param") {
-          return [new WatFuncParam(node, label, wasmType)];
+          out.push(new WatFuncParam(node, label, wasmType));
         } else if (scopeType == "Local") {
-          return [new WatFuncLocal(node, label, wasmType)];
+          out.push(new WatFuncLocal(node, label, wasmType));
         } else if (scopeType == "Global") {
           if (node instanceof AstVariableDeclarationStatement) {
             const rhs = node.expression;
@@ -332272,28 +332494,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             const v = value[0];
             return [new WatGlobal(node, label, wasmType, !p.isConst, v)];
           }
+          throw new Error("Should not happen");
         }
-        throw new Error("Should not happen");
-      } else if (typeDef instanceof StructTypeDefinition) {
-        const flattenedFields = typeDef.flattenedFields();
-        const outArray = new Array();
-        for (const out of flattenedFields) {
-          const label = this.nameMapper.getStructFieldName(p, out[0]);
-          const wasmType = this.typeMapper.mapType(out[1].expression);
-          if (scopeType == "Param") {
-            const temp = new WatFuncParam(node, label, wasmType);
-            outArray.push(temp);
-          } else if (scopeType == "Local") {
-            const temp = new WatFuncLocal(node, label, wasmType);
-            outArray.push(temp);
-          } else if (scopeType == "Global") {
-            throw new Error(`Global structs not yet implemented`);
-          }
-        }
-        return outArray;
-      } else {
-        throw new Error("Should not happen");
       }
+      return out;
     }
     toWatModule(root, context) {
       const globalScope = context.table.getGlobalScope();
@@ -332313,7 +332517,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           if (type != "Operator") {
             return true;
           }
-          const allTypesBuiltIn = overload.params.every((value) => context.table.findSymbol(value.type.symbolName)?.isBuiltIn);
+          const allTypesBuiltIn = overload.params.every((value) => context.table.findSymbol(value.typeExpression.symbolName)?.isBuiltIn);
           return !allTypesBuiltIn;
         }).map((overload) => {
           const bodyScope = overload.node.bodyScope;
@@ -332336,12 +332540,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
               returnTypes = [
                 new WatFuncReturn(overload.returnType, this.typeMapper.mapType(returnTypeDef.expression))
               ];
-            } else if (returnTypeDef instanceof StructTypeDefinition) {
+            } else if (returnTypeDef instanceof CompositeTypeDefinition) {
               const flattenedFields = returnTypeDef.flattenedFields();
               returnTypes = flattenedFields.map((f) => {
-                const scalarDef = f[1];
-                const placeholderTypeExpression = scalarDef.expression;
-                return new WatFuncReturn(overload.returnType, this.typeMapper.mapType(placeholderTypeExpression));
+                const fieldTypeDef = f[1];
+                const fieldTypeExpression = fieldTypeDef.expression;
+                return new WatFuncReturn(overload.returnType, this.typeMapper.mapType(fieldTypeExpression));
               });
             } else {
               throw new Error(`Return type mapping not implemented for type: ${returnTypes}`);
@@ -332357,7 +332561,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             }
           };
           const instructions = this.instructionEmitter.traverse(overload.node, instructionEmitterContext);
-          return new WatFunction(overload.node, this.nameMapper.getWasmNameForOverload(
+          return new WatFunction(overload.node, this.nameMapper.getWasmNameForCallableOverload(
             overload.node,
             type == "Operator"
             /* SymbolType.Operator */
@@ -332393,7 +332597,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseNumberAtom(node, context) {
       let instruction;
       if (node instanceof AstIntLiteral) {
-        const wasmType = context.moduleContext.typeMapper.mapType(node.augmentedProperties.acceptableTypes.resolveTypeExpression());
+        const wasmType = context.moduleContext.typeMapper.mapType(node.augmentedProperties.resolvedTypeDefinition?.resolveType()?.expression);
         instruction = new WatConst(node, wasmType, node.value);
       } else if (node instanceof AstFloatLiteral) {
         let value = node.value;
@@ -332403,7 +332607,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           value = "-inf";
         else if (Number.isNaN(value))
           value = "nan";
-        const wasmType = context.moduleContext.typeMapper.mapType(node.augmentedProperties.acceptableTypes.resolveTypeExpression());
+        const wasmType = context.moduleContext.typeMapper.mapType(node.augmentedProperties.resolvedTypeDefinition?.resolveType()?.expression);
         instruction = new WatConst(node, wasmType, value);
       } else {
         throw new Error(`Failed to convert number literal to WasmInstruction for type: ${node.constructor.name}`);
@@ -332418,23 +332622,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return [new WatConst(node, PtrWasmNumberType, -1)];
     }
     traverseTupleLiteral(node, context) {
-      throw new Error("Method not implemented.");
+      return this.traverseCompositeLiteralNode(node, context);
     }
     traverseArrayLiteral(node, context) {
       throw new Error("Method not implemented.");
     }
     traverseStructLiteral(node, context) {
+      return this.traverseCompositeLiteralNode(node, context);
+    }
+    traverseCompositeLiteralNode(node, context) {
       const out = [];
-      const definition = (context.table.findSymbolWithType(
-        node.structSymbolName,
-        "Type"
-        /* SymbolType.Type */
-      )?.symbolDefinition).type;
-      let ordinal = 0;
-      const fieldOrder = new Map([...definition.fieldMap.keys()].map((key) => [key, ordinal++]));
-      const orderedAssignments = [...node.assignments].sort((a, b) => fieldOrder.get(a.lhs.name) - fieldOrder.get(b.lhs.name));
-      for (const assignment of orderedAssignments) {
-        const temp = this.traverse(assignment.rhs, context);
+      const definition = node.augmentedProperties?.resolvedTypeDefinition?.resolveType();
+      if (!(definition instanceof CompositeTypeDefinition)) {
+        throw new Error(`Received type: ${definition?.toString()} in composite node traversal in the emitter`);
+      }
+      let orderedFieldAssignmentsExpressions;
+      if (node instanceof AstStructLiteral) {
+        let ordinal = 0;
+        const declarationFieldOrder = new Map([...definition.fields.keys()].map((key) => [key, ordinal++]));
+        orderedFieldAssignmentsExpressions = [...node.assignments].sort((a, b) => declarationFieldOrder.get(a.lhs.name) - declarationFieldOrder.get(b.lhs.name)).map((assignmentStatement) => assignmentStatement.rhs);
+      } else if (node instanceof AstTupleLiteral) {
+        orderedFieldAssignmentsExpressions = [...node.values];
+      } else {
+        throw new Error("Not yet implemented");
+      }
+      for (const assignment of orderedFieldAssignmentsExpressions) {
+        const temp = this.traverse(assignment, context);
         out.push(...temp);
       }
       return out;
@@ -332447,15 +332660,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const typeDef = context.table.resolveVariableTypeDefinition(node.symbolName);
       if (typeDef instanceof ScalarTypeDefinition) {
-        const wasmName = context.moduleContext.nameMapper.getWasmName(symbolDef);
+        const wasmName = context.moduleContext.nameMapper.mapScalarVarName(symbolDef);
         return [
           new WatVariableInstruction(node, isGlobal ? "global.get" : "local.get", wasmName)
         ];
-      } else if (typeDef instanceof StructTypeDefinition) {
+      } else if (typeDef instanceof CompositeTypeDefinition) {
         const flattenedFields = typeDef.flattenedFields();
         const varInst = isGlobal ? "global.get" : "local.get";
         return flattenedFields.map((field) => {
-          return new WatVariableInstruction(node, varInst, context.moduleContext.nameMapper.getStructFieldName(symbolDef, field[0]));
+          return new WatVariableInstruction(node, varInst, context.moduleContext.nameMapper.mapNestedFieldName(symbolDef, field[0]));
         });
       } else {
         throw new Error(`Identifier wasm emission not yet defined for type ${typeDef?.constructor?.name ?? void 0}`);
@@ -332463,13 +332676,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseUnaryOperation(node, context) {
       const operandInstructions = this.traverse(node.operand, context);
-      const resolvedType = node.operand.augmentedProperties.acceptableTypes.acceptableTypes[0];
-      if (node.operator == "*" && resolvedType instanceof PointerTypeExpression) {
-        const resolvedTypeDefinition = context.table.resolveTypeDefinition(resolvedType);
-        if (!(resolvedTypeDefinition instanceof PointerTypeDefinition)) {
-          throw new Error("This should not happen. It probably should have been caught in the checker");
-        }
-        const dereferencedType = resolvedTypeDefinition.dereferencedType;
+      const resolvedType = node.operand.augmentedProperties.resolvedTypeDefinition?.resolveType();
+      if (node.operator == "*" && resolvedType instanceof PointerTypeDefinition) {
+        const dereferencedType = resolvedType.dereferencedType;
         if (dereferencedType instanceof ScalarTypeDefinition) {
           const mappedType = context.moduleContext.typeMapper.mapType(dereferencedType.expression);
           const instruction = new WatTypedMemoryInstruction(
@@ -332479,7 +332688,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             /* WasmMemoryInstruction.Load */
           );
           return [...operandInstructions, instruction];
-        } else if (dereferencedType instanceof StructTypeDefinition) {
+        } else if (dereferencedType instanceof CompositeTypeDefinition) {
           const flattenedFields = dereferencedType.flattenedFields();
           const wasmFields = flattenedFields.map((f) => context.moduleContext.typeMapper.mapType(f[1].expression));
           const generateStructLoadFunctionCall = context.moduleContext.helperFunctionGenerator.generateStructLoadInstructions(node, PtrWasmNumberType, wasmFields);
@@ -332508,7 +332717,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const args = [node.lhs, node.rhs];
       const argInstructions = args.map((arg) => this.traverse(arg, context));
-      const functionName = context.moduleContext.nameMapper.getWasmNameForOverload(node.augmentedProperties.resolvedFunctionDefinition, true);
+      const functionName = context.moduleContext.nameMapper.getWasmNameForCallableOverload(node.augmentedProperties.resolvedFunctionDefinition, true);
       const functionCall = new WatFunctionCall(node, functionName);
       return [...argInstructions.flat(), functionCall];
     }
@@ -332517,7 +332726,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseFunctionCall(node, context) {
       const argInstructions = node.args.astNodes.map((arg) => this.traverse(arg, context));
-      const functionName = context.moduleContext.nameMapper.getWasmNameForOverload(node.augmentedProperties.resolvedFunctionDefinition, false);
+      const functionName = context.moduleContext.nameMapper.getWasmNameForCallableOverload(node.augmentedProperties.resolvedFunctionDefinition, false);
       const functionCall = new WatFunctionCall(node, functionName);
       return [...argInstructions.flat(), functionCall];
     }
@@ -332529,7 +332738,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           throw new Error(`TypeDef for ${typeExpression.toString()} could not be resolved.`);
         }
         const size2 = typeDef.sizeInBytes();
-        return [new WatConst(node, PtrWasmNumberType, size2, { comment: `sizeof ${node.args[0].name}` })];
+        return [new WatConst(node, PtrWasmNumberType, size2, { comment: `size_of ${node.args[0].name}` })];
       }
       throw new Error(`Built in function: ${node.builtInFunction} is not yet defined in the emitter`);
     }
@@ -332539,13 +332748,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseFieldAccessExpression(node, context) {
       const rhs = node.right;
       const lhs = node.left;
-      if (lhs instanceof AstStructLiteral) {
-        const field = lhs.fieldMap.get(rhs.name);
-        if (field == void 0) {
-          throw new Error("The type checker should catch this if the field is not defined on the type");
-        }
-        return this.traverse(field, context);
-      } else if (lhs instanceof AstIdentifierNode) {
+      if (lhs instanceof AstIdentifierNode) {
         const typeDef = context.table.resolveVariableTypeDefinition(lhs.name);
         const symbolInfo = context.table.findSymbolWithType(
           lhs.name,
@@ -332557,16 +332760,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const prefix = field[0][0];
           return prefix == rhs.name;
         }).map((field) => {
-          return new WatVariableInstruction(node, "local.get", context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field[0]));
+          return new WatVariableInstruction(node, "local.get", context.moduleContext.nameMapper.mapNestedFieldName(symbolInfo, field[0]));
         });
       } else if (lhs instanceof AstAbstractExpressionNode) {
         const internalInstructions = this.traverse(lhs, context);
-        const typeSet = lhs.augmentedProperties.acceptableTypes;
-        if (typeSet?.acceptableTypes?.length != 1) {
-          throw new Error(`Cannot resolve types for expression: ${typeSet?.toString()}`);
-        }
-        const typeDefinition = context.table.resolveTypeDefinition(typeSet.acceptableTypes[0]);
-        if (!(typeDefinition instanceof StructTypeDefinition)) {
+        const typeDefinition = lhs.augmentedProperties.resolvedTypeDefinition?.resolveType();
+        if (!(typeDefinition instanceof CompositeTypeDefinition)) {
           throw new Error(`Unable to field access a non-struct type`);
         }
         const typeDefinitionTypes = typeDefinition.flattenedFields().map((f) => context.moduleContext.typeMapper.mapType(f[1].expression));
@@ -332589,8 +332788,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         return [...internalInstructions, stackSelect.call];
       }
-      throw new Error(`Not yet implemented for type: '${node.constructor.name}'`);
+      throw new Error(`Field access not yet implemented for type: '${node.constructor.name}'`);
     }
+    // type expressions don't need to be traversed - all type information is stripped from the compiled output
     traverseUnitTypeExpression(node, context) {
       throw new Error("Method not implemented.");
     }
@@ -332609,11 +332809,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseAssignmentStatement(node, context) {
       return this.handleAssignment(node.lhs, node.rhs, context);
     }
+    traverseVariableDeclaration(node, context) {
+      return this.handleAssignment(node.variable.variable, node.expression, context);
+    }
     // used in both assignment and declaration statements
     handleAssignment(variableNode, expression, context) {
       const expressionInstructions = this.traverse(expression, context);
-      const typeDefinition = context.table.resolveVariableTypeDefinition(variableNode.name);
-      const response = parseAssignmentVariable(variableNode, context, typeDefinition);
+      const variableTypeDefinition = context.table.resolveVariableTypeDefinition(variableNode.name);
+      const lhsExpressionType = variableNode.augmentedProperties.resolvedTypeDefinition?.resolveType();
+      if (variableTypeDefinition == void 0 || lhsExpressionType == void 0) {
+        console.warn(`For variable with name: ${variableNode.name} found undef type.`, variableTypeDefinition?.toString() ?? "undefined", lhsExpressionType?.toString() ?? "undefined");
+        throw new Error(`For variable with name: ${variableNode.name} found undef type.`);
+      }
+      const response = parseAssignmentVariable(variableNode, context, variableTypeDefinition);
       const symbolInfo = context.table.findSymbolWithType(
         variableNode.symbolName,
         "Variable"
@@ -332621,7 +332829,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       );
       const isGlobal = (symbolInfo?.symbolDefinition).scopeType == "Global";
       const fieldsToInstructions = response.fields.map((field) => {
-        const mappedName = field.fieldName.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field.fieldName) : context.moduleContext.nameMapper.getWasmName(symbolInfo);
+        const mappedName = field.fieldName.length > 0 ? context.moduleContext.nameMapper.mapNestedFieldName(symbolInfo, field.fieldName) : context.moduleContext.nameMapper.mapScalarVarName(symbolInfo);
         if (field instanceof ValueFieldAssignment) {
           const varInstruction = isGlobal ? "global.set" : "local.set";
           const setInstruction = new WatVariableInstruction(variableNode, varInstruction, mappedName);
@@ -332633,7 +332841,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           if (!context.moduleContext.generatedFunctionMap.has(generateStructStoreFunctionCall.definition.label)) {
             context.moduleContext.generatedFunctionMap.set(generateStructStoreFunctionCall.definition.label, generateStructStoreFunctionCall.definition);
           }
-          const memAddressName = field.variable.fields.length > 0 ? context.moduleContext.nameMapper.getStructFieldName(symbolInfo, field.variable.fields) : context.moduleContext.nameMapper.getWasmName(symbolInfo);
+          const memAddressName = field.variable.fields.length > 0 ? context.moduleContext.nameMapper.mapNestedFieldName(symbolInfo, field.variable.fields) : context.moduleContext.nameMapper.mapScalarVarName(symbolInfo);
           const getAddrInstruction = new WatVariableInstruction(variableNode, getAddrGlobalness, memAddressName);
           return [getAddrInstruction, generateStructStoreFunctionCall.call];
         } else {
@@ -332678,7 +332886,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseIfStatement(node, context) {
       if (node.elseIfStatements != void 0) {
-        throw new Error("If else / elseif statements are not implemented at all in the emitter");
+        throw new Error("If 'else if' statements are not implemented at all in the emitter");
       }
       const conditionInst = this.traverse(node.condition, context);
       const ifBodyScope = node.body.augmentedProperties.scope;
@@ -332702,8 +332910,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseWhileStatement(node, context) {
       const whileName = context.moduleContext.nameMapper.getWhileLoopName();
-      const blockName = whileName + "_block";
-      const loopName = whileName + "_loop";
+      const blockName = whileName + ":block";
+      const loopName = whileName + ":loop";
       node.emitterData = {
         blockName,
         loopName
@@ -332731,9 +332939,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseForStatement(node, context) {
       throw new Error("Method not implemented.");
     }
-    traverseVariableDeclaration(node, context) {
-      return this.handleAssignment(node.variable.variable, node.expression, context);
-    }
     traverseFunctionDefinition(node, context) {
       const body = node.body;
       const instructions = body.astNodes.map((n) => this.traverse(n, context)).flat();
@@ -332750,6 +332955,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseWatOperatorDefinition(node, context) {
       return this.watBodyToWatInstructions(node.params, node.watBody, context);
     }
+    // type definitions don't need any instructions to be emitted - similar to type expressions - since they aren't included in the compiler output
     traverseTypeDefinition(node, context) {
       throw new Error("Method not implemented.");
     }
@@ -332863,7 +333069,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         variable: outVar,
         fields: [new ValueFieldAssignment(node, node.name, [], typeDef, 0)]
       };
-    } else if (typeDef instanceof StructTypeDefinition) {
+    } else if (typeDef instanceof CompositeTypeDefinition) {
       const fields = typeDef.flattenedFields();
       let memOffsetAcc = 0;
       const mapped = fields.map((f) => {
@@ -332907,10 +333113,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (field.type instanceof PointerTypeDefinition) {
         const derefType = field.type.dereferencedType;
         let flattenedDereferencedTypes = [];
-        if (derefType instanceof StructTypeDefinition) {
+        if (derefType instanceof CompositeTypeDefinition) {
           flattenedDereferencedTypes = derefType.flattenedFields().map((f) => f[1]);
-        } else {
+        } else if (derefType instanceof ScalarTypeDefinition) {
           flattenedDereferencedTypes = [derefType];
+        } else {
+          throw new Error(`Unable to dereference type: ${field.type.toString()}`);
         }
         let acc = 0;
         return flattenedDereferencedTypes.map((type) => {
@@ -333295,6 +333503,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.parseTupleExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.functionTypeExpression) {
         return this.parseFunctionTypeExpression(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.unitKeyword) {
+        return new AstUnitTypeExpression(child);
       }
       throw new Error(`Type expression parsing is not implemented for type: ${child.matchedRule?.name}`);
     }
@@ -333993,7 +334203,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     );
     const sizeOfKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.sizeOfKeyword,
-      "sizeof"
+      "size_of"
       /* TokenType.Sizeof */
     );
     const asKeyword = parser2.createTokenMatcher(
@@ -334075,6 +334285,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       PARSER_RULE_NAMES.structKeyword,
       "struct"
       /* TokenType.Struct */
+    );
+    const unitKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.unitKeyword,
+      "unit"
+      /* TokenType.Unit */
     );
     const extendsKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.extendsKeyword,
@@ -334240,10 +334455,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // [i32, 5], [i32, *]
       tupleTypeExpression,
       // (i32, i32, i32)
+      unitKeyword,
+      // matches "unit" - which is an alias for ()
       identifierMatcher
     );
     const variableDeclarationOperator = parser2.createOrderedChoice(PARSER_RULE_NAMES.variableDeclarationOperators, constMatcher, varMatcher);
-    const extendsStatement = parser2.createSequence(PARSER_RULE_NAMES.extendsStatement, identifierMatcher, extendsKeyword, identifierMatcher);
+    const extendsStatement = parser2.createSequence(
+      // FIXME: remove this and rethink this kind of statement
+      PARSER_RULE_NAMES.extendsStatement,
+      identifierMatcher,
+      extendsKeyword,
+      identifierMatcher
+    );
     const genericIdentifier = parser2.createOrderedChoice(
       PARSER_RULE_NAMES.genericIdentifier,
       extendsStatement,
