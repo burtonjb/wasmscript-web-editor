@@ -329736,7 +329736,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toString() {
       return this.name;
     }
-    isBuiltIn = true;
   };
   var IntegerLiteralType = class extends ScalarLiteralType {
     static {
@@ -329810,12 +329809,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     astDefinitionNode;
     name;
-    isBuiltIn;
     _id = typeDefId++;
-    constructor(astDefinitionNode, name, isBuiltIn) {
+    genericParameters = void 0;
+    // basically the "parent type". E.g. if the specialized type is Option<i32> then the parent type is Option<T>
+    parentGenericComposite = void 0;
+    // this array tracks all the specializations of the generic types. Eg. Option<T> will track Option<i32>, Option<f32>, etc
+    specializations = void 0;
+    constructor(astDefinitionNode, name) {
       this.astDefinitionNode = astDefinitionNode;
       this.name = name;
-      this.isBuiltIn = isBuiltIn;
     }
     resolveType() {
       return this;
@@ -329834,7 +329836,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     _id = typeDefId++;
     constructor(astDefinitionNode, scope, expression) {
       const name = expression.toString();
-      super(astDefinitionNode, name, false);
+      super(astDefinitionNode, name);
       this.astDefinitionNode = astDefinitionNode;
       this.scope = scope;
       this.expression = expression;
@@ -329865,14 +329867,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     astDefinitionNode;
     expression;
     name;
-    isBuiltIn;
     _id = typeDefId++;
-    constructor(astDefinitionNode, expression, name, isBuiltIn) {
-      super(astDefinitionNode, name, true);
+    constructor(astDefinitionNode, expression, name) {
+      super(astDefinitionNode, name);
       this.astDefinitionNode = astDefinitionNode;
       this.expression = expression;
       this.name = name;
-      this.isBuiltIn = isBuiltIn;
     }
     specialize(typeArguments) {
       throw new Error("Specialization Not supported for scalar type");
@@ -329937,8 +329937,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       let temp = super.toString();
-      temp += ":" + [...this.fields.entries()].map((p) => `(${p[0]},${p[1].toString()})`);
-      temp += `[${this._id}]`;
+      temp += " {" + [...this.fields.entries()].map((p) => `${p[0]}:${p[1].toString()}`).join(", ") + "} ";
       return temp;
     }
     equals(other) {
@@ -329968,7 +329967,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     genericParameters;
     parentGenericComposite;
     constructor(astDefinitionNode, expression, name, fields, genericParameters, parentGenericComposite) {
-      super(astDefinitionNode, name, false);
+      super(astDefinitionNode, name);
       this.astDefinitionNode = astDefinitionNode;
       this.expression = expression;
       this.name = name;
@@ -329985,6 +329984,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     sizeInBytes() {
       return [...this.fields.values()].reduce((acc, f) => acc + f.sizeInBytes(), 0);
     }
+    toString() {
+      const temp = `Struct ${this.name} {` + [...this.fields.entries()].map((p) => `${p[0]}:${p[1].toString()}`).join(", ") + "} ";
+      return temp;
+    }
   };
   var UnionTypeDefinition = class _UnionTypeDefinition extends CompositeTypeDefinition {
     static {
@@ -329997,7 +330000,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     genericParameters;
     parentGenericComposite;
     constructor(astDefinitionNode, expression, name, fields, genericParameters, parentGenericComposite) {
-      super(astDefinitionNode, name, false);
+      super(astDefinitionNode, name);
       this.astDefinitionNode = astDefinitionNode;
       this.expression = expression;
       this.name = name;
@@ -330018,6 +330021,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return size2;
     }
+    toString() {
+      const temp = `Union ${this.name} {` + [...this.fields.entries()].map((p) => `${p[0]}:${p[1].toString()}`).join(", ") + "} ";
+      return temp;
+    }
   };
   var VariantTypeDefinition = class _VariantTypeDefinition extends CompositeTypeDefinition {
     static {
@@ -330032,7 +330039,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parentGenericComposite;
     fieldNameToBackingValue = /* @__PURE__ */ new Map();
     constructor(astDefinitionNode, expression, name, backingTagType, fields, genericParameters, parentGenericComposite) {
-      super(astDefinitionNode, name, false);
+      super(astDefinitionNode, name);
       this.astDefinitionNode = astDefinitionNode;
       this.expression = expression;
       this.name = name;
@@ -330059,6 +330066,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const tagSize = this.backingTagType.sizeInBytes();
       return unionSize + tagSize;
     }
+    toString() {
+      const temp = `Variant ${this.name} {` + [...this.fields.entries()].map((p) => `${p[0]}:${p[1].toString()}`).join(", ") + "} ";
+      return temp;
+    }
   };
   var TupleTypeDefinition = class _TupleTypeDefinition extends CompositeTypeDefinition {
     static {
@@ -330074,7 +330085,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const filtered = types.filter((f) => f.resolveType() != void 0).map((f) => f.resolveType());
       const expression = new TupleTypeExpression(FAKE_PARSE_TREE_NODE, filtered.map((t) => t.expression));
       const name = expression.toString();
-      super(void 0, name, true);
+      super(void 0, name);
       this.scope = scope;
       this.types = types;
       this.expression = expression;
@@ -330117,7 +330128,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     length;
     expression;
     constructor(scope, backingType, length) {
-      super(void 0, "", true);
+      super(void 0, "");
       this.scope = scope;
       this.backingType = backingType;
       this.length = length;
@@ -330183,7 +330194,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // A pointer itself is a scalar type (usually an i32, maybe an i64 if I eventually support 64-bit addressing)
     // The value it points to may not be a scalar though
     constructor(expression, name, scope) {
-      super(void 0, expression, name, false);
+      super(void 0, expression, name);
       this.expression = expression;
       this.name = name;
       this.scope = scope;
@@ -330214,10 +330225,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     symbol;
     astDefinitionNode = void 0;
+    // TODO: eventually fix this, but right now I don't support function pointers
+    genericParameters = void 0;
     scope;
     name;
     symbolDef;
-    isBuiltIn = false;
     constructor(symbol) {
       this.symbol = symbol;
       this.name = symbol.symbolName;
@@ -330235,7 +330247,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     resolveType() {
       return void 0;
     }
-    resolveOverload(argumentTypes) {
+    resolveOverload(genericArgumentTypes, argumentTypes) {
       const overloads = this.symbolDef.overloads.slice();
       const matching = overloads.filter((overload) => {
         if (overload.params.length != argumentTypes.length) {
@@ -330261,17 +330273,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     scope;
     functionDefinitionNode;
+    genericParameters;
     paramsTypes;
     returnType;
     isDynamic;
     expression;
     type;
+    // This is used for method calls and is kind of hacky
     capturedLhsType;
-    constructor(scope, functionDefinitionNode, paramsTypes, returnType, isDynamic) {
+    constructor(scope, functionDefinitionNode, genericParameters, paramsTypes, returnType, isDynamic) {
       const name = functionDefinitionNode.symbolName;
-      super(functionDefinitionNode, name, false);
+      super(functionDefinitionNode, name);
       this.scope = scope;
       this.functionDefinitionNode = functionDefinitionNode;
+      this.genericParameters = genericParameters;
       this.paramsTypes = paramsTypes;
       this.returnType = returnType;
       this.isDynamic = isDynamic;
@@ -330287,6 +330302,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
     specialize(typeArguments) {
+      if (this.genericParameters == void 0) {
+        throw new Error(`Cannot specialize on a function with no generics`);
+      }
+      if (typeArguments.length != this.genericParameters?.length) {
+        throw new Error(`Input number of type arguments don't match the number of generic parameters in the definition`);
+      }
+      const typeArgsToParams = [];
+      for (let i = 0; i < typeArguments.length; i++) {
+        const typeArg = typeArguments[i];
+        const typeParam = this.genericParameters[i];
+        typeArgsToParams.push({ typeArg, typeParam });
+      }
       throw new Error("Method not implemented.");
     }
     sizeInBytes() {
@@ -330310,8 +330337,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return true;
     }
-    resolveOverload(argumentTypes) {
-      if (this.matchesArgumentTypes(argumentTypes)) {
+    resolveOverload(genericArgumentTypes, functionArgumentTypes) {
+      if (this.matchesArgumentTypes(functionArgumentTypes)) {
         return this;
       }
       return UndeterminedTypeTypeDefinition.instance;
@@ -330344,7 +330371,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     const symbolDef = symbol.symbolDefinition;
     if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
-      return new ScalarTypeDefinition(void 0, typeExpression, symbolName, false);
+      return new ScalarTypeDefinition(void 0, typeExpression, symbolName);
     } else if (symbolDef.isGenericTypeParam) {
       return new GenericParameterTypeDefinition(symbolDef.astCompositeDefinitionNode, scope, typeExpression);
     } else if (symbolDef.astCompositeDefinitionNode instanceof AstCompositeDefinition) {
@@ -330370,7 +330397,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (transformedFields.size > 255) {
           throw new Error(`FIXME: support larger backing types for variant types`);
         }
-        const u8ScalarType = new ScalarTypeDefinition(void 0, BuiltInScalarConfig["u8"].astValues.typeExpression, "u8", false);
+        const u8ScalarType = new ScalarTypeDefinition(void 0, BuiltInScalarConfig["u8"].astValues.typeExpression, "u8");
         return new VariantTypeDefinition(typeDefAstNode, typeExpression, symbolName, u8ScalarType, transformedFields, genericParameters, void 0);
       } else {
         throw new Error(`Unable to resolve type for composite type: ${typeDefAstNode.compositeType}`);
@@ -330650,13 +330677,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const functionParamDefs = matching.typeExpression.params.map((p) => this.resolveTypeDefinition(p));
       const returnTypeExpression = matching.typeExpression.returnType;
       const returnTypeDef = returnTypeExpression ? this.resolveTypeDefinition(returnTypeExpression) : new UnitTypeDefinition(this);
-      const functionTypeDef = new ResolvedCallableTypeDefinition(this, node, functionParamDefs, returnTypeDef, false);
+      const generics = node.generics?.types.map((t) => new GenericParameterTypeDefinition(t.identifier, this, new BaseTypeExpression(t.identifier.parseTreeNode, t.identifier)));
+      node.generics?.types.forEach((g) => {
+        node.augmentedProperties.scope?.bindGenericType(g.identifier);
+      });
+      const functionTypeDef = new ResolvedCallableTypeDefinition(this, node, generics, functionParamDefs, returnTypeDef, false);
       if (matching.typeDefinition != void 0) {
         throw new Error(`Reassigning type definition to callable: ${node.symbolName}`);
       }
       matching.typeDefinition = functionTypeDef;
     }
-    bindTypeDefinition(node, isBuiltIn = false, isGenericTypeParam = false) {
+    /**
+     * Binds (basically declares) a type definition
+     * The actual TypeDefinition object can't be created here, since it can require all types to be declared before
+     * being able to actually define them (mostly to account for recursive or mutually-recursive types)
+     */
+    bindAstTypeDefinition(node, isBuiltIn = false, isGenericTypeParam = false) {
       const rhs = node.typeExpression;
       const rhsSymbols = rhs.getReferencedTypeSymbols();
       if (!isBuiltIn) {
@@ -331076,14 +331112,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     for (const t of BUILT_IN_SCALAR_TYPE_NAMES) {
       const config = BuiltInScalarConfig[t];
       const astTypeDefinition = config.astValues.astTypeDefinition;
-      const err = table.bindTypeDefinition(astTypeDefinition, true);
+      const err = table.bindAstTypeDefinition(astTypeDefinition, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
       }
     }
     for (const t of BUILT_IN_POINTER_TYPE_DEFINITIONS) {
-      const err = table.bindTypeDefinition(t, true);
+      const err = table.bindAstTypeDefinition(t, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
@@ -331553,7 +331589,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       let scope = context.table;
       if (node.generics != void 0) {
-        scope = new SymbolTable(`composite_definition_${node.identifier.name}`, scope);
+        scope = new SymbolTable(`${node.identifier.name}:composite_definition`, scope);
         for (const g of node.generics.types) {
           const bounds = g.bounds;
           if (bounds != void 0) {
@@ -331701,7 +331737,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             context.violations.push(error);
           }
         } else if (node instanceof AstTypeDefinitionStatement) {
-          const error = context.table.bindTypeDefinition(node);
+          const error = context.table.bindAstTypeDefinition(node);
           if (error != void 0) {
             context.violations.push(error);
           }
@@ -331720,7 +331756,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseTypeDefinition(node, context) {
-      const error = context.table.bindTypeDefinition(node);
+      const error = context.table.bindAstTypeDefinition(node);
       if (error != void 0) {
         context.violations.push(error);
       }
@@ -332153,14 +332189,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const callArgumentTypes = node.args.astNodes.map((arg) => this.traverse(arg, context).resolveType());
-      const resolvedOverload = internalType.resolveOverload(callArgumentTypes);
+      const callGenericTypeArguments = node.generics?.map((g) => context.table.resolveTypeDefinition(g));
+      const functionArgumentTypes = node.args.astNodes.map((arg) => this.traverse(arg, context).resolveType());
+      const resolvedOverload = internalType.resolveOverload(callGenericTypeArguments, functionArgumentTypes);
       if (resolvedOverload instanceof UndeterminedTypeTypeDefinition) {
         const error = {
           firstToken: node.firstToken,
           type: "NoMatchingFunctionSignature",
           message: formatErrorMessage(`Unable to resolve overload for callable with name: '${internalType.name}'.
-        Input types were: (${callArgumentTypes.map((t) => t.toString()).join(", ")})
+        Input types were: (${functionArgumentTypes.map((t) => t.toString()).join(", ")})
         Referenced on: ${node.firstToken.createTokenSourceString()} 
         `)
         };
@@ -332825,6 +332862,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return UndeterminedTypeTypeDefinition.instance;
         }
       }
+      scope.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
       return UndeterminedTypeTypeDefinition.instance;
     }
     traverseBlockNode(node, context) {
@@ -336354,12 +336392,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const contents = values.filter((v) => v.filename == mismatch.firstToken.file)[0].contents;
         console.log("Error around: ", contents.slice(mismatch.firstToken.start - 10, mismatch.firstToken.end + 10));
       }
-      throw new Error(`Found semantic error while processing input`);
+      const errorMessages = violations.map((v) => v.message).join("\n");
+      console.log("Error messages", errorMessages);
+      throw new Error(`Found binder errors while processing input.
+    Errors: ${errorMessages}`);
     }
     const checkerStartTimeMs = performance.now();
     const checker = new Checker();
     const checkerContext = {
-      typeMismatches: [],
+      typeMismatches: violations,
       table: binderContext.table
     };
     try {
@@ -336377,7 +336418,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const contents = values.filter((v) => v.filename == mismatch.firstToken.file)[0].contents;
         console.log("Error around: ", contents.slice(mismatch.firstToken.start - 10, mismatch.firstToken.end + 10));
       }
-      throw new Error(`Found type error while processing input`);
+      const errorMessages = violations.map((v) => v.message).join("\n");
+      console.log("Error messages", errorMessages);
+      throw new Error(`Found type checker errors while processing input.
+    Errors: ${errorMessages}`);
     }
     if (printDebugInfo && printDebugInfo.symbolTable) {
       console.log(checkerContext.table.toMarkdownString());
@@ -336447,12 +336491,64 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }, "getWorkerUrl")
   };
   var DEFAULT_CONTENT = `
-function add(a: f64, b: f64): f64 {
-	return a + b;
+/*
+Somewhat trivial example of demonstrating how to set up a struct representing a complex
+number and defining a couple operations/methods on complex numbers.
+*/
+
+
+// I don't have libraries defined yet, so I have to inline the wasm here.
+watmethod (a: f64) sqrt(): f64 {
+	\`
+	local.get {a}
+	f64.sqrt
+	\`
 }
 
-function main(): f64 {
-	return add(1.0, 2.0);
+struct Complex {
+  r: f64,
+  i: f64
+}
+
+function complex(real: f64, imaginary: f64): Complex {
+  // factory function. Not useful here as complex numbers are simple, but useful if the struct is more complex
+  return Complex {r = real, i = imaginary };
+}
+
+operator + (a: Complex, b: Complex): Complex {
+  return Complex {
+    r = a.r + b.r,
+    i = a.i + b.i
+  };
+}
+
+operator - (a: Complex, b: Complex): Complex {
+  return -1.0 * a + b;
+}
+
+operator * (a: f64, b: Complex): Complex {
+  return Complex {
+    r = a * b.r,
+    i = a * b.i
+  };
+}
+
+operator * (a: Complex, b: Complex): Complex {
+  return Complex {
+    r = a.r * b.r - a.i * b.i,
+    i = a.r * b.i + a.i * b.r
+  };
+}
+
+method (a: Complex) abs(): f64 {
+	const absSquare = a.r * a.r + a.i * a.i;
+	return absSquare.sqrt();
+}
+
+function main(): Complex {
+	var a = Complex { r = 3.0, i = 2.0 };
+	var b = Complex { r = 4.0, i = -3.0 };
+	return b - a;
 }
 `;
   var content = localStorage.getItem(LOCAL_STORAGE_SAVE_KEY) ?? DEFAULT_CONTENT;
