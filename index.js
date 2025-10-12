@@ -327160,6 +327160,15 @@ ${tagToString(tag)}`;
       if (options2?.includeTokenRange) {
         out["range"] = `${this.firstToken.createTokenSourceString()} ${this.tokens[this.tokens.length - 1].createTokenSourceString()}`;
       }
+      if (options2.includeAugmentedProperties) {
+        out["augmentedProperties"] = {
+          // these are all undefined during parse, but the get added during binding and checking
+          scope: this.augmentedProperties.scope?.scopeName,
+          symbolName: this.symbolName,
+          symbolDefinition_symbolType: this.symbolDefinition?.symbolDefinition.symbolType,
+          typeDefinition: this.augmentedProperties.typeDefinition?.toString()
+        };
+      }
       return out;
     }
   };
@@ -327244,10 +327253,23 @@ ${tagToString(tag)}`;
       return this._resolvedCallableInfo;
     }
     set resolvedCallableInfo(value) {
-      if (this._resolvedCallableInfo != void 0) {
-        throw new Error("Setting callable information again");
-      }
       this._resolvedCallableInfo = value;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      const resolvedCallableInfo = this.resolvedCallableInfo;
+      if (resolvedCallableInfo == void 0) {
+        out["resolvedCallInfo"] = void 0;
+      } else {
+        out["resolveCallInfo"] = {
+          typeArguments: resolvedCallableInfo.typeArguments?.map((t) => t.toString()),
+          symbol: resolvedCallableInfo.symbol.symbolName,
+          overload: resolvedCallableInfo.overload.typeExpression.toString(),
+          functionDefinitionNode_Loc: resolvedCallableInfo.functionDefinitionNode.firstToken.createTokenSourceString(),
+          functionType: resolvedCallableInfo.functionType.toString()
+        };
+      }
+      return out;
     }
   };
   var AstOperationNode = class extends AstAbstractCallExpression {
@@ -327790,6 +327812,12 @@ ${tagToString(tag)}`;
     }
     get isFloat() {
       return true;
+    }
+    get isNan() {
+      return Number.isNaN(this.value);
+    }
+    get isInfinite() {
+      return !Number.isFinite(this.value) && !this.isNan;
     }
     toJson(options2) {
       const out = super.toJson(options2);
@@ -329971,6 +329999,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toString() {
       return this.name;
     }
+    toShortString() {
+      return this.name;
+    }
+    isGeneric() {
+      return false;
+    }
   };
   var ScalarLiteralType = class {
     static {
@@ -329982,6 +330016,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       return this.name;
+    }
+    toShortString() {
+      return this.name;
+    }
+    isGeneric() {
+      return false;
     }
   };
   var IntegerLiteralType = class extends ScalarLiteralType {
@@ -330165,10 +330205,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new CanonicalTypeDefinition(this.declaringScope, "TypeParam", "T" + this.position, [], this);
     }
     toString() {
-      return `<${this.expression.toString()}.${this.declaringScope.id}>`;
+      return `GenericParam<${this.expression.toString()}.${this.declaringScope.id}>`;
+    }
+    toShortString() {
+      return `<${this.name}>`;
     }
     sizeInBytes() {
       throw new Error(`sizeInBytes called for generic type expression`);
+    }
+    isGeneric() {
+      return true;
     }
   };
   var ScalarTypeDefinition = class extends InstantiableTypeDefinition {
@@ -330205,6 +330251,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Failed to lookup size for scalar with name: ${this.name}`);
       }
       return size2;
+    }
+    isGeneric() {
+      return false;
+    }
+    toShortString() {
+      return this.name;
     }
   };
   var CompositeTypeDefinition = class extends InstantiableTypeDefinition {
@@ -330322,6 +330374,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const temp = `${compositeType ?? "UnknownType"} ${formattedTypeArgs} ${this.name} ${genStr} { ${fieldsStr} }`;
       return temp;
+    }
+    toShortString() {
+      return (this.name ?? "") + this.typeInstantiationInformation?.typeArgs.map((t) => `<${t.typeArg.toShortString()}>`);
+    }
+    isGeneric() {
+      return this.typeParameters != void 0 || this.typeInstantiationInformation?.typeArgs.some((arg) => arg.typeArg.isGeneric()) == true;
     }
   };
   var StructTypeDefinition = class _StructTypeDefinition extends CompositeTypeDefinition {
@@ -330545,6 +330603,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const typeStrings = [...this.fields.values()].map((t) => t.toString()).join(", ");
       return `( ${typeStrings} )`;
     }
+    toShortString() {
+      const typeStrings = [...this.fields.values()].map((t) => t.toShortString()).join(", ");
+      return `( ${typeStrings} )`;
+    }
+    isGeneric() {
+      return false;
+    }
   };
   var FunctionTypeDefinition = class _FunctionTypeDefinition extends InstantiableTypeDefinition {
     static {
@@ -330623,6 +330688,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const returnStr = this.returnType.toString();
       return `( ${params} ) => ${returnStr}`;
     }
+    toShortString() {
+      const params = this.paramTypes.map((p) => p.toShortString()).join(", ");
+      const returnStr = this.returnType.toShortString();
+      return `( ${params} ) => ${returnStr}`;
+    }
+    isGeneric() {
+      return this.returnType.isGeneric() || this.paramTypes.some((t) => t.isGeneric());
+    }
   };
   var ArrayTypeDefinition = class _ArrayTypeDefinition extends InstantiableTypeDefinition {
     static {
@@ -330657,6 +330730,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const temp = super.toString();
       return temp;
     }
+    toShortString() {
+      const temp = super.toString();
+      return temp;
+    }
     sizeInBytes() {
       return this.backingType.sizeInBytes();
     }
@@ -330668,6 +330745,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return false;
       }
       return this.backingType.equals(other.backingType);
+    }
+    isGeneric() {
+      return false;
     }
   };
   var UnitTypeDefinition = class _UnitTypeDefinition extends TupleTypeDefinition {
@@ -330694,6 +330774,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       return "unit";
+    }
+    isGeneric() {
+      return false;
     }
   };
   var PointerTypeDefinition = class extends InstantiableTypeDefinition {
@@ -330735,6 +330818,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       return `${this.expression.toString()}`;
+    }
+    toShortString() {
+      return `*${this.dereferencedType().toShortString()}`;
+    }
+    isGeneric() {
+      return false;
     }
   };
   function mapExpressionToDefinition(scope, typeExpression) {
@@ -332720,7 +332809,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (nodeScope == void 0) {
         throw new Error(`Failed to find scope for node: ${node.tokens.map((t) => t.lexeme)}. Declared on ${node.firstToken.createTokenSourceString()}`);
       }
-      let curErrCount = context.typeMismatches.length;
+      const curErrCount = context.typeMismatches.length;
       const typeArgumentsTypeDefs = genericParams?.map((p) => this.traverse(p, context).resolveType());
       const argumentTypeDefs = argumentTypes.map((t) => t.resolveType());
       if (context.typeMismatches.length != curErrCount) {
@@ -335339,6 +335428,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   }
   __name(parseInt2, "parseInt");
 
+  // ../compiler/dist/src/compiler/ir/IRInstructions.js
+  var IRPlaceholderInstruction = class {
+    static {
+      __name(this, "IRPlaceholderInstruction");
+    }
+    comment = "";
+    toJson(options2) {
+      return ["PLACEHOLDER INSTRUCTION"];
+    }
+  };
+
   // ../compiler/dist/src/compiler/ir/IRDefinitions.js
   var IRType = class _IRType {
     static {
@@ -335375,25 +335475,25 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       __name(this, "IRFunction");
     }
     identifier;
-    parentSymbol;
-    definition;
+    symbol;
+    callableOverload;
+    functionTypeDefinition;
     typeParameters;
     specialization;
     parameters;
     locals;
     returnType;
     comment = "";
-    isGenericTemplate = false;
     tempStoreCounter = 0;
     // TODO: a function that I can use to create key for looking up IRFunctions
-    static convertFromSymbol(parentSymbol, definition, specialization) {
-      const definitionScope = definition.definitionNode.definitionScope;
+    static convertFromSymbol(parentSymbol, callableOverload, specialization) {
+      const definitionScope = callableOverload.definitionNode.definitionScope;
       const typeArguments = specialization?.typeArguments.map((t) => IRType.convertFromSymbol(t));
-      const typeDef = specialization?.instantiatedType ?? definition.typeDefinition;
+      const typeDef = specialization?.instantiatedType ?? callableOverload.typeDefinition;
       if (typeDef == void 0) {
         throw new Error(`Type def for function ${parentSymbol.symbolName} not correctly set to ResolvedCallableTypeDefinition`);
       }
-      const functionTypeParameters = definition.typeDefinition?.typeParameters;
+      const functionTypeParameters = callableOverload.typeDefinition?.typeParameters;
       if (typeArguments != void 0 && typeArguments?.length != functionTypeParameters?.length) {
         throw new Error(`Mismatched type args len to type parameters len. TypeArgs: ${typeArguments?.length}, typeParams: ${functionTypeParameters?.length}`);
       }
@@ -335405,7 +335505,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const key = {
         scope: parentSymbol.declaringScope,
         name: parentSymbol.symbolName,
-        genericArguments: typeArguments,
+        typeArguments,
         funcParamTypes: typeDef.paramTypes.map((p) => IRType.convertFromSymbol(p))
       };
       const resolveGenericTypeToTypeArgument = /* @__PURE__ */ __name((type) => {
@@ -335415,9 +335515,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return type.instantiateViaMap(mappedArgs);
       }, "resolveGenericTypeToTypeArgument");
       const params = new IRVariables();
-      const paramsList = definition.definitionNode.params.map((p) => definitionScope?.findSymbolInThisScope(p.symbolName)).map((p) => {
+      const paramsList = callableOverload.definitionNode.params.map((p) => definitionScope?.findSymbolInThisScope(p.symbolName)).map((p) => {
         return { variable: p, type: resolveGenericTypeToTypeArgument(p.symbolDefinition.resolvedType) };
-      }).map((p) => IRVariable.convertFromSymbol(p.variable, p.type)).forEach((v) => params.putValue(v));
+      }).map((p) => IRVariable.convertFromSymbol(p.variable, p.type));
+      paramsList.forEach((v) => params.putValue(v));
       const locals = new IRVariables();
       const localsList = definitionScope.findAllSymbolsByType(
         "Variable"
@@ -335427,22 +335528,28 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         /* ScopeType.Local */
       ).map((p) => {
         return { variable: p, type: resolveGenericTypeToTypeArgument(p.symbolDefinition.resolvedType) };
-      }).map((v) => IRVariable.convertFromSymbol(v.variable, v.type)).forEach((v) => locals.putValue(v));
+      }).map((v) => IRVariable.convertFromSymbol(v.variable, v.type));
+      localsList.forEach((v) => locals.putValue(v));
       const returnTypeDef = resolveGenericTypeToTypeArgument(typeDef.returnType);
       const returnType = IRType.convertFromSymbol(returnTypeDef);
-      const irFunction = new _IRFunction(key, parentSymbol, definition, functionTypeParameters, typeArguments?.map((t) => t.typeDefinition), params, locals, returnType);
+      const functionTypeDefinition = new FunctionTypeDefinition(callableOverload.definitionNode.definitionScope, functionTypeParameters, paramsList.map((p) => p.irType.typeDefinition), returnType.typeDefinition);
+      const irFunction = new _IRFunction(key, parentSymbol, callableOverload, functionTypeDefinition, functionTypeParameters, typeArguments?.map((t) => t.typeDefinition), params, locals, returnType);
       return irFunction;
     }
     _instructions;
-    constructor(identifier3, parentSymbol, definition, typeParameters, specialization, parameters, locals, returnType) {
+    constructor(identifier3, symbol, callableOverload, functionTypeDefinition, typeParameters, specialization, parameters, locals, returnType) {
       this.identifier = identifier3;
-      this.parentSymbol = parentSymbol;
-      this.definition = definition;
+      this.symbol = symbol;
+      this.callableOverload = callableOverload;
+      this.functionTypeDefinition = functionTypeDefinition;
       this.typeParameters = typeParameters;
       this.specialization = specialization;
       this.parameters = parameters;
       this.locals = locals;
       this.returnType = returnType;
+    }
+    get isGenericTemplate() {
+      return this.functionTypeDefinition.isGeneric();
     }
     getVariable(key) {
       if (this.parameters.has(key)) {
@@ -335461,19 +335568,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     /**
      * Creates a temporary variable to store a variable.
      */
-    createTemporaryVariable(scope, label, type) {
+    createTemporaryVariable(module2, scope, label, type, typeArguments) {
+      if (typeArguments != void 0) {
+        type = type.instantiateViaMap(typeArguments);
+      }
       const identifier3 = {
         scope,
         name: `${label}.${this.tempStoreCounter++}`
       };
-      const irType = IRType.convertFromSymbol(type);
+      const irType = module2.types.putValueIfMissing(IRType.convertFromSymbol(type));
       const variable = new IRVariable(identifier3, irType);
       this.locals.set(identifier3, variable);
       return variable;
     }
     instructions() {
       if (this._instructions == void 0) {
-        return [];
+        return [new IRPlaceholderInstruction()];
       }
       return this._instructions.slice();
     }
@@ -335540,6 +335650,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return false;
     }
+    size() {
+      let out = 0;
+      for (const m of this.internalMaps) {
+        out += m.size();
+      }
+      return out;
+    }
     values() {
       const out = [];
       for (const v of this.internalMaps) {
@@ -335586,6 +335703,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     values() {
       return this.backingMap.values();
     }
+    size() {
+      return this.backingMap.size;
+    }
   };
   var IRVariables = class _IRVariables extends ModuleMapImpl {
     static {
@@ -335607,7 +335727,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     static idenToKey(key) {
       const scopeId2 = `${key.scope.id}`;
       const name = `${key.name}`;
-      const genericsKey = `${key.genericArguments?.map((g) => g.typeDefinition.canonicalize().toString()) ?? ""}`;
+      const genericsKey = `${key.typeArguments?.map((g) => g.typeDefinition.canonicalize().toString()) ?? ""}`;
       const funcParamsTypes = `${key.funcParamTypes.map((p) => p.typeDefinition.canonicalize().toString())}`;
       return `function:${scopeId2}.${name}.(generics:${genericsKey}).${funcParamsTypes}`;
     }
@@ -336037,7 +336157,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         prev[current[0]] = current[1].toJson({});
         return prev;
       }, {});
-      return ["const", this.outputType.typeDefinition.expression.toString(), objectJsonValue];
+      return ["const", this.outputType.typeDefinition.toShortString(), objectJsonValue];
     }
     /**
      * Returns the associated fields and the expressions in the literal in the order that the
@@ -336630,7 +336750,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     typeMapper = new WatTypeMapper();
     instructionEmitter = new WatInstructionEmitterV2(this.nameMapper, this.typeMapper);
     convertToWasmModule(irModule) {
-      const functions = [...irModule.getConcreteFunctions()].filter((f) => !(f.definition.definitionNode instanceof AstWatOperatorDefinition)).map((f) => this.convertFunctionDefinition(f));
+      const functions = [...irModule.getConcreteFunctions()].filter((f) => !(f.callableOverload.definitionNode instanceof AstWatOperatorDefinition)).map((f) => this.convertFunctionDefinition(f));
       let exports2 = [`(export "mem" (memory 0))`];
       for (const func of functions) {
         if (func.label == "$main") {
@@ -336645,32 +336765,37 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       });
     }
     convertFunctionDefinition(irFunction) {
-      const label = this.nameMapper.mapIrFunctionName(irFunction.identifier);
-      const params = [...irFunction.parameters.values()].map((p) => {
-        const mappedName = this.nameMapper.mapIrVarName(p.identifier);
-        const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
-        return mappedTypes.map((t) => new WasmFuncParam(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
-      }).flat();
-      const returnType = this.typeMapper.flattenType(irFunction.returnType.typeDefinition).map((t) => new WasmFuncReturn(void 0, t));
-      const locals = [...irFunction.locals.values()].map((p) => {
-        const mappedName = this.nameMapper.mapIrVarName(p.identifier);
-        const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
-        return mappedTypes.map((t) => new WasmFuncLocal(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
-      }).flat();
-      let body;
-      const def = irFunction.definition.definitionNode;
-      if (def instanceof AstFunctionDefinition || def instanceof AstOperatorDefinition) {
-        body = this.instructionEmitter.convertInstructions(irFunction.instructions());
-      } else if (def instanceof AstWatFunctionDefinition || def instanceof AstWatOperatorDefinition) {
-        let watBody = def.watBody;
-        for (const param of def.params) {
-          watBody = watBody.replaceAll(`{${param.variable.name}}`, `${this.nameMapper.hackyMapWasmFunctionVarName(param.variable.name, def.definitionScope)}`);
+      try {
+        const label = this.nameMapper.mapIrFunctionName(irFunction.identifier);
+        const params = [...irFunction.parameters.values()].map((p) => {
+          const mappedName = this.nameMapper.mapIrVarName(p.identifier);
+          const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
+          return mappedTypes.map((t) => new WasmFuncParam(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
+        }).flat();
+        const returnType = this.typeMapper.flattenType(irFunction.returnType.typeDefinition).map((t) => new WasmFuncReturn(void 0, t));
+        const locals = [...irFunction.locals.values()].map((p) => {
+          const mappedName = this.nameMapper.mapIrVarName(p.identifier);
+          const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
+          return mappedTypes.map((t) => new WasmFuncLocal(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
+        }).flat();
+        let body;
+        const def = irFunction.callableOverload.definitionNode;
+        if (def instanceof AstFunctionDefinition || def instanceof AstOperatorDefinition) {
+          body = this.instructionEmitter.convertInstructions(irFunction.instructions());
+        } else if (def instanceof AstWatFunctionDefinition || def instanceof AstWatOperatorDefinition) {
+          let watBody = def.watBody;
+          for (const param of def.params) {
+            watBody = watBody.replaceAll(`{${param.variable.name}}`, `${this.nameMapper.hackyMapWasmFunctionVarName(param.variable.name, def.definitionScope)}`);
+          }
+          body = [new WasmStringInstruction(def, watBody)];
+        } else {
+          throw new Error(`Unable to convert callable of type ${def.constructor.name}`);
         }
-        body = [new WasmStringInstruction(def, watBody)];
-      } else {
-        throw new Error(`Unable to convert callable of type ${def.constructor.name}`);
+        return new WasmFunction(void 0, label, params, returnType, locals, body);
+      } catch (ex) {
+        console.log(`Failed to convert function with key: ${IRFunctions.idenToKey(irFunction.identifier)}`);
+        throw ex;
       }
-      return new WasmFunction(void 0, label, params, returnType, locals, body);
     }
   };
   var WatNameMapper = class _WatNameMapper {
@@ -336696,12 +336821,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return `${scopeString}${typeNameString}`;
     }
     mapIrFunctionName(irFunc) {
-      const paramTypeStrings = irFunc.funcParamTypes.map((p) => this.mapIrTypeName(p.identifier)).join(".");
-      const sanitized_name = _WatNameMapper.sanitizeName(irFunc.name);
-      if (paramTypeStrings.length > 0) {
-        return "$" + sanitized_name + "." + paramTypeStrings;
+      if (irFunc.name == "main" && irFunc.typeArguments == void 0 && irFunc.funcParamTypes.length == 0) {
+        return "$main";
       }
-      return "$" + sanitized_name;
+      const scope = irFunc.scope.id;
+      const name = irFunc.name;
+      const typeArgs = irFunc.typeArguments?.map((t) => this.mapIrTypeName(t.identifier)).join(".");
+      const paramTypes = irFunc.funcParamTypes.map((p) => this.mapIrTypeName(p.identifier)).join(".");
+      const unsanitizedName = `${name}.s:${scope}.t:${typeArgs}.p:${paramTypes}`;
+      const sanitizedName = _WatNameMapper.sanitizeName(unsanitizedName);
+      return "$" + sanitizedName;
     }
     mapIrVarName(irVar) {
       return this.hackyMapWasmFunctionVarName(irVar.name, irVar.scope);
@@ -336741,8 +336870,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         for (const field of type.fields) {
           const newName = name.slice();
           newName.push(field[0]);
-          const type2 = this.mapNameAndType(newName, field[1]);
-          out.push(type2);
+          try {
+            const type2 = this.mapNameAndType(newName, field[1]);
+            out.push(type2);
+          } catch (ex) {
+            console.log(`Failed to map type: ${type.toString()}`);
+            throw ex;
+          }
         }
         return out.flat();
       } else if (type instanceof VariantTypeDefinition) {
@@ -336750,8 +336884,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         for (const field of type.fields) {
           const newName = name.slice();
           newName.push(field[0]);
-          const type2 = this.mapNameAndType(newName, field[1]);
-          temp.push(type2);
+          try {
+            const type2 = this.mapNameAndType(newName, field[1]);
+            temp.push(type2);
+          } catch (ex) {
+            console.log(`Failed to map type: ${type.toString()}`);
+            throw ex;
+          }
         }
         const out = temp.flat();
         const backingField = this.mapNameAndType([...name, VARIANT_BACKING_FIELD_NAME], type.backingTagType);
@@ -336840,10 +336979,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           throw new Error(`Failed to map type: ${irConst.type.name} to a scalar wasm type`);
         }
         let value;
-        if (irConst.type.name == "bool") {
+        if (irConst instanceof IRConstBool) {
           value = irConst.value ? 1 : 0;
-        } else {
+        } else if (irConst instanceof IRConstInt) {
           value = irConst.value;
+        } else if (irConst instanceof IRConstFloat) {
+          if (irConst.astNode?.isNan) {
+            value = "nan";
+          } else if (irConst.astNode?.isInfinite) {
+            value = irConst.value > 0 ? "inf" : "-inf";
+          } else {
+            value = irConst.value;
+          }
+        } else {
+          throw new Error("I haven't mapped this const type to wasm type conversion");
         }
         return [new WasmConst(irConst.astNode, wasmType[0], value, { comment: irConst.comment })];
       } else if (irConst instanceof IRCompositeLiteral) {
@@ -336942,41 +337091,29 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     static {
       __name(this, "IRModule");
     }
-    types = new IRTypes();
-    // used to store concrete/instantiated types
-    typeConstructors = new IRTypes();
-    // used to store the generic types/type constructors
-    typeMap = new MergedModuleMap([this.types, this.typeConstructors]);
-    // used to lookup both generic and non-generic types
-    functions = new IRFunctions();
-    // used to store concrete/instantiated types
-    genericFunctions = new IRFunctions();
-    // used to store any of the generic types
-    functionMap = new MergedModuleMap([this.functions, this.genericFunctions]);
+    types = new IRModuleTypes();
+    functions = new IRModuleFunctions();
     globals = /* @__PURE__ */ new Map();
     constructor() {
-    }
-    addType(type) {
-      if (type.typeDefinition.typeParameters == void 0 || type.typeDefinition.typeParameters.length == 0) {
-        this.types.putValue(type);
-      } else {
-        this.typeConstructors.putValue(type);
-      }
     }
     addAllCallables(f) {
       for (const overload of f.symbolDefinition.overloads) {
         const irFunction = IRFunction.convertFromSymbol(f, overload, void 0);
-        if (overload.specializations.length > 0) {
-          irFunction.isGenericTemplate = true;
-          this.genericFunctions.putValue(irFunction);
-        } else {
-          this.functions.putValue(irFunction);
-        }
+        this.functions.putValue(irFunction);
         for (const specialization of overload.specializations) {
           const irFunction2 = IRFunction.convertFromSymbol(f, overload, specialization);
           this.functions.putValue(irFunction2);
         }
       }
+    }
+    addInstantiatedFunction(baseFunction, typeArguments) {
+      const specializationInformation = {
+        typeArguments,
+        instantiatedType: baseFunction.callableOverload.typeDefinition
+      };
+      const irFunction = IRFunction.convertFromSymbol(baseFunction.symbol, baseFunction.callableOverload, specializationInformation);
+      this.functions.putValue(irFunction);
+      return irFunction;
     }
     addGlobalVariable(irVariable) {
       this.globals.set(irVariable.identifier.name, irVariable);
@@ -336986,29 +337123,73 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      * since wasm doesnt have the concept of generic functions
      */
     getConcreteFunctions() {
-      return [...this.functions.values()];
+      return [...this.functions.concreteFunctions.values()];
     }
     toJson(options2) {
-      const formatTypes = /* @__PURE__ */ __name((types2) => {
-        const out2 = [...types2.values()].filter((t) => !t.typeDefinition.symbolInformation?.isBuiltIn || options2?.includeBuiltTypes).map((t) => {
-          const typeJson = {
-            scope: t.identifier.scope.scopeName,
-            expression: t.typeDefinition.expression.toString(),
-            typeParameters: t.identifier.typeParameters?.map((t2) => t2.toString()),
-            toString: t.typeDefinition.toString()
-          };
-          return typeJson;
-        });
-        return out2;
-      }, "formatTypes");
-      const types = formatTypes(this.types);
-      const typeConstructors = formatTypes(this.typeConstructors);
+      const globalVariables = [...this.globals.values()].map((v) => {
+        const globalVarJson = {
+          name: v.identifier.name,
+          type: v.type.toString()
+        };
+        return globalVarJson;
+      });
+      const irTypeJson = this.types.toJson(options2);
+      const irFunctionJson = this.functions.toJson(options2);
+      const out = {
+        concreteTypes: irTypeJson.types,
+        typeConstructors: irTypeJson.typeConstructors,
+        genericFunctions: irFunctionJson.genericFunctions,
+        functions: irFunctionJson.functions,
+        globalVariables
+      };
+      return out;
+    }
+  };
+  var IRModuleFunctions = class {
+    static {
+      __name(this, "IRModuleFunctions");
+    }
+    concreteFunctions = new IRFunctions();
+    genericFunctions = new IRFunctions();
+    functionMap = new MergedModuleMap([this.concreteFunctions, this.genericFunctions]);
+    putValue(irFunction) {
+      if (irFunction.isGenericTemplate) {
+        this.genericFunctions.putValue(irFunction);
+      } else {
+        this.concreteFunctions.putValue(irFunction);
+      }
+    }
+    putValueIfMissing(value) {
+      return this.getOrPutIfMissing(value.identifier, value);
+    }
+    getOrPutIfMissing(key, value) {
+      if (!this.functionMap.has(key)) {
+        this.putValue(value);
+      } else {
+        const currentValue = this.functionMap.get(key);
+        if (currentValue != value) {
+          throw new Error(`Multiple values put in for a function that should already be in the map`);
+        }
+      }
+      return value;
+    }
+    has(irFunctionKey) {
+      return this.functionMap.has(irFunctionKey);
+    }
+    get(irFunctionKey) {
+      return this.functionMap.get(irFunctionKey);
+    }
+    size() {
+      return this.concreteFunctions.size() + this.genericFunctions.size();
+    }
+    toJson(options2) {
       const formatFunctions = /* @__PURE__ */ __name((functions2) => {
-        return [...functions2.values()].filter((f) => !(f.definition.definitionNode instanceof AstWatOperatorDefinition) || options2?.includeBuiltInFunctions).map((f) => {
+        return [...functions2.values()].filter((f) => !(f.callableOverload.definitionNode instanceof AstWatOperatorDefinition) || options2?.includeBuiltInFunctions).map((f) => {
           const functionJson = {
+            keyString: IRFunctions.idenToKey(f.identifier),
             name: f.identifier.name,
-            type: f.definition.typeDefinition?.toString(),
-            typeParameters: "< " + f.typeParameters?.map((t) => t.name).join(", ") + " >",
+            type: f.functionTypeDefinition.toString(),
+            typeParameters: "< " + f.typeParameters?.map((t) => t.toString()).join(", ") + " >",
             specialization: f.specialization?.map((t) => t.toString()),
             params: [...f.parameters.values()].map((v) => {
               return { name: v.identifier.name, type: v.type.toString() };
@@ -337022,27 +337203,102 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return functionJson;
         });
       }, "formatFunctions");
-      const functions = formatFunctions(this.functions);
+      const functions = formatFunctions(this.concreteFunctions);
       const genericFunctions = formatFunctions(this.genericFunctions);
-      const globalVariables = [...this.globals.values()].map((v) => {
-        const globalVarJson = {
-          name: v.identifier.name,
-          type: v.type.toString()
-        };
-        return globalVarJson;
-      });
-      const out = {
-        typeConstructors,
-        types,
-        genericFunctions,
+      return {
         functions,
-        globalVariables
+        genericFunctions
       };
+    }
+  };
+  var IRModuleTypes = class {
+    static {
+      __name(this, "IRModuleTypes");
+    }
+    concreteTypes = new IRTypes();
+    typeConstructors = new IRTypes();
+    typeMap = new MergedModuleMap([this.concreteTypes, this.typeConstructors]);
+    lookupIrType(key) {
+      if (!this.typeMap.has(key)) {
+        return void 0;
+      }
+      return this.typeMap.get(key);
+    }
+    lookupIrTypeOrThrow(key) {
+      const out = this.lookupIrType(key);
+      if (out == void 0) {
+        throw new Error(`Failed to lookup ir type with name: ${key.name} and key: ${IRTypes.idenToKey(key)}`);
+      }
       return out;
+    }
+    putValue(value) {
+      if (value.typeDefinition.isGeneric()) {
+        this.typeConstructors.putValue(value);
+      } else {
+        this.concreteTypes.putValue(value);
+      }
+    }
+    putValueIfMissing(value) {
+      return this.getOrPutIfMissing(value.identifier, value);
+    }
+    getOrPutIfMissing(key, value) {
+      if (!this.typeMap.has(key)) {
+        this.putValue(value);
+      } else {
+        const currentValue = this.typeMap.get(key);
+        if (!currentValue.typeDefinition.equals(value.typeDefinition)) {
+          throw new Error(`There are two specializations of type ${value.typeDefinition.toString()} which are not equal`);
+        }
+      }
+      return value;
+    }
+    size() {
+      return this.typeConstructors.size() + this.concreteTypes.size();
+    }
+    toJson(options2) {
+      const formatTypes = /* @__PURE__ */ __name((types2) => {
+        const out = [...types2.values()].filter((t) => !t.typeDefinition.symbolInformation?.isBuiltIn || options2?.includeBuiltTypes).map((t) => {
+          const typeJson = {
+            keyString: IRTypes.idenToKey(t.identifier),
+            scope: t.identifier.scope.scopeName,
+            expression: t.typeDefinition.expression.toString(),
+            typeParameters: t.identifier.typeParameters?.map((t2) => t2.typeDefinition.toString()),
+            toString: t.typeDefinition.toString()
+          };
+          return typeJson;
+        });
+        return out;
+      }, "formatTypes");
+      const types = formatTypes(this.concreteTypes);
+      const typeConstructors = formatTypes(this.typeConstructors);
+      return {
+        types,
+        typeConstructors
+      };
     }
   };
 
   // ../compiler/dist/src/compiler/IRConverter.js
+  var FunctionProcessStack = class {
+    static {
+      __name(this, "FunctionProcessStack");
+    }
+    backingList = [];
+    dedupeSet = /* @__PURE__ */ new Set();
+    push(context) {
+      const key = IRFunctions.idenToKey(context.func.definition.identifier);
+      if (!this.dedupeSet.has(key)) {
+        this.dedupeSet.add(key);
+        this.backingList.push(context);
+      }
+    }
+    pop() {
+      return this.backingList.pop();
+    }
+    isEmpty() {
+      return this.backingList.length == 0;
+    }
+  };
   var IRModuleConverter = class {
     static {
       __name(this, "IRModuleConverter");
@@ -337056,6 +337312,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         /* SymbolType.Type */
       );
       this.bindTypeDefinitions(module2, typeSymbols);
+      const globalVariables = globalScope.findAllSymbolsByType(
+        "Variable"
+        /* SymbolType.Variable */
+      ).map((v) => v).filter(
+        (v) => v.symbolDefinition.scopeType == "Global"
+        /* ScopeType.Global */
+      );
+      this.bindGlobalVariable(module2, globalVariables);
       const callables = [
         ...globalScope.findAllSymbolsByType(
           "Function"
@@ -337067,45 +337331,44 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         )
       ].map((s) => s);
       this.bindCallableDefinitions(module2, callables);
-      const globalVariables = globalScope.findAllSymbolsByType(
-        "Variable"
-        /* SymbolType.Variable */
-      ).map((v) => v).filter(
-        (v) => v.symbolDefinition.scopeType == "Global"
-        /* ScopeType.Global */
-      );
-      this.bindGlobalVariable(module2, globalVariables);
-      [...module2.functionMap.values()].forEach((functionDefinition) => {
-        const functionDefTypeArgs = functionDefinition.definition.generics?.types.map((t) => t.identifier);
-        const specializationArgs = functionDefinition.specialization;
-        if (!functionDefinition.isGenericTemplate && functionDefTypeArgs?.length != specializationArgs?.length) {
-          throw new Error(`I don't think I set up the specialization up properly for ${functionDefinition.definition.definitionNode.symbolName}
-        as the number of functionDefTypeArgs != specializationArgs ${functionDefTypeArgs?.length}, ${specializationArgs?.length}`);
+      const functionsToInstantiate = new FunctionProcessStack();
+      [...module2.functions.concreteFunctions.values(), ...module2.functions.genericFunctions.values()].forEach((functionDefinition) => {
+        const functionTypeParameters = functionDefinition.typeParameters;
+        const typeArguments = functionDefinition.specialization;
+        if (!functionDefinition.isGenericTemplate && functionTypeParameters?.length != typeArguments?.length) {
+          throw new Error(`I don't think I set up the specialization up properly for ${functionDefinition.callableOverload.definitionNode.symbolName}
+        as the number of functionDefTypeArgs != specializationArgs ${functionTypeParameters?.length}, ${typeArguments?.length}`);
         }
-        const mapArgs = [];
-        if (functionDefTypeArgs != void 0 && specializationArgs != void 0) {
-          for (let i = 0; i < functionDefTypeArgs.length; i++) {
-            mapArgs.push([functionDefTypeArgs[i].name, specializationArgs[i]]);
+        let mapArgs = void 0;
+        if (functionTypeParameters != void 0 && typeArguments != void 0) {
+          mapArgs = [];
+          for (let i = 0; i < functionTypeParameters.length; i++) {
+            mapArgs.push({ genericParam: functionTypeParameters[i], typeArg: typeArguments[i] });
           }
         }
         const context2 = {
           module: module2,
+          lateInstantiatedFunctionsToProcess: functionsToInstantiate,
           func: {
             definition: functionDefinition,
-            specialization: new Map(mapArgs)
-            // FIXME: this needs to be populated. I guess I had that assert above so that
-            // it was a reminder to populate this map
+            genericsToTypeArgs: mapArgs
           },
-          scope: functionDefinition.definition.definitionNode.bodyScope
+          scope: functionDefinition.callableOverload.definitionNode.bodyScope
         };
+        functionsToInstantiate.push(context2);
+      });
+      while (!functionsToInstantiate.isEmpty()) {
+        const context2 = functionsToInstantiate.pop();
+        const functionDefinition = context2.func.definition;
         try {
-          const instructions = instructionConverter.traverse(functionDefinition.definition.definitionNode, context2);
+          const instructions = instructionConverter.traverse(functionDefinition.callableOverload.definitionNode, context2);
           functionDefinition.setInstructions(instructions);
         } catch (ex) {
-          functionDefinition.setInstructions([]);
+          console.log(`Failed when converting function: ${functionDefinition.symbol.symbolName} with signature: ${functionDefinition.callableOverload.typeDefinition?.toString()}`);
+          console.log(module2.toJson({}));
           throw ex;
         }
-      });
+      }
       return module2;
     }
     bindTypeDefinitions(module2, typeSymbols) {
@@ -337120,17 +337383,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           typeDefinition = type.symbolDefinition.typeDefinition;
         }
         const irType = IRType.convertFromSymbol(typeDefinition);
-        module2.addType(irType);
+        module2.types.getOrPutIfMissing(irType.identifier, irType);
         if (typeDefinition.typeInstantiations != void 0) {
           for (const specializedTypeDef of typeDefinition.typeInstantiations) {
             const specializedIrType = IRType.convertFromSymbol(specializedTypeDef);
-            if (module2.typeMap.has(specializedIrType.identifier)) {
-              if (!specializedIrType.typeDefinition.equals(module2.typeMap.get(specializedIrType.identifier).typeDefinition)) {
-                throw new Error(`There are two specializations of type ${specializedIrType.typeDefinition.toString()} which are not equal`);
-              }
-            } else {
-              module2.addType(specializedIrType);
-            }
+            module2.types.getOrPutIfMissing(specializedIrType.identifier, specializedIrType);
           }
         }
       }
@@ -337179,7 +337436,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       ].includes(lookup.info.symbolDefinition.symbolType)) {
         throw new Error(`Failed to lookup callable with name: ${symbolName}. Found ${lookup}`);
       }
-      const genericsKeys = typeArguments?.map((p) => {
+      const resolvedTypeArguments = typeArguments?.map((p) => {
         return this.lookupIrType(p, context);
       });
       const functionParamKeys = functionType.paramTypes.map((p) => {
@@ -337188,21 +337445,56 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const key = {
         scope: lookup.scope,
         name: symbolName,
-        genericArguments: genericsKeys,
+        typeArguments: resolvedTypeArguments,
         funcParamTypes: functionParamKeys
       };
-      try {
-        return context.module.functionMap.get(key);
-      } catch (ex) {
-        const keys = [...context.module.functionMap.values()].filter((t) => t.parentSymbol.isBuiltIn != true).map((t) => IRFunctions.idenToKey(t.identifier));
-        console.log("Existing keys: ", keys);
-        console.log("Lookup key:", [IRFunctions.idenToKey(key)]);
-        throw ex;
+      if (context.module.functions.has(key)) {
+        return context.module.functions.get(key);
+      } else {
+        const unresolvedTypeArguments = typeArguments?.map((t) => IRType.convertFromSymbol(t));
+        const nonInstantiatedKey = {
+          scope: lookup.scope,
+          name: symbolName,
+          typeArguments: unresolvedTypeArguments,
+          funcParamTypes: functionParamKeys
+        };
+        const genericFunction = context.module.functions.get(nonInstantiatedKey);
+        if (resolvedTypeArguments == void 0) {
+          throw new Error("FIXME!");
+        }
+        const newIrFunctionToProcess = context.module.addInstantiatedFunction(genericFunction, resolvedTypeArguments?.map((t) => t.typeDefinition));
+        const typeParamsToArgs = [];
+        if (unresolvedTypeArguments?.length != resolvedTypeArguments.length) {
+          throw new Error("FIXME!");
+        }
+        for (let i = 0; i < unresolvedTypeArguments.length; i++) {
+          const genericParam = unresolvedTypeArguments[i].typeDefinition;
+          if (!(genericParam instanceof GenericParameterTypeDefinition)) {
+            throw new Error("FIXME");
+          }
+          typeParamsToArgs.push({ genericParam, typeArg: resolvedTypeArguments[i].typeDefinition });
+        }
+        const processContext = {
+          module: context.module,
+          lateInstantiatedFunctionsToProcess: context.lateInstantiatedFunctionsToProcess,
+          func: {
+            definition: newIrFunctionToProcess,
+            genericsToTypeArgs: typeParamsToArgs
+          },
+          scope: newIrFunctionToProcess.callableOverload.definitionNode.bodyScope
+        };
+        context.lateInstantiatedFunctionsToProcess.push(processContext);
+        return newIrFunctionToProcess;
       }
     }
     getIrTypeByTypeDef(type, context) {
-      const identifier3 = IRType.convertFromSymbol(type).identifier;
-      return context.module.typeMap.get(identifier3);
+      const irType = IRType.convertFromSymbol(type);
+      try {
+        return context.module.types.putValueIfMissing(irType);
+      } catch (exception) {
+        console.log(context.module.toJson({}));
+        throw exception;
+      }
     }
     lookupIrType(type, context) {
       let resolvedType = type?.resolveType();
@@ -337210,18 +337502,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Type not set for augmented AST`);
       }
       if (resolvedType.name == void 0) {
-        const key = IRType.createKey(resolvedType);
-        if (!context.module.typeMap.has(key)) {
-          const irType = IRType.convertFromSymbol(resolvedType);
-          context.module.addType(irType);
-          return irType;
-        }
-        return context.module.typeMap.get(key);
+        const irType2 = IRType.convertFromSymbol(resolvedType);
+        return context.module.types.putValueIfMissing(irType2);
       }
-      if (resolvedType instanceof GenericParameterTypeDefinition) {
-        const specializedGenericType = context.func.specialization.get(resolvedType.name);
-        if (specializedGenericType == void 0) {
-          throw new Error(`Failed to resolve generic param with name: ${resolvedType.name} for type: ${type?.toString()}`);
+      if (context.func.definition.specialization != void 0 && resolvedType instanceof GenericParameterTypeDefinition && context.func.genericsToTypeArgs) {
+        let specializedGenericType = resolvedType;
+        for (const arg of context.func.genericsToTypeArgs) {
+          if (resolvedType.equals(arg.genericParam)) {
+            specializedGenericType = arg.typeArg;
+            break;
+          }
         }
         resolvedType = specializedGenericType;
         const typeParams = context.func.definition.typeParameters ?? [];
@@ -337232,8 +337522,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
         }
       }
-      const irTypeIdentifier = IRType.createKey(resolvedType);
-      return context.module.typeMap.get(irTypeIdentifier);
+      if (context.func.genericsToTypeArgs != void 0) {
+        resolvedType = resolvedType.instantiateViaMap(context.func.genericsToTypeArgs);
+      }
+      const irType = IRType.convertFromSymbol(resolvedType);
+      return context.module.types.putValueIfMissing(irType);
     }
     initContext() {
       throw new Error("Context must be explicitly created for IR Instruction Converter");
@@ -337245,6 +337538,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.isInt) {
         out = new IRConstInt(node, irType, node.value);
       } else {
+        if (!(node instanceof AstFloatLiteral)) {
+          throw new Error("Expecting a float literal when converting an ast float literal to a ir float literal");
+        }
         out = new IRConstFloat(node, irType, node.value);
       }
       return [out];
@@ -337354,7 +337650,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseFieldAccessExpression(node, context) {
       const irType = this.lookupIrType(node.expression.augmentedProperties.typeDefinition, context);
-      const temp = context.func.definition.createTemporaryVariable(context.scope, `.temp_store.field.get_${irType.typeDefinition.expression.toString()}`, irType.typeDefinition);
+      const temp = context.func.definition.createTemporaryVariable(context.module, context.scope, `.temp_store.field.get_${irType.typeDefinition.expression.toString()}`, irType.typeDefinition, context.func.genericsToTypeArgs);
       const expression = this.traverse(node.expression, context);
       const exp = new IRExpressionGroup(node.expression, expression);
       const inst = new IRFieldGetExpression(node, irType, exp, node.field.name, temp);
@@ -337487,9 +337783,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Switching on a non-variant type. Type was: ${expType.typeDefinition.toString()}`);
       }
       const variantType = expType.typeDefinition;
-      const variantExpressionTempStore = context.func.definition.createTemporaryVariable(node.augmentedProperties.scope, "variant_expression_temp", expType.typeDefinition);
+      const variantExpressionTempStore = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, "variant_expression_temp", expType.typeDefinition, context.func.genericsToTypeArgs);
       const backingTagValue = new IRVariantTagGetExpression(node.expression, expType, exp, variantExpressionTempStore);
-      const backingTagTempVariable = context.func.definition.createTemporaryVariable(node.augmentedProperties.scope, ".backing_field_temp_store", variantType.backingTagType);
+      const backingTagTempVariable = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, ".backing_field_temp_store", variantType.backingTagType, context.func.genericsToTypeArgs);
       switchInstructions.push(new IRVariableSet(node.expression, backingTagTempVariable, backingTagValue));
       for (const c of node.caseStatements) {
         const newContext = {
