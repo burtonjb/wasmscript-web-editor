@@ -327238,724 +327238,10 @@ ${tagToString(tag)}`;
     }
   };
 
-  // ../compiler/dist/src/compiler/ast/AstExpressions.js
-  var AstAbstractExpressionNode = class extends AstNode {
-    static {
-      __name(this, "AstAbstractExpressionNode");
-    }
-  };
-  var AstAbstractCallExpression = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstAbstractCallExpression");
-    }
-    _resolvedCallableInfo;
-    get resolvedCallableInfo() {
-      return this._resolvedCallableInfo;
-    }
-    set resolvedCallableInfo(value) {
-      this._resolvedCallableInfo = value;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      const resolvedCallableInfo = this.resolvedCallableInfo;
-      if (resolvedCallableInfo == void 0) {
-        out["resolvedCallInfo"] = void 0;
-      } else {
-        out["resolveCallInfo"] = {
-          typeArguments: resolvedCallableInfo.typeArguments?.map((t) => t.toString()),
-          symbol: resolvedCallableInfo.symbol.symbolName,
-          overload: resolvedCallableInfo.overload.typeExpression.toString(),
-          functionDefinitionNode_Loc: resolvedCallableInfo.functionDefinitionNode.firstToken.createTokenSourceString(),
-          functionType: resolvedCallableInfo.functionType.toString()
-        };
-      }
-      return out;
-    }
-  };
-  var AstOperationNode = class extends AstAbstractCallExpression {
-    static {
-      __name(this, "AstOperationNode");
-    }
-  };
-  var AstUnaryOperation = class extends AstOperationNode {
-    static {
-      __name(this, "AstUnaryOperation");
-    }
-    operator;
-    operand;
-    constructor(node, operator, operand) {
-      super(node);
-      this.operator = operator;
-      this.operand = operand;
-    }
-    get symbolName() {
-      return `Unary(${this.operator})`;
-    }
-    get symbolKind() {
-      return "Operator";
-    }
-    toJson(options2) {
-      const operatorStr = `${this.operator}`;
-      const out = super.toJson(options2);
-      out["operator"] = operatorStr;
-      out["operand"] = this.operand.toJson(options2);
-      return out;
-    }
-  };
-  var AstBinaryOperation = class extends AstOperationNode {
-    static {
-      __name(this, "AstBinaryOperation");
-    }
-    lhs;
-    operator;
-    rhs;
-    constructor(node, lhs, operator, rhs) {
-      super(node);
-      this.lhs = lhs;
-      this.operator = operator;
-      this.rhs = rhs;
-    }
-    get symbolName() {
-      return `Binary(${this.operator})`;
-    }
-    get symbolKind() {
-      return "Operator";
-    }
-    toJson(options2) {
-      const operatorStr = `${this.operator}`;
-      const out = super.toJson(options2);
-      out["lhs"] = this.lhs.toJson(options2);
-      out["operator"] = operatorStr;
-      out["rhs"] = this.rhs.toJson(options2);
-      return out;
-    }
-  };
-  var AstBuiltInFunctionCallExpression = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstBuiltInFunctionCallExpression");
-    }
-    builtInFunction;
-    identifier;
-    args;
-    constructor(node, builtInFunction, identifier3, args) {
-      super(node);
-      this.builtInFunction = builtInFunction;
-      this.identifier = identifier3;
-      this.args = args;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["builtin"] = this.identifier.toJson(options2);
-      out["args"] = this.args.map((a) => a.toJson(options2));
-      return out;
-    }
-  };
-  var AstCallExpression = class extends AstAbstractCallExpression {
-    static {
-      __name(this, "AstCallExpression");
-    }
-    internal;
-    typeArguments;
-    args;
-    constructor(node, internal, typeArguments, args) {
-      super(node);
-      this.internal = internal;
-      this.typeArguments = typeArguments;
-      this.args = args;
-    }
-    get symbolName() {
-      return this.internal.symbolName;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["call"] = this.internal.toJson(options2);
-      out["typeArguments"] = this.typeArguments?.map((t) => t.toJson(options2));
-      out["callArguments"] = this.args.toJson(options2);
-      return out;
-    }
-  };
-  var AstTypeCastingExpression = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstTypeCastingExpression");
-    }
-    expression;
-    type;
-    constructor(node, expression, type) {
-      super(node);
-      this.expression = expression;
-      this.type = type;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["expression"] = this.expression.toJson(options2);
-      out["as"] = this.type.toJson(options2);
-      return out;
-    }
-  };
-  var AstFieldAccessExpression = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstFieldAccessExpression");
-    }
-    expression;
-    field;
-    constructor(node, expression, field) {
-      super(node);
-      this.expression = expression;
-      this.field = field;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["expression"] = this.expression.toJson(options2);
-      out["field"] = this.field.toJson(options2);
-      return out;
-    }
-  };
-  var AstAtomNode = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstAtomNode");
-    }
-    constructor(node) {
-      super(node);
-    }
-  };
-
-  // ../compiler/dist/src/compiler/ast/AstTypes.js
-  var AstTypeExpression = class extends AstNode {
-    static {
-      __name(this, "AstTypeExpression");
-    }
-    constructor(node) {
-      super(node);
-    }
-    get identifier() {
-      return void 0;
-    }
-  };
-  var AstUnitTypeExpression = class _AstUnitTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "AstUnitTypeExpression");
-    }
-    constructor(node) {
-      super(node);
-    }
-    toString() {
-      return "()";
-    }
-    equals(other) {
-      return other instanceof _AstUnitTypeExpression;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = "unit";
-      return out;
-    }
-  };
-  var BaseTypeExpression = class _BaseTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "BaseTypeExpression");
-    }
-    _identifier;
-    constructor(node, _identifier) {
-      super(node);
-      this._identifier = _identifier;
-    }
-    get identifier() {
-      return this._identifier;
-    }
-    toString() {
-      return `${this.identifier.name}`;
-    }
-    equals(other) {
-      if (!(other instanceof _BaseTypeExpression)) {
-        return false;
-      }
-      return other.identifier.name == this.identifier.name;
-    }
-    get symbolName() {
-      return this.identifier.name;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = this.identifier.toJson(options2);
-      return out;
-    }
-  };
-  var PointerTypeExpression = class _PointerTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "PointerTypeExpression");
-    }
-    internal;
-    constructor(node, internal) {
-      super(node);
-      this.internal = internal;
-    }
-    toString() {
-      return `*${this.internal.toString()}`;
-    }
-    equals(other) {
-      if (!(other instanceof _PointerTypeExpression)) {
-        return false;
-      }
-      if (this.internal instanceof BaseTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
-        return true;
-      }
-      return this.internal.equals(other.internal);
-    }
-    get symbolName() {
-      return void 0;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    dereference() {
-      return this.internal;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["referenced_type"] = this.internal.toJson(options2);
-      return out;
-    }
-  };
-  var ArrayTypeExpression = class _ArrayTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "ArrayTypeExpression");
-    }
-    internalType;
-    length;
-    constructor(node, internalType, length) {
-      super(node);
-      this.internalType = internalType;
-      this.length = length;
-    }
-    toString() {
-      return `[${this.internalType.toString()}, ${this.length == void 0 ? "*" : this.length}]`;
-    }
-    equals(other) {
-      if (!(other instanceof _ArrayTypeExpression)) {
-        return false;
-      }
-      return this.length == other.length && this.internalType.equals(other.internalType);
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = this.internalType.toJson(options2);
-      out["length"] = this.length;
-      return out;
-    }
-  };
-  var TupleTypeExpression = class _TupleTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "TupleTypeExpression");
-    }
-    types;
-    constructor(node, types) {
-      super(node);
-      this.types = types;
-    }
-    toString() {
-      return `( ${this.types.map((t) => t.toString()).join(", ")})`;
-    }
-    equals(other) {
-      if (!(other instanceof _TupleTypeExpression)) {
-        return false;
-      }
-      if (this.types.length != other.types.length) {
-        return false;
-      }
-      for (let i = 0; i < this.types.length; i++) {
-        if (this.types[i] != other.types[i]) {
-          return false;
-        }
-      }
-      return true;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["types"] = this.types.map((t) => t.toJson(options2));
-      return out;
-    }
-  };
-  var TypeParamsTypeExpression = class _TypeParamsTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "TypeParamsTypeExpression");
-    }
-    types;
-    constructor(node, types) {
-      super(node);
-      this.types = types;
-    }
-    toString() {
-      const typeToString = /* @__PURE__ */ __name((t) => {
-        return `${t.identifier.name}${t.bounds == void 0 ? "" : ` extends ${t.bounds.name}`}`;
-      }, "typeToString");
-      return `< ${this.types.map((t) => typeToString(t)).join(" ")} >`;
-    }
-    equals(other) {
-      if (!(other instanceof _TypeParamsTypeExpression)) {
-        return false;
-      }
-      if (!(this.types.length != other.types.length)) {
-        return false;
-      }
-      for (let i = 0; i < this.types.length; i++) {
-        const a = this.types[i];
-        const b = other.types[i];
-        if (a.identifier != b.identifier || a.bounds != b.bounds) {
-          return false;
-        }
-      }
-      return true;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_params"] = this.types.map((t) => [t.identifier.toJson(options2), t.bounds?.toJson(options2)]);
-      return out;
-    }
-  };
-  var SpecializedTypeExpression = class _SpecializedTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "SpecializedTypeExpression");
-    }
-    typeConstructor;
-    typeArgs;
-    constructor(typeConstructor, typeArgs) {
-      super(typeConstructor.parseTreeNode);
-      this.typeConstructor = typeConstructor;
-      this.typeArgs = typeArgs;
-    }
-    get identifier() {
-      return this.typeConstructor.identifier;
-    }
-    toString() {
-      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
-    }
-    equals(other) {
-      if (this === other) {
-        return true;
-      }
-      if (!(other instanceof _SpecializedTypeExpression)) {
-        return false;
-      }
-      if (!other.typeConstructor.equals(this.typeConstructor)) {
-        return false;
-      }
-      if (this.typeArgs.length != other.typeArgs.length) {
-        return false;
-      }
-      for (let i = 0; i < this.typeArgs.length; i++) {
-        const a = this.typeArgs[i];
-        const b = other.typeArgs[i];
-        if (!a.equals(b)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_constructor"] = this.typeConstructor.toJson(options2);
-      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
-      return out;
-    }
-  };
-  var FunctionTypeExpression = class _FunctionTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "FunctionTypeExpression");
-    }
-    typeParameters;
-    parameterTypes;
-    returnType;
-    constructor(node, typeParameters, parameterTypes, returnType) {
-      super(node);
-      this.typeParameters = typeParameters;
-      this.parameterTypes = parameterTypes;
-      this.returnType = returnType;
-    }
-    toString() {
-      const typeParamStringTemp = this.typeParameters?.map((t) => t.toString());
-      const typeParamString = typeParamStringTemp ? `<${typeParamStringTemp}>` : "";
-      const paramTypeStr = `${this.parameterTypes.map((p) => p.toString())}`;
-      const returnTypeStr = `${this.returnType == void 0 ? new AstUnitTypeExpression(this.parseTreeNode).toString() : this.returnType.toString()}`;
-      return `${typeParamString} (${paramTypeStr}) => ${returnTypeStr}`;
-    }
-    equals(other) {
-      if (!(other instanceof _FunctionTypeExpression)) {
-        return false;
-      }
-      if (this.parameterTypes.length != other.parameterTypes.length) {
-        return false;
-      }
-      if (this.parameterTypes.length != other.parameterTypes.length) {
-        return false;
-      }
-      for (let i = 0; i < this.parameterTypes.length; i++) {
-        if (!this.parameterTypes[i].equals(other.parameterTypes[i])) {
-          return false;
-        }
-      }
-      if (this.returnType != void 0 && other.returnType == void 0 || this.returnType == void 0 && other.returnType != void 0) {
-        return false;
-      }
-      return this.returnType == void 0 && other.returnType == void 0 || this.returnType.equals(other.returnType);
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_parameters"] = this.typeParameters?.map((t) => t.toJson(options2));
-      out["function_param_types"] = this.parameterTypes.map((p) => p.toJson(options2));
-      out["return_type"] = this.returnType?.toJson(options2);
-      return out;
-    }
-  };
-
-  // ../compiler/dist/src/compiler/ast/AstLiterals.js
-  var AstAbstractLiteralAtom = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstAbstractLiteralAtom");
-    }
-  };
-  var AstBooleanLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstBooleanLiteral");
-    }
-    // encodes the constants true, false, null
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get value() {
-      if (this.firstToken.lexeme == "true") {
-        return true;
-      } else if (this.firstToken.lexeme == "false") {
-        return false;
-      }
-      throw new Error("Not able to convert lexeme to value");
-    }
-    toJson(options2) {
-      const json = super.toJson(options2);
-      json["bool_literal"] = this.value;
-      return json;
-    }
-  };
-  var AstNullPtrLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstNullPtrLiteral");
-    }
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get value() {
-      return null;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["null_literal"] = "null";
-      return out;
-    }
-  };
-  var AstNumberLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstNumberLiteral");
-    }
-    // encodes a number
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get isInt() {
-      return this.firstToken.lexeme.indexOf(".") == -1;
-    }
-    get isFloat() {
-      return this.firstToken.lexeme.indexOf(".") != -1;
-    }
-    get isPositive() {
-      return this.value > 0;
-    }
-    get isNegative() {
-      return this.value < 0;
-    }
-    get value() {
-      return this.firstToken.literal;
-    }
-  };
-  var AstIntLiteral = class extends AstNumberLiteral {
-    static {
-      __name(this, "AstIntLiteral");
-    }
-    get isInt() {
-      return true;
-    }
-    get isFloat() {
-      return false;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["int_literal"] = this.value;
-      return out;
-    }
-  };
-  var AstFloatLiteral = class extends AstNumberLiteral {
-    static {
-      __name(this, "AstFloatLiteral");
-    }
-    get isInt() {
-      return false;
-    }
-    get isFloat() {
-      return true;
-    }
-    get isNan() {
-      return Number.isNaN(this.value);
-    }
-    get isInfinite() {
-      return !Number.isFinite(this.value) && !this.isNan;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["float_literal"] = this.value;
-      return out;
-    }
-  };
-  var AstTupleLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstTupleLiteral");
-    }
-    values;
-    constructor(node, values) {
-      super(node);
-      this.values = values;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["tuple_literal"] = this.values.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-  var AstArrayLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstArrayLiteral");
-    }
-    values;
-    constructor(node, values) {
-      super(node);
-      this.values = values;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["array_literal"] = this.values.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-  var AstCompositeLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstCompositeLiteral");
-    }
-    typeExpression;
-    assignments;
-    fieldMap = /* @__PURE__ */ new Map();
-    constructor(node, typeExpression, assignments) {
-      super(node);
-      this.typeExpression = typeExpression;
-      this.assignments = assignments;
-      for (const assignment of assignments) {
-        this.fieldMap.set(assignment.lhs.name, assignment.rhs);
-      }
-    }
-    get identifier() {
-      return this.typeExpression.identifier;
-    }
-    get typeArguments() {
-      if (this.typeExpression instanceof SpecializedTypeExpression) {
-        return this.typeExpression.typeArgs;
-      }
-      return void 0;
-    }
-    get compositeSymbolName() {
-      return this.identifier?.name;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["composite"] = this.typeExpression.toJson(options2);
-      out["assignments"] = this.assignments.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-
   // ../compiler/dist/src/compiler/ast/AstStatements.js
   var AstStatementNode = class extends AstNode {
     static {
       __name(this, "AstStatementNode");
-    }
-  };
-  var AstDefinitionNode = class extends AstStatementNode {
-    static {
-      __name(this, "AstDefinitionNode");
-    }
-    get symbolName() {
-      return this.identifier.name;
-    }
-  };
-  var AstVariableDeclarationStatement = class extends AstDefinitionNode {
-    static {
-      __name(this, "AstVariableDeclarationStatement");
-    }
-    variable;
-    expression;
-    constructor(node, variable, expression) {
-      super(node);
-      this.variable = variable;
-      this.expression = expression;
-    }
-    get identifier() {
-      return this.variable.variable;
-    }
-    get symbolName() {
-      return this.variable.variable.name;
-    }
-    get symbolKind() {
-      return "Variable";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["declaration"] = this.variable.toJson(options2);
-      out["expression"] = this.expression?.toJson(options2);
-      return out;
-    }
-  };
-  var AstTypeDefinitionStatement = class extends AstDefinitionNode {
-    static {
-      __name(this, "AstTypeDefinitionStatement");
-    }
-    variable;
-    typeExpression;
-    constructor(node, variable, typeExpression) {
-      super(node);
-      this.variable = variable;
-      this.typeExpression = typeExpression;
-    }
-    get identifier() {
-      return this.variable;
-    }
-    get symbolName() {
-      return this.variable.name;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_variable"] = this.variable.toJson(options2);
-      out["type_expression"] = this.typeExpression.toJson(options2);
-      return out;
     }
   };
   var AstControlStatementWithParent = class extends AstStatementNode {
@@ -328131,6 +327417,466 @@ ${tagToString(tag)}`;
       return out;
     }
   };
+  var AstVariableAssignmentStatement = class extends AstStatementNode {
+    static {
+      __name(this, "AstVariableAssignmentStatement");
+    }
+    lhs;
+    assignmentOperator;
+    rhs;
+    constructor(node, lhs, assignmentOperator, rhs) {
+      super(node);
+      this.lhs = lhs;
+      this.assignmentOperator = assignmentOperator;
+      this.rhs = rhs;
+    }
+    get symbolName() {
+      if (this.lhs instanceof AstIdentifierNode) {
+        return this.lhs.name;
+      }
+      return this.lhs.identifier.name;
+    }
+    get symbolKind() {
+      return "Variable";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["lhs"] = this.lhs.toJson(options2);
+      out["assignment_operator"] = this.assignmentOperator;
+      out["rhs"] = this.rhs.toJson(options2);
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstTypes.js
+  var AstTypeExpression = class extends AstNode {
+    static {
+      __name(this, "AstTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    get identifier() {
+      return void 0;
+    }
+  };
+  var AstUnitTypeExpression = class _AstUnitTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "AstUnitTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return "()";
+    }
+    equals(other) {
+      return other instanceof _AstUnitTypeExpression;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = "unit";
+      return out;
+    }
+  };
+  var AstNeverTypeExpression = class _AstNeverTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "AstNeverTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return "never";
+    }
+    equals(other) {
+      return other instanceof _AstNeverTypeExpression;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = "never";
+      return out;
+    }
+  };
+  var BaseTypeExpression = class _BaseTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "BaseTypeExpression");
+    }
+    _identifier;
+    constructor(node, _identifier) {
+      super(node);
+      this._identifier = _identifier;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    toString() {
+      return `${this.identifier.name}`;
+    }
+    equals(other) {
+      if (!(other instanceof _BaseTypeExpression)) {
+        return false;
+      }
+      return other.identifier.name == this.identifier.name;
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = this.identifier.toJson(options2);
+      return out;
+    }
+  };
+  var PointerTypeExpression = class _PointerTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "PointerTypeExpression");
+    }
+    internal;
+    constructor(node, internal) {
+      super(node);
+      this.internal = internal;
+    }
+    toString() {
+      return `*${this.internal.toString()}`;
+    }
+    equals(other) {
+      if (!(other instanceof _PointerTypeExpression)) {
+        return false;
+      }
+      if (this.internal instanceof BaseTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
+        return true;
+      }
+      return this.internal.equals(other.internal);
+    }
+    get symbolName() {
+      return void 0;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    dereference() {
+      return this.internal;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["referenced_type"] = this.internal.toJson(options2);
+      return out;
+    }
+  };
+  var ArrayTypeExpression = class _ArrayTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "ArrayTypeExpression");
+    }
+    internalType;
+    length;
+    constructor(node, internalType, length) {
+      super(node);
+      this.internalType = internalType;
+      this.length = length;
+    }
+    toString() {
+      return `[${this.internalType.toString()}, ${this.length == void 0 ? "*" : this.length}]`;
+    }
+    equals(other) {
+      if (!(other instanceof _ArrayTypeExpression)) {
+        return false;
+      }
+      return this.length == other.length && this.internalType.equals(other.internalType);
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = this.internalType.toJson(options2);
+      out["length"] = this.length;
+      return out;
+    }
+  };
+  var TupleTypeExpression = class _TupleTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "TupleTypeExpression");
+    }
+    types;
+    constructor(node, types) {
+      super(node);
+      this.types = types;
+    }
+    toString() {
+      return `( ${this.types.map((t) => t.toString()).join(", ")})`;
+    }
+    equals(other) {
+      if (!(other instanceof _TupleTypeExpression)) {
+        return false;
+      }
+      if (this.types.length != other.types.length) {
+        return false;
+      }
+      for (let i = 0; i < this.types.length; i++) {
+        if (this.types[i] != other.types[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["types"] = this.types.map((t) => t.toJson(options2));
+      return out;
+    }
+  };
+  var TypeInstantiatingTypeExpression = class _TypeInstantiatingTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "TypeInstantiatingTypeExpression");
+    }
+    typeConstructor;
+    typeArgs;
+    constructor(typeConstructor, typeArgs) {
+      super(typeConstructor.parseTreeNode);
+      this.typeConstructor = typeConstructor;
+      this.typeArgs = typeArgs;
+    }
+    get identifier() {
+      return this.typeConstructor.identifier;
+    }
+    toString() {
+      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      }
+      if (!(other instanceof _TypeInstantiatingTypeExpression)) {
+        return false;
+      }
+      if (!other.typeConstructor.equals(this.typeConstructor)) {
+        return false;
+      }
+      if (this.typeArgs.length != other.typeArgs.length) {
+        return false;
+      }
+      for (let i = 0; i < this.typeArgs.length; i++) {
+        const a = this.typeArgs[i];
+        const b = other.typeArgs[i];
+        if (!a.equals(b)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type_constructor"] = this.typeConstructor.toJson(options2);
+      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
+      return out;
+    }
+  };
+  var FunctionTypeExpression = class _FunctionTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "FunctionTypeExpression");
+    }
+    parameterTypes;
+    returnType;
+    constructor(node, parameterTypes, returnType) {
+      super(node);
+      this.parameterTypes = parameterTypes;
+      this.returnType = returnType;
+    }
+    toString() {
+      const paramTypeStr = `${this.parameterTypes.map((p) => p.toString())}`;
+      const returnTypeStr = `${this.returnType == void 0 ? new AstUnitTypeExpression(this.parseTreeNode).toString() : this.returnType.toString()}`;
+      return `(${paramTypeStr}) => ${returnTypeStr}`;
+    }
+    equals(other) {
+      if (!(other instanceof _FunctionTypeExpression)) {
+        return false;
+      }
+      if (this.parameterTypes.length != other.parameterTypes.length) {
+        return false;
+      }
+      if (this.parameterTypes.length != other.parameterTypes.length) {
+        return false;
+      }
+      for (let i = 0; i < this.parameterTypes.length; i++) {
+        if (!this.parameterTypes[i].equals(other.parameterTypes[i])) {
+          return false;
+        }
+      }
+      if (this.returnType != void 0 && other.returnType == void 0 || this.returnType == void 0 && other.returnType != void 0) {
+        return false;
+      }
+      return this.returnType == void 0 && other.returnType == void 0 || this.returnType.equals(other.returnType);
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["function_param_types"] = this.parameterTypes.map((p) => p.toJson(options2));
+      out["return_type"] = this.returnType?.toJson(options2);
+      return out;
+    }
+  };
+  var AstTypeParameter = class _AstTypeParameter extends AstNode {
+    static {
+      __name(this, "AstTypeParameter");
+    }
+    typeParameterIndex;
+    typeBoundExpression;
+    _identifier;
+    constructor(node, identifier3, typeParameterIndex, typeBoundExpression) {
+      super(node);
+      this.typeParameterIndex = typeParameterIndex;
+      this.typeBoundExpression = typeBoundExpression;
+      this._identifier = identifier3;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    get symbolName() {
+      return this._identifier.symbolName;
+    }
+    toString() {
+      const name = this._identifier.name;
+      const bounds = this.typeBoundExpression ? `: ${this.typeBoundExpression?.toString()}` : "";
+      return name + bounds;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["name"] = this._identifier.name;
+      out["typeParameterIndex"] = this.typeParameterIndex;
+      if (this.typeBoundExpression != void 0) {
+        out["bounds"] = this.typeBoundExpression.toJson(options2);
+      }
+      return out;
+    }
+    equals(other) {
+      if (!(other instanceof _AstTypeParameter)) {
+        return false;
+      }
+      if (other._identifier.name != this._identifier.name) {
+        return false;
+      }
+      if (this.typeBoundExpression != void 0 && other.typeBoundExpression != void 0) {
+        return this.typeBoundExpression.equals(other.typeBoundExpression);
+      } else if (this.typeBoundExpression == void 0 && other.typeBoundExpression == void 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+  var AstTypeBoundExpression = class extends AstNode {
+    static {
+      __name(this, "AstTypeBoundExpression");
+    }
+    _identifier;
+    typeArguments;
+    constructor(node, _identifier, typeArguments) {
+      super(node);
+      this._identifier = _identifier;
+      this.typeArguments = typeArguments;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    toString() {
+      const name = `${this.identifier.name}`;
+      const args = this.typeArguments ? `<${this.typeArguments.map((t) => t.toString()).join(", ")}>` : "";
+      return `${name} ${args}`.trim();
+    }
+    equals(other) {
+      return other.identifier.name == this.identifier.name;
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["bound_name"] = this.identifier.toJson(options2);
+      if (this.typeArguments != void 0) {
+        out["type_arguments"] = this.typeArguments.map((t) => t.toJson(options2));
+      }
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstDefinitions.js
+  var AstDefinitionNode = class extends AstStatementNode {
+    static {
+      __name(this, "AstDefinitionNode");
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+  };
+  var AstVariableDeclarationStatement = class extends AstDefinitionNode {
+    static {
+      __name(this, "AstVariableDeclarationStatement");
+    }
+    variable;
+    expression;
+    constructor(node, variable, expression) {
+      super(node);
+      this.variable = variable;
+      this.expression = expression;
+    }
+    get identifier() {
+      return this.variable.variable;
+    }
+    get symbolName() {
+      return this.variable.variable.name;
+    }
+    get symbolKind() {
+      return "Variable";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["declaration"] = this.variable.toJson(options2);
+      out["expression"] = this.expression?.toJson(options2);
+      return out;
+    }
+  };
+  var AstTypeDefinitionStatement = class extends AstDefinitionNode {
+    static {
+      __name(this, "AstTypeDefinitionStatement");
+    }
+    variable;
+    typeExpression;
+    constructor(node, variable, typeExpression) {
+      super(node);
+      this.variable = variable;
+      this.typeExpression = typeExpression;
+    }
+    get identifier() {
+      return this.variable;
+    }
+    get symbolName() {
+      return this.variable.name;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type_variable"] = this.variable.toJson(options2);
+      out["type_expression"] = this.typeExpression.toJson(options2);
+      return out;
+    }
+  };
   var AstAbstractCallableDefinition = class extends AstDefinitionNode {
     static {
       __name(this, "AstAbstractCallableDefinition");
@@ -328138,7 +327884,7 @@ ${tagToString(tag)}`;
     identifier;
     typeParameters;
     params;
-    returnType;
+    returnTypeExpression;
     // the definitionScope for a function captures the generic type parameters so that they can still be resolved for the
     // input/output types
     // The body scope is a child scope of the definition scope
@@ -328146,12 +327892,12 @@ ${tagToString(tag)}`;
     // body scope is set on the BlockAstNodes for Functions/Operators/Methods but will be set on the function for wat* since they just have a string for the body
     _bodyScope;
     _symbolInfo;
-    constructor(node, identifier3, typeParameters, params, returnType) {
+    constructor(node, identifier3, typeParameters, params, returnTypeExpression) {
       super(node);
       this.identifier = identifier3;
       this.typeParameters = typeParameters;
       this.params = params;
-      this.returnType = returnType;
+      this.returnTypeExpression = returnTypeExpression;
     }
     get definitionScope() {
       return this._definitionScope;
@@ -328174,18 +327920,33 @@ ${tagToString(tag)}`;
     get symbolInformation() {
       return this._symbolInfo;
     }
-    get functionSignature() {
+    get functionSignatureExpression() {
       const paramTypes = this.params.map((p) => p.typeExpression);
-      const genericParams = this.typeParameters?.types.map((t) => new BaseTypeExpression(t.identifier.parseTreeNode, t.identifier));
-      return new FunctionTypeExpression(this.parseTreeNode, genericParams, paramTypes, this.returnType);
+      return new FunctionTypeExpression(this.parseTreeNode, paramTypes, this.returnTypeExpression);
     }
     toJson(options2) {
       const out = super.toJson(options2);
       out["identifier"] = this.identifier.toJson(options2);
-      out["type_params"] = this.typeParameters?.toJson(options2);
+      out["type_params"] = this.typeParameters?.map((t) => t.toJson(options2));
       out["function_params"] = this.params.map((p) => p.toJson(options2));
-      out["return_type"] = this.returnType.toJson(options2);
+      out["return_type"] = this.returnTypeExpression.toJson(options2);
       return out;
+    }
+  };
+  var AstTypeBoundRequirementFakeNode = class extends AstAbstractCallableDefinition {
+    static {
+      __name(this, "AstTypeBoundRequirementFakeNode");
+    }
+    identifier;
+    typeParameters;
+    params;
+    returnTypeExpression;
+    constructor(node, identifier3, typeParameters, params, returnTypeExpression) {
+      super(node, identifier3, typeParameters, params, returnTypeExpression);
+      this.identifier = identifier3;
+      this.typeParameters = typeParameters;
+      this.params = params;
+      this.returnTypeExpression = returnTypeExpression;
     }
   };
   var AstFunctionDefinition = class extends AstAbstractCallableDefinition {
@@ -328195,14 +327956,14 @@ ${tagToString(tag)}`;
     identifier;
     typeParameters;
     params;
-    returnType;
+    returnTypeExpression;
     body;
-    constructor(node, identifier3, typeParameters, params, returnType, body) {
-      super(node, identifier3, typeParameters, params, returnType);
+    constructor(node, identifier3, typeParameters, params, returnTypeExpression, body) {
+      super(node, identifier3, typeParameters, params, returnTypeExpression);
       this.identifier = identifier3;
       this.typeParameters = typeParameters;
       this.params = params;
-      this.returnType = returnType;
+      this.returnTypeExpression = returnTypeExpression;
       this.body = body;
     }
     get symbolName() {
@@ -328223,13 +327984,13 @@ ${tagToString(tag)}`;
     }
     identifier;
     params;
-    returnType;
+    returnTypeExpression;
     watBody;
-    constructor(node, identifier3, params, returnType, watBody) {
-      super(node, identifier3, void 0, params, returnType);
+    constructor(node, identifier3, params, returnTypeExpression, watBody) {
+      super(node, identifier3, void 0, params, returnTypeExpression);
       this.identifier = identifier3;
       this.params = params;
-      this.returnType = returnType;
+      this.returnTypeExpression = returnTypeExpression;
       this.watBody = watBody;
     }
     get symbolName() {
@@ -328250,14 +328011,14 @@ ${tagToString(tag)}`;
     }
     operator;
     params;
-    returnType;
+    returnTypeExpression;
     body;
-    constructor(node, operator, params, returnType, body) {
+    constructor(node, operator, params, returnTypeExpression, body) {
       const identifier3 = new AstIdentifierNode(node, operator);
-      super(node, identifier3, void 0, params, returnType);
+      super(node, identifier3, void 0, params, returnTypeExpression);
       this.operator = operator;
       this.params = params;
-      this.returnType = returnType;
+      this.returnTypeExpression = returnTypeExpression;
       this.body = body;
     }
     get symbolName() {
@@ -328267,7 +328028,7 @@ ${tagToString(tag)}`;
       } else if (this.params.length == 2) {
         header = "Binary";
       } else {
-        throw new Error("Operators need to have either 1 or 2 parameters since I only support unary or binary operators");
+        header = "Error";
       }
       return `${header}(${this.operator})`;
     }
@@ -328286,14 +328047,14 @@ ${tagToString(tag)}`;
     }
     operator;
     params;
-    returnType;
+    returnTypeExpression;
     watBody;
-    constructor(node, operator, params, returnType, watBody) {
+    constructor(node, operator, params, returnTypeExpression, watBody) {
       const identifier3 = new AstIdentifierNode(node, operator);
-      super(node, identifier3, void 0, params, returnType);
+      super(node, identifier3, void 0, params, returnTypeExpression);
       this.operator = operator;
       this.params = params;
-      this.returnType = returnType;
+      this.returnTypeExpression = returnTypeExpression;
       this.watBody = watBody;
     }
     get symbolName() {
@@ -328344,7 +328105,7 @@ ${tagToString(tag)}`;
     }
     set definitionScope(value) {
       if (this._definitionScope != void 0) {
-        throw new Error(`Rebinding definition scope for function with name: ${this.identifier.name}`);
+        throw new Error(`Rebinding definition scope for type with name: ${this.identifier.name}`);
       }
       this._definitionScope = value;
     }
@@ -328358,38 +328119,47 @@ ${tagToString(tag)}`;
       const out = super.toJson(options2);
       out["composite_type"] = this.compositeType;
       out["identifier"] = this.identifier.toJson(options2);
-      out["type_params"] = this.typeParameters?.toJson(options2);
+      out["type_params"] = this.typeParameters?.map((t) => t.toJson(options2));
       out["fields"] = this.fields.map((f) => f.toJson(options2));
       return out;
     }
   };
-  var AstVariableAssignmentStatement = class extends AstStatementNode {
+  var AstTypeBoundDefinition = class extends AstDefinitionNode {
     static {
-      __name(this, "AstVariableAssignmentStatement");
+      __name(this, "AstTypeBoundDefinition");
     }
-    lhs;
-    assignmentOperator;
-    rhs;
-    constructor(node, lhs, assignmentOperator, rhs) {
+    identifier;
+    typeParameters;
+    requirements;
+    // A hacky scope to keep track of all the symbols used in the definition body.
+    // pretty much just the symbols used for generics are used here.
+    _definitionScope;
+    constructor(node, identifier3, typeParameters, requirements) {
       super(node);
-      this.lhs = lhs;
-      this.assignmentOperator = assignmentOperator;
-      this.rhs = rhs;
+      this.identifier = identifier3;
+      this.typeParameters = typeParameters;
+      this.requirements = requirements;
+    }
+    get definitionScope() {
+      return this._definitionScope;
+    }
+    set definitionScope(value) {
+      if (this._definitionScope != void 0) {
+        throw new Error(`Rebinding definition scope for type bound with name: ${this.identifier.name}`);
+      }
+      this._definitionScope = value;
     }
     get symbolName() {
-      if (this.lhs instanceof AstIdentifierNode) {
-        return this.lhs.name;
-      }
-      return this.lhs.identifier.name;
+      return this.identifier.name;
     }
     get symbolKind() {
-      return "Variable";
+      return "TypeBound";
     }
     toJson(options2) {
       const out = super.toJson(options2);
-      out["lhs"] = this.lhs.toJson(options2);
-      out["assignment_operator"] = this.assignmentOperator;
-      out["rhs"] = this.rhs.toJson(options2);
+      out["identifier"] = this.identifier.toJson(options2);
+      out["type_params"] = this.typeParameters?.map((t) => t.toJson(options2));
+      out["requirements"] = this.requirements.map((f) => f.toJson(options2));
       return out;
     }
   };
@@ -328435,6 +328205,385 @@ ${tagToString(tag)}`;
       this.isConstant = isConstant;
       this.variable = variable;
       this.typeExpression = typeExpression;
+    }
+  };
+  var AstTypeBoundRequirement = class extends AstNode {
+    static {
+      __name(this, "AstTypeBoundRequirement");
+    }
+    callableType;
+    callableName;
+    typeExpression;
+    constructor(node, callableType, callableName, typeExpression) {
+      super(node);
+      this.callableType = callableType;
+      this.callableName = callableName;
+      this.typeExpression = typeExpression;
+    }
+    get identifier() {
+      return this.callableName;
+    }
+    get symbolName() {
+      return this.callableName.name;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = this.callableType;
+      out["name"] = this.callableName.toJson(options2);
+      out["type_expression"] = this.typeExpression.toJson(options2);
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstExpressions.js
+  var AstAbstractExpressionNode = class extends AstNode {
+    static {
+      __name(this, "AstAbstractExpressionNode");
+    }
+  };
+  var AstAbstractCallExpression = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstAbstractCallExpression");
+    }
+    _resolvedCallableInfo;
+    get resolvedCallableInfo() {
+      return this._resolvedCallableInfo;
+    }
+    set resolvedCallableInfo(value) {
+      this._resolvedCallableInfo = value;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      const resolvedCallableInfo = this.resolvedCallableInfo;
+      if (resolvedCallableInfo == void 0) {
+        out["resolvedCallInfo"] = void 0;
+      } else {
+        out["resolveCallInfo"] = {
+          typeArguments: resolvedCallableInfo.typeArguments?.map((t) => t.toString()),
+          symbol: resolvedCallableInfo.symbol.symbolName,
+          overload: resolvedCallableInfo.overload.typeExpression.toString(),
+          functionDefinitionNode_Loc: resolvedCallableInfo.functionDefinitionNode.firstToken.createTokenSourceString(),
+          functionType: resolvedCallableInfo.resolvedFunctionType.toString()
+        };
+      }
+      return out;
+    }
+  };
+  var AstOperationNode = class extends AstAbstractCallExpression {
+    static {
+      __name(this, "AstOperationNode");
+    }
+  };
+  var AstUnaryOperation = class extends AstOperationNode {
+    static {
+      __name(this, "AstUnaryOperation");
+    }
+    operator;
+    operand;
+    constructor(node, operator, operand) {
+      super(node);
+      this.operator = operator;
+      this.operand = operand;
+    }
+    get symbolName() {
+      return `Unary(${this.operator})`;
+    }
+    get symbolKind() {
+      return "Operator";
+    }
+    toJson(options2) {
+      const operatorStr = `${this.operator}`;
+      const out = super.toJson(options2);
+      out["operator"] = operatorStr;
+      out["operand"] = this.operand.toJson(options2);
+      return out;
+    }
+  };
+  var AstBinaryOperation = class extends AstOperationNode {
+    static {
+      __name(this, "AstBinaryOperation");
+    }
+    lhs;
+    operator;
+    rhs;
+    constructor(node, lhs, operator, rhs) {
+      super(node);
+      this.lhs = lhs;
+      this.operator = operator;
+      this.rhs = rhs;
+    }
+    get symbolName() {
+      return `Binary(${this.operator})`;
+    }
+    get symbolKind() {
+      return "Operator";
+    }
+    toJson(options2) {
+      const operatorStr = `${this.operator}`;
+      const out = super.toJson(options2);
+      out["lhs"] = this.lhs.toJson(options2);
+      out["operator"] = operatorStr;
+      out["rhs"] = this.rhs.toJson(options2);
+      return out;
+    }
+  };
+  var AstBuiltInFunctionCallExpression = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstBuiltInFunctionCallExpression");
+    }
+    builtInFunction;
+    identifier;
+    args;
+    constructor(node, builtInFunction, identifier3, args) {
+      super(node);
+      this.builtInFunction = builtInFunction;
+      this.identifier = identifier3;
+      this.args = args;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["builtin"] = this.identifier.toJson(options2);
+      out["args"] = this.args.map((a) => a.toJson(options2));
+      return out;
+    }
+  };
+  var AstCallExpression = class extends AstAbstractCallExpression {
+    static {
+      __name(this, "AstCallExpression");
+    }
+    internal;
+    typeArguments;
+    args;
+    constructor(node, internal, typeArguments, args) {
+      super(node);
+      this.internal = internal;
+      this.typeArguments = typeArguments;
+      this.args = args;
+    }
+    get symbolName() {
+      return this.internal.symbolName;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["call"] = this.internal.toJson(options2);
+      out["typeArguments"] = this.typeArguments?.map((t) => t.toJson(options2));
+      out["callArguments"] = this.args.toJson(options2);
+      return out;
+    }
+  };
+  var AstTypeCastingExpression = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstTypeCastingExpression");
+    }
+    expression;
+    type;
+    constructor(node, expression, type) {
+      super(node);
+      this.expression = expression;
+      this.type = type;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["expression"] = this.expression.toJson(options2);
+      out["as"] = this.type.toJson(options2);
+      return out;
+    }
+  };
+  var AstFieldAccessExpression = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstFieldAccessExpression");
+    }
+    expression;
+    field;
+    constructor(node, expression, field) {
+      super(node);
+      this.expression = expression;
+      this.field = field;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["expression"] = this.expression.toJson(options2);
+      out["field"] = this.field.toJson(options2);
+      return out;
+    }
+  };
+  var AstAtomNode = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstAtomNode");
+    }
+    constructor(node) {
+      super(node);
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstLiterals.js
+  var AstAbstractLiteralAtom = class extends AstAbstractExpressionNode {
+    static {
+      __name(this, "AstAbstractLiteralAtom");
+    }
+  };
+  var AstBooleanLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstBooleanLiteral");
+    }
+    // encodes the constants true, false, null
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get value() {
+      if (this.firstToken.lexeme == "true") {
+        return true;
+      } else if (this.firstToken.lexeme == "false") {
+        return false;
+      }
+      throw new Error("Not able to convert lexeme to value");
+    }
+    toJson(options2) {
+      const json = super.toJson(options2);
+      json["bool_literal"] = this.value;
+      return json;
+    }
+  };
+  var AstNullPtrLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstNullPtrLiteral");
+    }
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get value() {
+      return null;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["null_literal"] = "null";
+      return out;
+    }
+  };
+  var AstNumberLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstNumberLiteral");
+    }
+    // encodes a number
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get isInt() {
+      return this.firstToken.lexeme.indexOf(".") == -1;
+    }
+    get isFloat() {
+      return this.firstToken.lexeme.indexOf(".") != -1;
+    }
+    get isPositive() {
+      return this.value > 0;
+    }
+    get isNegative() {
+      return this.value < 0;
+    }
+    get value() {
+      return this.firstToken.literal;
+    }
+  };
+  var AstIntLiteral = class extends AstNumberLiteral {
+    static {
+      __name(this, "AstIntLiteral");
+    }
+    get isInt() {
+      return true;
+    }
+    get isFloat() {
+      return false;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["int_literal"] = this.value;
+      return out;
+    }
+  };
+  var AstFloatLiteral = class extends AstNumberLiteral {
+    static {
+      __name(this, "AstFloatLiteral");
+    }
+    get isInt() {
+      return false;
+    }
+    get isFloat() {
+      return true;
+    }
+    get isNan() {
+      return Number.isNaN(this.value);
+    }
+    get isInfinite() {
+      return !Number.isFinite(this.value) && !this.isNan;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["float_literal"] = this.value;
+      return out;
+    }
+  };
+  var AstTupleLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstTupleLiteral");
+    }
+    values;
+    constructor(node, values) {
+      super(node);
+      this.values = values;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["tuple_literal"] = this.values.map((n) => n.toJson(options2));
+      return out;
+    }
+  };
+  var AstArrayLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstArrayLiteral");
+    }
+    values;
+    constructor(node, values) {
+      super(node);
+      this.values = values;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["array_literal"] = this.values.map((n) => n.toJson(options2));
+      return out;
+    }
+  };
+  var AstCompositeLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstCompositeLiteral");
+    }
+    typeExpression;
+    assignments;
+    fieldMap = /* @__PURE__ */ new Map();
+    constructor(node, typeExpression, assignments) {
+      super(node);
+      this.typeExpression = typeExpression;
+      this.assignments = assignments;
+      for (const assignment of assignments) {
+        this.fieldMap.set(assignment.lhs.name, assignment.rhs);
+      }
+    }
+    get identifier() {
+      return this.typeExpression.identifier;
+    }
+    get typeArguments() {
+      if (this.typeExpression instanceof TypeInstantiatingTypeExpression) {
+        return this.typeExpression.typeArgs;
+      }
+      return void 0;
+    }
+    get compositeSymbolName() {
+      return this.identifier?.name;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["composite"] = this.typeExpression.toJson(options2);
+      out["assignments"] = this.assignments.map((n) => n.toJson(options2));
+      return out;
     }
   };
 
@@ -328498,11 +328647,11 @@ ${tagToString(tag)}`;
       __name(this, "AstVariableFieldAccess");
     }
     variable;
-    fields;
-    constructor(node, variable, fields) {
+    fieldNames;
+    constructor(node, variable, fieldNames) {
       super(node);
       this.variable = variable;
-      this.fields = fields;
+      this.fieldNames = fieldNames;
     }
     get identifier() {
       if (this.variable instanceof AstIdentifierNode) {
@@ -328513,7 +328662,7 @@ ${tagToString(tag)}`;
     toJson(options2) {
       const out = super.toJson(options2);
       out["var_name"] = this.identifier.toJson(options2);
-      out["fields"] = this.fields.map((f) => f.toJson(options2));
+      out["fields"] = this.fieldNames.map((f) => f.toJson(options2));
       return out;
     }
   };
@@ -328551,7 +328700,27 @@ ${tagToString(tag)}`;
       if (context == void 0) {
         context = this.initContext();
       }
-      if (node instanceof AstNumberLiteral) {
+      if (node instanceof BlockAstNode) {
+        return this.traverseBlockNode(node, context);
+      } else if (node instanceof GroupAstNode) {
+        return this.traverseGroupNode(node, context);
+      } else if (node instanceof AstTypeDefinitionStatement) {
+        return this.traverseTypeDefinition(node, context);
+      } else if (node instanceof AstFunctionDefinition) {
+        return this.traverseFunctionDefinition(node, context);
+      } else if (node instanceof AstWatFunctionDefinition) {
+        return this.traverseWatFunctionDefinition(node, context);
+      } else if (node instanceof AstOperatorDefinition) {
+        return this.traverseOperatorDefinition(node, context);
+      } else if (node instanceof AstWatOperatorDefinition) {
+        return this.traverseWatOperatorDefinition(node, context);
+      } else if (node instanceof AstCompositeDefinition) {
+        return this.traverseCompositeDefinition(node, context);
+      } else if (node instanceof AstTypeBoundDefinition) {
+        return this.traverseTypeBoundDefinition(node, context);
+      } else if (node instanceof AstTypeParameter) {
+        return this.traverseDefinitionTypeParameter(node, context);
+      } else if (node instanceof AstNumberLiteral) {
         return this.traverseNumberLiteral(node, context);
       } else if (node instanceof AstBooleanLiteral) {
         return this.traverseBoolLiteral(node, context);
@@ -328579,6 +328748,8 @@ ${tagToString(tag)}`;
         return this.traverseTypeCastingExpression(node, context);
       } else if (node instanceof AstUnitTypeExpression) {
         return this.traverseUnitTypeExpression(node, context);
+      } else if (node instanceof AstNeverTypeExpression) {
+        return this.traverseNeverTypeExpression(node, context);
       } else if (node instanceof BaseTypeExpression) {
         return this.traverseBaseTypeExpression(node, context);
       } else if (node instanceof PointerTypeExpression) {
@@ -328589,7 +328760,7 @@ ${tagToString(tag)}`;
         return this.traverseTupleTypeExpression(node, context);
       } else if (node instanceof FunctionTypeExpression) {
         return this.traverseFunctionTypeExpression(node, context);
-      } else if (node instanceof SpecializedTypeExpression) {
+      } else if (node instanceof TypeInstantiatingTypeExpression) {
         return this.traverseTypeInstantiatingExpression(node, context);
       } else if (node instanceof AstVariableAssignmentStatement) {
         return this.traverseAssignmentStatement(node, context);
@@ -328615,32 +328786,10 @@ ${tagToString(tag)}`;
         return this.traverseSwitchStatement(node, context);
       } else if (node instanceof AstVariableDeclarationStatement) {
         return this.traverseVariableDeclaration(node, context);
-      } else if (node instanceof AstTypeDefinitionStatement) {
-        return this.traverseTypeDefinition(node, context);
-      } else if (node instanceof AstFunctionDefinition) {
-        return this.traverseFunctionDefinition(node, context);
-      } else if (node instanceof AstWatFunctionDefinition) {
-        return this.traverseWatFunctionDefinition(node, context);
-      } else if (node instanceof AstOperatorDefinition) {
-        return this.traverseOperatorDefinition(node, context);
-      } else if (node instanceof AstWatOperatorDefinition) {
-        return this.traverseWatOperatorDefinition(node, context);
-      } else if (node instanceof AstCompositeDefinition) {
-        return this.traverseCompositeDefinition(node, context);
-      } else if (node instanceof BlockAstNode) {
-        return this.traverseBlockNode(node, context);
-      } else if (node instanceof GroupAstNode) {
-        return this.traverseGroupNode(node, context);
       } else
         throw new Error(`AstNodeTraverser traversal is not implemented for node type: ${node.constructor.name}`);
     }
   };
-
-  // ../compiler/dist/src/compiler/SemanticError.js
-  function formatErrorMessage(message) {
-    return message.replaceAll("\n", " ").replaceAll("	", "").replaceAll(/\s+/g, " ");
-  }
-  __name(formatErrorMessage, "formatErrorMessage");
 
   // ../compiler/dist/src/compiler/PEGParser.js
   var TokenStream = class {
@@ -329308,6 +329457,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Unit */
     ],
     [
+      "never",
+      "never"
+      /* TokenType.Never */
+    ],
+    [
       "for",
       "for"
       /* TokenType.For */
@@ -329348,16 +329502,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Continue */
     ],
     [
-      "nop",
-      "nop"
-      /* TokenType.Nop */
-    ],
-    [
-      "unreachable",
-      "unreachable"
-      /* TokenType.Unreachable */
-    ],
-    [
       "return",
       "return"
       /* TokenType.Return */
@@ -329396,6 +329540,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "watoperator",
       "watoperator"
       /* TokenType.WatOperator */
+    ],
+    [
+      "type_bound",
+      "type_bound"
+      /* TokenType.TypeBound */
     ]
   ]);
   var Token4 = class {
@@ -329467,6 +329616,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     lessEqual: "LESS_EQUAL",
     greater: "GREATER",
     lessThan: "LESS",
+    fatRightArrow: "FAT_RIGHT_ARROW",
+    // symbol is =>
     leftShift: "LEFT_SHIFT",
     rightShift: "RIGHT_SHIFT",
     pipe: "PIPE",
@@ -329492,11 +329643,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     watFunctionKeyword: "watFunction",
     operatorKeyword: "operator",
     watOperatorKeyword: "watOperator",
+    typeboundKeyword: "typebound",
     typeKeyword: "typeKeyword",
     structKeyword: "structKeyword",
     unionKeyword: "unionKeyword",
     variantKeyword: "variantKeyword",
     unitKeyword: "unit",
+    neverKeyword: "never",
     breakKeyword: "break",
     continueKeyword: "continue",
     extendsKeyword: "extends",
@@ -329512,6 +329665,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     arrayLiteral: "arrayLiteral",
     compositeLiteral: "compositeLiteral",
     literal: "literal",
+    operatorSymbols: "operatorSymbols",
     assignmentVariableAccess: "assignmentVariableAccess",
     nonLeftVariableAccess: "nonLeftVariableAccess",
     simpleVariableAccess: "simpleVariableAccess",
@@ -329599,24 +329753,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     operatorDefinition: "operatorDefinition",
     watFunctionDefinition: "watFunctionDefinition",
     watOperatorDefinition: "watOperatorDefinition",
+    typeboundDefinition: "typeboundDefinition",
     functionDefinitionParameters: "functionParameterList",
     functionParameterList: "functionParameterList",
     paramWithType: "paramWithType",
+    typeboundRequirement: "typeboundRequirement",
+    typeboundRequirementType: "typeboundRequirementType",
+    typeboundRequirementIdentifier: "typeboundRequirementIdentifier",
     paramWithOptionalType: "paramWithOptionalType",
     compositeTypeKeyword: "compositeTypeKeyword",
     compositeDefinition: "compositeDefinition",
     compositeFields: "compositeFields",
+    typeboundRequirements: "typeboundConstraints",
     typeAliasingStatement: "typeAliasingStatement",
     typeExpression: "typeExpression",
     pointerTypeExpression: "pointerTypeExpression",
     arraySizeMatcher: "arraySizeMatcher",
     arrayTypeExpression: "arrayTypeExpression",
     tupleTypeExpression: "tupleTypeExpression",
-    functionTypeExpression: "functionTypeExpression",
+    oldStyleFunctionTypeExpression: "oldStyleFunctionTypeExpression",
+    typescriptStyleFunctionTypeExpression: "typescriptStyleFunctionTypeExpression",
     typeArguments: "typeArguments",
     specializedType: "specializedType",
     typeCommaList: "typeCommaList",
     typeParameter: "typeParameter",
+    typeParameterBounds: "typeParameterBounds",
+    optionalTypeParameterBounds: "optionalTypeParameterBounds",
+    typeParameterBoundsWithColon: "typeParameterBoundsWithColon",
     typeParameterList: "typeParameterList",
     typeParameterCommaList: "typeParameterCommaList",
     typeExpressionList: "typeExpressionList",
@@ -329639,6 +329802,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   UNARY_OPERATORS[PARSER_RULE_NAMES.exclaim] = "!";
   UNARY_OPERATORS[PARSER_RULE_NAMES.tilde] = "~";
   UNARY_OPERATORS[PARSER_RULE_NAMES.minus] = "-";
+  UNARY_OPERATORS[PARSER_RULE_NAMES.asterisk] = "*";
   var BINARY_OPERATORS = {};
   BINARY_OPERATORS[PARSER_RULE_NAMES.asterisk] = "*";
   BINARY_OPERATORS[PARSER_RULE_NAMES.slash] = "/";
@@ -329659,6 +329823,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var ASSIGNMENT_OPERATORS = {};
   ASSIGNMENT_OPERATORS[PARSER_RULE_NAMES.equals] = "=";
 
+  // ../compiler/dist/src/compiler/SemanticError.js
+  function formatErrorMessage(message) {
+    return message.replaceAll("\n", " ").replaceAll("	", "").replaceAll(/\s+/g, " ");
+  }
+  __name(formatErrorMessage, "formatErrorMessage");
+
   // ../compiler/dist/src/compiler/wasm/WasmTypes.js
   var WasmScriptTypeToWasmNumberType = {
     bool: "i32",
@@ -329674,7 +329844,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     f64: "f64"
   };
 
-  // ../compiler/dist/src/compiler/TypesBuiltIn.js
+  // ../compiler/dist/src/compiler/TypeBuiltIns.js
   var BUILT_IN_SCALAR_TYPE_NAMES = [
     // TODO: usize/isize - they can be type aliases I think
     "bool",
@@ -329981,114 +330151,53 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   }
 
-  // ../compiler/dist/src/compiler/TypeDefinition.js
-  var typeDefId = 0;
-  var UndeterminedTypeTypeDefinition = class _UndeterminedTypeTypeDefinition {
+  // ../compiler/dist/src/compiler/type/TypeCommon.js
+  var MAX_TYPE_DEF_RECURSION = 100;
+  var ResolveTypeErrorToSemanticError = {
+    TypeArgumentsOnNonGenericType: "TypeArgumentsOnNonGenericType",
+    NoTypeArgumentsToGenericType: "NoTypeArgumentsToGenericType",
+    WrongNumberOfTypeArgumentsToGenericType: "WrongNumberOfTypeArgumentsToGenericType",
+    TypeBoundsNotSatisfied: "TypeBoundsNotSatisfied",
+    NoTypeArgumentsToTypeBound: "NoTypeArgumentsToTypeBound",
+    WrongNumberOfTypeArgumentsToTypeBound: "WrongNumberOfTypeArgumentsToTypeBound",
+    RecursiveTypeDefinition: "RecursiveTypeDefinition",
+    TypeLookupFailed: "CascadingError"
+  };
+  function resolveTypeResponseFailSingleError(error, message) {
+    const inner = {
+      error,
+      message
+    };
+    const out = {
+      success: false,
+      errors: [inner]
+    };
+    return out;
+  }
+  __name(resolveTypeResponseFailSingleError, "resolveTypeResponseFailSingleError");
+  var typeInstantiationCounter = 0;
+  function getTypeInstantiationCounter() {
+    return typeInstantiationCounter++;
+  }
+  __name(getTypeInstantiationCounter, "getTypeInstantiationCounter");
+  var InstantiableTypeDefinition = class {
     static {
-      __name(this, "UndeterminedTypeTypeDefinition");
+      __name(this, "InstantiableTypeDefinition");
     }
-    _id = typeDefId++;
-    symbolInformation = void 0;
-    name = "UndeterminedType";
-    static instance = new _UndeterminedTypeTypeDefinition();
-    constructor() {
+    symbolInformation;
+    _instantiationCounter = getTypeInstantiationCounter();
+    constructor(symbolInformation) {
+      this.symbolInformation = symbolInformation;
     }
     resolveType() {
-      return void 0;
+      return this;
     }
     toString() {
-      return this.name;
-    }
-    toShortString() {
-      return this.name;
-    }
-    isGeneric() {
-      return false;
+      return this.expression.toString();
     }
   };
-  var ScalarLiteralType = class {
-    static {
-      __name(this, "ScalarLiteralType");
-    }
-    _id = typeDefId++;
-    symbolInformation = void 0;
-    constructor() {
-    }
-    toString() {
-      return this.name;
-    }
-    toShortString() {
-      return this.name;
-    }
-    isGeneric() {
-      return false;
-    }
-  };
-  var IntegerLiteralType = class extends ScalarLiteralType {
-    static {
-      __name(this, "IntegerLiteralType");
-    }
-    declaringScope;
-    value;
-    _id = typeDefId++;
-    name = "IntegerLiteral";
-    // this value will be set if during an assignment the type of the LHS is specified.
-    // otherwise when resolving the type, it will fallback to the default type of the literal
-    resolvedType = void 0;
-    constructor(declaringScope, value) {
-      super();
-      this.declaringScope = declaringScope;
-      this.value = value;
-    }
-    resolveType() {
-      if (this.resolvedType != void 0) {
-        return this.resolvedType;
-      }
-      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.IntLiteralDefaultType));
-      return this.declaringScope.resolveTypeDefinition(typeExpression);
-    }
-  };
-  var FloatLiteralType = class extends ScalarLiteralType {
-    static {
-      __name(this, "FloatLiteralType");
-    }
-    scope;
-    value;
-    _id = typeDefId++;
-    name = "FloatLiteral";
-    resolvedType;
-    constructor(scope, value) {
-      super();
-      this.scope = scope;
-      this.value = value;
-    }
-    resolveType() {
-      if (this.resolvedType != void 0) {
-        return this.resolvedType;
-      }
-      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.FloatLiteralDefaultType));
-      return this.scope.resolveTypeDefinition(typeExpression);
-    }
-  };
-  var NullLiteralType = class extends ScalarLiteralType {
-    static {
-      __name(this, "NullLiteralType");
-    }
-    declaringScope;
-    _id = typeDefId++;
-    name = "NullLiteral";
-    resolvedType = void 0;
-    // leave as undef for now
-    constructor(declaringScope) {
-      super();
-      this.declaringScope = declaringScope;
-    }
-    resolveType() {
-      const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.NullLiteralDefaultType));
-      const typeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
-      return this.declaringScope.resolveTypeDefinition(typeExpression);
-    }
-  };
+
+  // ../compiler/dist/src/compiler/type/CanonicalType.js
   var CanonicalTypeDefinition = class {
     static {
       __name(this, "CanonicalTypeDefinition");
@@ -330105,127 +330214,636 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.canonicalTypeParameters = canonicalTypeParameters;
       this.sourceType = sourceType;
     }
-    equals(other) {
-      const scopesEqual = this.declaringScope.id == other.declaringScope.id;
-      const typesEqual = this.typeType == other.typeType;
-      const namesEqual = this.name == other.name;
-      let paramsEqual = true;
-      if (this.canonicalTypeParameters.length != other.canonicalTypeParameters.length) {
-        paramsEqual = false;
-      }
-      for (let i = 0; paramsEqual && i < this.canonicalTypeParameters.length; i++) {
-        if (!this.canonicalTypeParameters[i].equals(other.canonicalTypeParameters[i])) {
-          paramsEqual = false;
-          break;
-        }
-      }
-      return scopesEqual && typesEqual && namesEqual && paramsEqual;
-    }
     toString() {
-      const typeParams = this.canonicalTypeParameters.length > 0 ? `[ ${this.canonicalTypeParameters.map((t) => t.toString()).join(", ")} ]` : "";
-      return `${this.typeType} ${this.name}.${this.declaringScope.id} ${typeParams}`;
+      const typeParams = this.canonicalTypeParameters.length > 0 ? `(${this.canonicalTypeParameters.map((t) => t.toString()).join(",")})` : "";
+      return `${this.typeType}_${this.name}.${this.declaringScope?.id}(${typeParams})`;
     }
   };
-  var InstantiableTypeDefinition = class {
+
+  // ../compiler/dist/src/compiler/type/StructuralTypes.js
+  var StructuralTypeDefinition = class extends InstantiableTypeDefinition {
     static {
-      __name(this, "InstantiableTypeDefinition");
+      __name(this, "StructuralTypeDefinition");
     }
-    symbolInformation;
-    _id = typeDefId++;
-    // The type parameters that the type definition takes. E.g. Wrapper<T1, T2> -> this is [T1, T2]
-    // If the type is not generic, this should be undefined! Not a 0 length array
-    // though I'm not actually sure on that design decision - though later on I might want to do inference?
+  };
+  var TupleTypeDefinition = class _TupleTypeDefinition extends StructuralTypeDefinition {
+    static {
+      __name(this, "TupleTypeDefinition");
+    }
+    types;
+    declaringScope;
+    // the declaring scope is always the global scope
+    expression;
+    _components;
     typeParameters = void 0;
-    //If the type was specialized, it contains an reference to the non-specialized type,
-    // and the arguments it was used to specialize. Otherwise its just undefined (for both non-generic types and non-specialized generic types)
-    typeInstantiationInformation = void 0;
-    // this array tracks all the specializations of the generic types. Eg. Option<T> will track Option<i32>, Option<f32>, etc
-    // Its not as critical as the other fields, but its still nice to have for bookkeeping
-    typeInstantiations = void 0;
-    constructor(symbolInformation) {
-      this.symbolInformation = symbolInformation;
+    // I guess there's no name for an anonymous tuple, so leave this as undefined
+    name = void 0;
+    constructor(scope, types) {
+      const filtered = types.filter((f) => f.resolveType() != void 0).map((f) => f.resolveType());
+      const expression = new TupleTypeExpression(FAKE_PARSE_TREE_NODE, filtered.map((t) => t.expression));
+      super(void 0);
+      this.types = types;
+      this.declaringScope = scope.getGlobalScope();
+      this.expression = expression;
+      this._components = /* @__PURE__ */ new Map();
+      for (let i = 0; i < filtered.length; i++) {
+        this._components.set(`_${i}`, filtered[i]);
+      }
     }
-    resolveType() {
-      return this;
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const types = this.types.map((t) => t.replaceTypeParametersViaMap(scope, typeArguments)).map((t) => {
+        if (t.success) {
+          return t.type;
+        } else {
+          throw new Error("FIXME");
+        }
+      });
+      const instantiatedType = new _TupleTypeDefinition(this.declaringScope, types);
+      return { success: true, type: instantiatedType };
+    }
+    sizeInBytes() {
+      return [...this._components.values()].reduce((acc, f) => acc + f.sizeInBytes(), 0);
+    }
+    canonicalize() {
+      const canonicalFields = [...this._components.values()].map((t) => t.canonicalize());
+      return new CanonicalTypeDefinition(this.declaringScope, "Tuple", "", canonicalFields, this);
     }
     equals(other) {
       if (this == other) {
         return true;
       }
-      const out = this.canonicalize().equals(other.canonicalize());
-      return out;
-    }
-    toString() {
-      return this.expression.toString();
-    }
-  };
-  var UserDefinedType = class extends InstantiableTypeDefinition {
-    static {
-      __name(this, "UserDefinedType");
-    }
-    symbolInformation;
-    declaringScope;
-    name;
-    constructor(symbolInformation) {
-      super(symbolInformation);
-      this.symbolInformation = symbolInformation;
-      this.name = symbolInformation.symbolName;
-      this.declaringScope = symbolInformation.declaringScope;
-    }
-  };
-  var GenericParameterTypeDefinition = class extends UserDefinedType {
-    static {
-      __name(this, "GenericParameterTypeDefinition");
-    }
-    symbolInformation;
-    position;
-    _id = typeDefId++;
-    expression;
-    constructor(symbolInformation, position) {
-      super(symbolInformation);
-      this.symbolInformation = symbolInformation;
-      this.position = position;
-      this.expression = symbolInformation.symbolDefinition.typeExpression;
-    }
-    instantiateType(typeArguments) {
-      throw new Error("Not supported for GenericParameterTypeDefinition");
-    }
-    instantiateViaMap(typeArguments) {
-      for (const item of typeArguments) {
-        if (item.genericParam.equals(this)) {
-          return item.typeArg;
+      if (!(other instanceof _TupleTypeDefinition)) {
+        return false;
+      }
+      if (this.types.length != other.types.length) {
+        return false;
+      }
+      for (let i = 0; i < this.types.length; i++) {
+        if (!this.types[i].equals(other.types[i])) {
+          return false;
         }
       }
-      return this;
+      return true;
+    }
+    alphaEquivalent(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _TupleTypeDefinition)) {
+        return false;
+      }
+      if (this.types.length != other.types.length) {
+        return false;
+      }
+      for (let i = 0; i < this.types.length; i++) {
+        if (!this.types[i].alphaEquivalent(other.types[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    toString() {
+      return this.toShortString();
+    }
+    toShortString() {
+      const typeStrings = [...this._components.values()].map((t) => t.toShortString()).join(", ");
+      return `( ${typeStrings} )`;
+    }
+    isGeneric() {
+      return [...this._components.values()].some((v) => v.isGeneric());
+    }
+    components() {
+      return this._components;
+    }
+    fields() {
+      return this._components;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [...this._components.values()];
+    }
+  };
+  var FunctionTypeDefinition = class _FunctionTypeDefinition extends StructuralTypeDefinition {
+    static {
+      __name(this, "FunctionTypeDefinition");
+    }
+    paramTypes;
+    returnType;
+    declaringScope;
+    // the declaring scope is always the global scope
+    expression;
+    // There's no name for function types
+    name = void 0;
+    constructor(scope, paramTypes, returnType) {
+      const expression = new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, paramTypes.map((p) => p.expression), returnType.expression);
+      super(void 0);
+      this.paramTypes = paramTypes;
+      this.returnType = returnType;
+      this.declaringScope = scope.getGlobalScope();
+      this.expression = expression;
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const instantiatedFunctionParams = this.paramTypes.map((t) => t.replaceTypeParametersViaMap(scope, typeArguments));
+      const failedToResolve = instantiatedFunctionParams.filter((p) => p.success == false);
+      if (failedToResolve.length > 0) {
+        const out = {
+          success: false,
+          errors: failedToResolve.flatMap((e) => e.errors)
+        };
+        return out;
+      }
+      const successfulResolvedFuncParams = instantiatedFunctionParams.map((t) => {
+        if (t.success) {
+          return t.type;
+        } else {
+          throw new Error("This should have been caught above when checking failed to resolve!");
+        }
+      });
+      const instantiatedReturnType = this.returnType.replaceTypeParametersViaMap(scope, typeArguments);
+      if (!instantiatedReturnType.success) {
+        return instantiatedReturnType;
+      }
+      const instantiatedType = new _FunctionTypeDefinition(this.declaringScope.getGlobalScope(), successfulResolvedFuncParams, instantiatedReturnType.type);
+      return { success: true, type: instantiatedType };
+    }
+    sizeInBytes() {
+      throw new Error("Not implemented");
+    }
+    canonicalize() {
+      const mappedParams = this.paramTypes.map((p) => p.canonicalize());
+      const canonicalParams = new CanonicalTypeDefinition(this.declaringScope, "Args", "", mappedParams, this);
+      const mappedReturn = this.returnType.canonicalize();
+      const canonicalReturn = new CanonicalTypeDefinition(this.declaringScope, "ReturnType", "", [mappedReturn], this);
+      const out = new CanonicalTypeDefinition(this.declaringScope, "Function", "", [canonicalParams, canonicalReturn], this);
+      return out;
+    }
+    equals(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _FunctionTypeDefinition)) {
+        return false;
+      }
+      if (!this.returnType.equals(other.returnType)) {
+        return false;
+      }
+      return this.areParamTypesEqual(other);
+    }
+    alphaEquivalent(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _FunctionTypeDefinition)) {
+        return false;
+      }
+      if (!this.returnType.alphaEquivalent(other.returnType)) {
+        return false;
+      }
+      return this.areParamTypesAlphaEquivalent(other);
+    }
+    areParamTypesEqual(other) {
+      const aParams = this.paramTypes;
+      const bParams = other.paramTypes;
+      if (aParams.length != bParams.length) {
+        return false;
+      }
+      for (let n = 0; n < aParams.length; n++) {
+        if (!aParams[n].equals(bParams[n])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    areParamTypesAlphaEquivalent(other) {
+      const aParams = this.paramTypes;
+      const bParams = other.paramTypes;
+      if (aParams.length != bParams.length) {
+        return false;
+      }
+      for (let n = 0; n < aParams.length; n++) {
+        if (!aParams[n].alphaEquivalent(bParams[n])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    toString() {
+      return this.toShortString();
+    }
+    toShortString() {
+      const params = this.paramTypes.map((p) => p.toShortString()).join(", ");
+      const returnStr = this.returnType.toShortString();
+      return `( ${params} ) => ${returnStr}`;
+    }
+    isGeneric() {
+      return this.returnType.isGeneric() || this.paramTypes.some((t) => t.isGeneric());
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [...this.paramTypes, this.returnType];
+    }
+  };
+  var ArrayTypeDefinition = class _ArrayTypeDefinition extends InstantiableTypeDefinition {
+    static {
+      __name(this, "ArrayTypeDefinition");
+    }
+    backingType;
+    length;
+    expression;
+    declaringScope;
+    // the name for the array type is not actually set since its a built-in
+    name = void 0;
+    constructor(scope, backingType, length) {
+      super(void 0);
+      this.backingType = backingType;
+      this.length = length;
+      this.expression = new ArrayTypeExpression(FAKE_PARSE_TREE_NODE, backingType.expression, length);
+      this.declaringScope = scope.getGlobalScope();
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      throw new Error("Not implemented");
     }
     resolveType() {
       return this;
     }
     canonicalize() {
-      return new CanonicalTypeDefinition(this.declaringScope, "TypeParam", "T" + this.position, [], this);
+      throw new Error("Not implemented");
     }
     toString() {
-      return `GenericParam<${this.expression.toString()}.${this.declaringScope.id}>`;
+      return this.toShortString();
     }
     toShortString() {
-      return `<${this.name}>`;
+      return `[${this.backingType.toShortString()}, ${this.length}]`;
     }
     sizeInBytes() {
-      throw new Error(`sizeInBytes called for generic type expression`);
+      return this.backingType.sizeInBytes();
+    }
+    equals(other) {
+      if (!(other instanceof _ArrayTypeDefinition)) {
+        return false;
+      }
+      if (this.length != other.length) {
+        return false;
+      }
+      return this.backingType.equals(other.backingType);
+    }
+    alphaEquivalent(other) {
+      if (!(other instanceof _ArrayTypeDefinition)) {
+        return false;
+      }
+      if (this.length != other.length) {
+        return false;
+      }
+      return this.backingType.alphaEquivalent(other.backingType);
     }
     isGeneric() {
-      return true;
+      return false;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [this.backingType];
     }
   };
-  var ScalarTypeDefinition = class extends InstantiableTypeDefinition {
+  var UnitTypeDefinition = class extends TupleTypeDefinition {
+    static {
+      __name(this, "UnitTypeDefinition");
+    }
+    expression = new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE);
+    constructor(declaringScope) {
+      const globalScope = declaringScope.getGlobalScope();
+      super(globalScope, []);
+      this.name = "unit";
+    }
+    sizeInBytes() {
+      return 0;
+    }
+    toString() {
+      return "unit";
+    }
+    isGeneric() {
+      return false;
+    }
+  };
+  var NeverTypeDefinition = class _NeverTypeDefinition extends InstantiableTypeDefinition {
+    static {
+      __name(this, "NeverTypeDefinition");
+    }
+    expression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "Never"));
+    constructor(declaringScope) {
+      super(void 0);
+      const globalScope = declaringScope.getGlobalScope();
+      this.name = "Never";
+      this.declaringScope = globalScope;
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      return { success: true, type: this };
+    }
+    canonicalize() {
+      return new CanonicalTypeDefinition(this.declaringScope, "Never", "never", [], this);
+    }
+    equals(other) {
+      return other instanceof _NeverTypeDefinition;
+    }
+    alphaEquivalent(other) {
+      return other instanceof _NeverTypeDefinition;
+    }
+    sizeInBytes() {
+      return 0;
+    }
+    toString() {
+      return "Never";
+    }
+    toShortString() {
+      return "Never";
+    }
+    isGeneric() {
+      return false;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [];
+    }
+  };
+  var PointerTypeDefinition = class _PointerTypeDefinition extends InstantiableTypeDefinition {
+    static {
+      __name(this, "PointerTypeDefinition");
+    }
+    expression;
+    // A pointer itself is a scalar type (usually an i32, maybe an i64 if I eventually support 64-bit addressing)
+    // The value it points to may not be a scalar though
+    name = void 0;
+    declaringScope;
+    constructor(expression, scope) {
+      super(void 0);
+      this.expression = expression;
+      this.declaringScope = scope.getGlobalScope();
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      throw new Error("Not implemented");
+    }
+    dereferencedType() {
+      const resp = this.declaringScope.resolveTypeDefinition(this.expression.internal);
+      if (resp.success == false) {
+        throw new Error("TODO");
+      }
+      return resp.type;
+    }
+    resolveType() {
+      return this;
+    }
+    canonicalize() {
+      const internalType = this.dereferencedType().canonicalize();
+      return new CanonicalTypeDefinition(this.declaringScope, "Pointer", "", [internalType], this);
+    }
+    sizeInBytes() {
+      const out = BuiltInScalarConfig[CompilerDefaultTypes.PointerAddressType].bytes;
+      if (out == void 0) {
+        throw new Error(`Failed to determine the default size in bytes for a pointer type. This is a big bug in the compiler`);
+      }
+      return out;
+    }
+    equals(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _PointerTypeDefinition)) {
+        return false;
+      }
+      return this.dereferencedType().equals(other.dereferencedType());
+    }
+    alphaEquivalent(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _PointerTypeDefinition)) {
+        return false;
+      }
+      return this.dereferencedType().alphaEquivalent(other.dereferencedType());
+    }
+    toString() {
+      return this.toShortString();
+    }
+    toShortString() {
+      return `*${this.dereferencedType().toShortString()}`;
+    }
+    isGeneric() {
+      return false;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [this.dereferencedType()];
+    }
+  };
+  var InstantiatedTypeConstructor = class _InstantiatedTypeConstructor extends StructuralTypeDefinition {
+    static {
+      __name(this, "InstantiatedTypeConstructor");
+    }
+    typeConstructor;
+    typeArguments;
+    typeWithInstantiatedArgs;
+    name;
+    declaringScope;
+    expression;
+    static create(scope, typeConstructor, typeArguments) {
+      if (typeConstructor.typeParameters == void 0) {
+        const error = resolveTypeResponseFailSingleError("TypeArgumentsOnNonGenericType", `Unable to create Type instance from type constructor with name: ${typeConstructor.name}. 
+        The type ${typeConstructor.name} does not accept type arguments.`);
+        return error;
+      }
+      if (typeConstructor.typeParameters.length != typeArguments.length) {
+        const error = resolveTypeResponseFailSingleError("WrongNumberOfTypeArgumentsToGenericType", `Unable to create Type instance from type constructor with name: ${typeConstructor.name}. 
+        Expecting ${typeConstructor.typeParameters?.length} type arguments, but instead received ${typeArguments.length}`);
+        return error;
+      }
+      const typeArgsToGenericParams = new Array();
+      for (let i = 0; i < typeConstructor.typeParameters.length; i++) {
+        typeArgsToGenericParams.push({
+          typeArg: typeArguments[i],
+          genericParam: typeConstructor.typeParameters[i]
+        });
+      }
+      const instantiatedTypeResp = typeConstructor.replaceTypeParametersViaMap(scope, typeArgsToGenericParams);
+      if (instantiatedTypeResp.success == false) {
+        return instantiatedTypeResp;
+      }
+      const instantiatedType = instantiatedTypeResp.type;
+      const out = new _InstantiatedTypeConstructor(typeConstructor, typeArguments, instantiatedType);
+      return { success: true, type: out };
+    }
+    constructor(typeConstructor, typeArguments, typeWithInstantiatedArgs) {
+      super(void 0);
+      this.typeConstructor = typeConstructor;
+      this.typeArguments = typeArguments;
+      this.typeWithInstantiatedArgs = typeWithInstantiatedArgs;
+      this.declaringScope = typeConstructor.declaringScope;
+      this.name = typeConstructor.name;
+      this.expression = new TypeInstantiatingTypeExpression(typeConstructor.expression, typeArguments.map((t) => t.expression));
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const typeConstructor = this.typeConstructor;
+      const mappedInternalResp = this.typeWithInstantiatedArgs.replaceTypeParametersViaMap(scope, typeArguments);
+      if (mappedInternalResp.success == false) {
+        return mappedInternalResp;
+      }
+      const mappedTypeArgs = this.typeArguments.map((t) => t.replaceTypeParametersViaMap(scope, typeArguments));
+      const failedMapped = mappedTypeArgs.filter((t) => t.success == false);
+      if (failedMapped.length > 0) {
+        const out2 = {
+          success: false,
+          errors: failedMapped.flatMap((f) => f.errors)
+        };
+        return out2;
+      }
+      const successfulMappedTypeArgs = mappedTypeArgs.map((t) => {
+        if (t.success) {
+          return t.type;
+        } else {
+          throw new Error("This should have been handled above");
+        }
+      });
+      const out = new _InstantiatedTypeConstructor(typeConstructor, successfulMappedTypeArgs, mappedInternalResp.type);
+      typeConstructor.addTypeInstantiation(out);
+      return { success: true, type: out };
+    }
+    equals(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _InstantiatedTypeConstructor)) {
+        return false;
+      }
+      if (!this.typeConstructor.equals(other.typeConstructor)) {
+        return false;
+      }
+      if (this.typeArguments.length != other.typeArguments.length) {
+        return false;
+      }
+      for (let i = 0; i < this.typeArguments.length; i++) {
+        if (!this.typeArguments[i].equals(other.typeArguments[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    alphaEquivalent(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _InstantiatedTypeConstructor)) {
+        return false;
+      }
+      if (this.typeArguments.length != other.typeArguments.length) {
+        return false;
+      }
+      if (!this.typeConstructor.alphaEquivalent(other.typeConstructor)) {
+        return false;
+      }
+      for (let i = 0; i < this.typeArguments.length; i++) {
+        if (!this.typeArguments[i].alphaEquivalent(other.typeArguments[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    canonicalize() {
+      const canonicalTypeConstructor = this.typeConstructor.canonicalize();
+      const canonicalTypeArguments = this.typeArguments.map((arg) => arg.canonicalize());
+      return new CanonicalTypeDefinition(canonicalTypeConstructor.declaringScope, canonicalTypeConstructor.typeType, canonicalTypeConstructor.name, canonicalTypeArguments, this);
+    }
+    sizeInBytes() {
+      return this.typeWithInstantiatedArgs.sizeInBytes();
+    }
+    isGeneric() {
+      return this.typeWithInstantiatedArgs.isGeneric();
+    }
+    toShortString() {
+      return `${this.typeConstructor.name}[${this.typeArguments.map((a) => a.toShortString()).join(", ")}]`;
+    }
+    toString() {
+      return `${this.typeConstructor.name}.${this.typeConstructor.declaringScope.id} [${this.typeArguments.map((t) => t.toShortString())}] (${this.typeWithInstantiatedArgs.toString()})`;
+    }
+    components() {
+      return this.typeWithInstantiatedArgs.components();
+    }
+    fields() {
+      return this.typeWithInstantiatedArgs.fields();
+    }
+    cases() {
+      return this.typeWithInstantiatedArgs.cases();
+    }
+    getReferencedTypes() {
+      return [this.typeConstructor, ...this.typeArguments, ...this.typeWithInstantiatedArgs.getReferencedTypes()];
+    }
+  };
+
+  // ../compiler/dist/src/compiler/type/NominalTypes.js
+  var NominalTypeDefinition = class _NominalTypeDefinition extends InstantiableTypeDefinition {
+    static {
+      __name(this, "NominalTypeDefinition");
+    }
+    symbolInformation;
+    constructor(symbolInformation) {
+      super(symbolInformation);
+      this.symbolInformation = symbolInformation;
+      this.name = symbolInformation.symbolName;
+      this.declaringScope = symbolInformation.declaringScope;
+    }
+    equals(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _NominalTypeDefinition)) {
+        return false;
+      }
+      return other.name == this.name && other.declaringScope.id == this.declaringScope.id;
+    }
+    alphaEquivalent(other) {
+      return this.equals(other);
+    }
+    toShortString() {
+      return this.name;
+    }
+  };
+  var ScalarTypeDefinition = class extends NominalTypeDefinition {
     static {
       __name(this, "ScalarTypeDefinition");
     }
     symbolInformation;
-    _id = typeDefId++;
     expression;
-    name;
-    declaringScope;
     constructor(symbolInformation) {
       super(symbolInformation);
       this.symbolInformation = symbolInformation;
@@ -330233,11 +330851,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.name = symbolInformation.symbolName;
       this.declaringScope = symbolInformation.declaringScope;
     }
-    instantiateType(typeArguments) {
-      throw new Error("Specialization Not supported for scalar type");
-    }
-    instantiateViaMap(typeArguments) {
-      return this;
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      return {
+        success: true,
+        type: this
+        // scalars don't actually specialize, so they can just return this
+      };
     }
     resolveType() {
       return this;
@@ -330258,32 +330877,156 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toShortString() {
       return this.name;
     }
-  };
-  var CompositeTypeDefinition = class extends InstantiableTypeDefinition {
-    static {
-      __name(this, "CompositeTypeDefinition");
+    toString() {
+      return this.name;
     }
-    _id = typeDefId++;
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [];
+    }
+  };
+  var SelfReferenceTypeDefinition = class {
+    static {
+      __name(this, "SelfReferenceTypeDefinition");
+    }
+  };
+  var TypeParameterDefinition = class _TypeParameterDefinition extends NominalTypeDefinition {
+    static {
+      __name(this, "TypeParameterDefinition");
+    }
+    symbolInformation;
+    position;
+    expression;
+    typeBoundInfo;
+    constructor(symbolInformation, position, typeBoundInfo) {
+      super(symbolInformation);
+      this.symbolInformation = symbolInformation;
+      this.position = position;
+      this.expression = symbolInformation.symbolDefinition.typeExpression;
+      if (typeBoundInfo != void 0) {
+        this.typeBoundInfo = {
+          typeBound: typeBoundInfo.typeBound,
+          typeBoundTypeArguments: typeBoundInfo.typeBoundTypeArguments.map((t) => {
+            if (t instanceof SelfReferenceTypeDefinition) {
+              return this;
+            }
+            return t;
+          })
+        };
+      }
+    }
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      for (const item of typeArguments) {
+        if (item.genericParam.equals(this)) {
+          if (this.typeBoundInfo == void 0) {
+            return { success: true, type: item.typeArg };
+          }
+          const bounds = this.typeBoundInfo.typeBound;
+          const resp = bounds.doesTypeSatisfyTypeBound(scope, item.typeArg);
+          if (resp.isSatisfied == true) {
+            return { success: true, type: item.typeArg };
+          } else {
+            const failedToFindFunctions = resp.failedLookups.length == 0 ? "" : `The following function names failed to be found: ${resp.failedLookups.map((n) => n).join(", ")}`;
+            const wrongTypeFunctions = resp.noMatchingTypes.length == 0 ? "" : `The following function could not be found with the appropriate signatures: ${resp.noMatchingTypes.map((t) => [t.name, t.requirementType.toString()].join(": ")).join(", ")}`;
+            const successes = resp.matches.length == 0 ? "" : `The following functions could be found with the appropriate signatures: ${resp.matches.map((t) => [t.name, t.requirementType.toString()].join(": ")).join(", ")}`;
+            const message = [successes, failedToFindFunctions, wrongTypeFunctions].filter((s) => s.length > 0).join("\n");
+            return resolveTypeResponseFailSingleError("TypeBoundsNotSatisfied", message);
+          }
+        }
+      }
+      return { success: true, type: this };
+    }
+    equals(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _TypeParameterDefinition)) {
+        return false;
+      }
+      return this.declaringScope.id == other.declaringScope.id && this.name == other.name;
+    }
+    alphaEquivalent(other) {
+      if (this == other) {
+        return true;
+      }
+      if (!(other instanceof _TypeParameterDefinition)) {
+        return false;
+      }
+      return this.position == other.position;
+    }
+    resolveType() {
+      return this;
+    }
+    canonicalize() {
+      return new CanonicalTypeDefinition(this.declaringScope, "TypeParam", "$" + this.position, [], this);
+    }
+    toString() {
+      let boundsToString = "";
+      if (this.typeBoundInfo != void 0) {
+        boundsToString = `(${this.typeBoundInfo.typeBound.name}<${this.typeBoundInfo.typeBoundTypeArguments.map((t) => t.toShortString()).join(",")}>)`;
+      }
+      return `${this.name}.${this.declaringScope.id}${boundsToString}`;
+    }
+    toShortString() {
+      return `${this.name}.${this.declaringScope.id}`;
+    }
+    sizeInBytes() {
+      throw new Error(`sizeInBytes called for generic type expression`);
+    }
+    isGeneric() {
+      return true;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [];
+    }
+  };
+  var AlgebraicDataTypeDefinition = class extends NominalTypeDefinition {
+    static {
+      __name(this, "AlgebraicDataTypeDefinition");
+    }
+    // The type parameters that the type definition takes. E.g. Wrapper<T1, T2> -> this is [T1, T2]
+    // If the type is not generic, this should be undefined! Not a 0 length array
+    // though I'm not actually sure on that design decision - though later on I might want to do inference?
     typeParameters = void 0;
-    typeInstantiationInformation = void 0;
-    typeInstantiations = [];
+    // this array tracks all the specializations of the generic types. Eg. Option<T> will track Option<i32>, Option<f32>, etc
+    // Its not as critical as the other fields, but its still nice to have for bookkeeping
+    _typeInstantiations = [];
+    get typeInstantiations() {
+      return this._typeInstantiations;
+    }
     /**
      * Specializes a generic type into a specific type.
+     *
      * For example, if I have the type Type<A, B, C> then it can be specialized to Type<i32, u32, f64>
-     * The type arguments in this situation are [i32, u32, f64]
+     * The type arguments in this situation are [i32, u32, f64].
+     *
+     * If the type is not generic an error will be returned.
+     * If you want to try to specialize (instead of force it), use the replaceTypeParametersViaMap
      */
-    instantiateType(typeArguments) {
-      if (typeArguments.length != this.typeParameters?.length) {
-        throw new Error(`Underspecified (or overspecified) type instantiation for type: ${this.name}`);
+    instantiateType(scope, typeArguments) {
+      const resp = InstantiatedTypeConstructor.create(scope, this, typeArguments);
+      if (resp.success == false) {
+        return resp;
       }
-      const typeArgsToGenericParams = new Array();
-      for (let i = 0; i < this.typeParameters.length; i++) {
-        typeArgsToGenericParams.push({
-          typeArg: typeArguments[i],
-          genericParam: this.typeParameters[i]
-        });
-      }
-      return this.instantiateViaMap(typeArgsToGenericParams);
+      this.addTypeInstantiation(resp.type);
+      return resp;
     }
     /**
      * This is basically an internal function for specialization and returns the information required for
@@ -330297,59 +331040,38 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      * Undefined is returned if no specialization happens, otherwise it returns a map of the fieldName->specialized field type and the
      * internal information used to track up to the parent "template" type
      */
-    internalSpecializeViaMap(typeArguments) {
-      let originalTypeArgs;
-      if (this.typeParameters != void 0) {
-        originalTypeArgs = this.typeParameters;
-      } else {
-        originalTypeArgs = this.typeInstantiationInformation?.typeArgs.map((t) => t.typeArg.instantiateViaMap(typeArguments));
-      }
-      const mappedTypeArgs = originalTypeArgs?.map((p) => {
-        return { genericParam: p, typeArg: p.instantiateViaMap(typeArguments) };
-      });
+    internalSpecializeViaMap(scope, typeArguments) {
       const instantiatedFields = /* @__PURE__ */ new Map();
-      for (const field of this.fields) {
+      for (const field of this._components) {
         const fieldName = field[0];
-        const fieldType = field[1];
-        const specializedType = fieldType.instantiateViaMap(typeArguments);
-        instantiatedFields.set(fieldName, specializedType);
-      }
-      let cycleDetectionCounter = 0;
-      let templatedType = this;
-      while (templatedType.typeInstantiationInformation != void 0) {
-        templatedType = templatedType.typeInstantiationInformation.typeConstructor;
-        cycleDetectionCounter += 1;
-        if (cycleDetectionCounter > 1e6) {
-          throw new Error(`Cycle detected in resolving parent of type: ${this.toString()}, or at least there was > 1 mill checks for the parent`);
+        const originalFieldType = field[1];
+        const resp = originalFieldType.replaceTypeParametersViaMap(scope, typeArguments);
+        if (resp.success == false) {
+          return resp;
         }
-      }
-      let newSpecializationInformation = void 0;
-      if (mappedTypeArgs != void 0) {
-        newSpecializationInformation = {
-          typeConstructor: templatedType,
-          typeArgs: mappedTypeArgs
-        };
+        instantiatedFields.set(fieldName, resp.type);
       }
       return {
-        mappedTypeArgs,
-        // type args can be undefined in the case where the type doesn't specialize
-        mappedFieldTypes: instantiatedFields,
-        newSpecializationInformation
+        success: true,
+        mappedFieldTypes: instantiatedFields
       };
     }
     addTypeInstantiation(instance) {
-      if (this.equals(instance)) {
+      if (instance.equals(this)) {
         return;
       }
       let alreadyInSpecializations = false;
       for (const existingSpecialization of this.typeInstantiations) {
-        if (existingSpecialization.equals(instance)) {
+        if (existingSpecialization.alphaEquivalent(instance)) {
           alreadyInSpecializations = true;
         }
       }
       if (!alreadyInSpecializations) {
-        this.typeInstantiations.push(instance);
+        this._typeInstantiations.push(instance);
       }
+    }
+    canonicalizeInternal(kind) {
+      return new CanonicalTypeDefinition(this.declaringScope, kind, this.name, [], this);
     }
     resolveType() {
       return this;
@@ -330358,57 +331080,46 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return this.symbolInformation?.symbolDefinition.astCompositeDefinitionNode?.definitionScope;
     }
     formatToString(compositeType) {
-      const genStr = this.typeParameters?.map((p) => p.toString()) ?? "";
-      const fieldsStr = [...this.fields.entries()].map((p) => `${p[0]}:${p[1].toString()}`).join(", ");
-      const typeArgs = [];
-      let formattedTypeArgs = "";
-      if (this.typeInstantiationInformation != void 0) {
-        const args = this.typeInstantiationInformation.typeArgs;
-        const parentArgs = this.typeInstantiationInformation.typeConstructor.typeParameters ?? [];
-        for (let i = 0; i < Math.max(args.length, parentArgs.length); i++) {
-          const param = parentArgs[i]?.name ?? "";
-          const arg = args[i].typeArg.expression.toString() ?? "";
-          typeArgs.push([param, arg]);
-        }
-        formattedTypeArgs = `<${typeArgs.map((t) => [`${t[0]}:${t[1]}`]).join(",")}>`;
+      let typeParametersString = "";
+      if (this.typeParameters != void 0) {
+        typeParametersString = "<" + this.typeParameters.map((p) => p.toShortString()).join(", ") + ">";
       }
-      const temp = `${compositeType ?? "UnknownType"} ${formattedTypeArgs} ${this.name} ${genStr} { ${fieldsStr} }`;
+      const formattedTypeArgs = "";
+      const fieldsStr = [...this._components.entries()].map((p) => `${p[0]}:${p[1].toShortString()}`).join(", ");
+      const temp = `${compositeType ?? "UnknownType"} ${this.name}.${this.declaringScope.id} ${typeParametersString}${formattedTypeArgs} { ${fieldsStr} }`;
       return temp;
     }
     toShortString() {
-      return (this.name ?? "") + this.typeInstantiationInformation?.typeArgs.map((t) => `<${t.typeArg.toShortString()}>`);
+      const typeParamString = this.typeParameters ? `<${this.typeParameters.map((t) => t.toShortString()).join(", ")}>` : "";
+      return this.name + typeParamString;
     }
     isGeneric() {
-      return this.typeParameters != void 0 || this.typeInstantiationInformation?.typeArgs.some((arg) => arg.typeArg.isGeneric()) == true;
+      return [...this.components().values()].some((v) => v.isGeneric());
+    }
+    components() {
+      return this._components;
+    }
+    getReferencedTypes() {
+      return [...this._components.values(), ...this.typeInstantiations];
     }
   };
-  var StructTypeDefinition = class _StructTypeDefinition extends CompositeTypeDefinition {
+  var StructTypeDefinition = class _StructTypeDefinition extends AlgebraicDataTypeDefinition {
     static {
       __name(this, "StructTypeDefinition");
     }
     symbolInformation;
     expression;
     name;
-    fields;
+    _components;
     typeParameters;
-    typeInstantiationInformation;
-    declaringScope;
-    constructor(symbolInformation, expression, name, fields, typeParameters, typeInstantiationInformation) {
+    constructor(symbolInformation, expression, name, _components, typeParameters) {
       super(symbolInformation);
       this.symbolInformation = symbolInformation;
       this.expression = expression;
       this.name = name;
-      this.fields = fields;
+      this._components = _components;
       this.typeParameters = typeParameters;
-      this.typeInstantiationInformation = typeInstantiationInformation;
       this.declaringScope = symbolInformation.declaringScope;
-    }
-    instantiateType(typeArguments) {
-      const out = super.instantiateType(typeArguments);
-      if (!(out instanceof _StructTypeDefinition)) {
-        throw new Error("Unable to instantiate Struct type definition");
-      }
-      return out;
     }
     /**
      * This accepts a map of type arguments to specialized types
@@ -330416,74 +331127,62 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      *
      * Javascript's map is ordered, so the values are assumed to be in the order that the params are specialized in
      */
-    instantiateViaMap(typeArguments) {
-      const res = this.internalSpecializeViaMap(typeArguments);
-      const { mappedTypeArgs, mappedFieldTypes, newSpecializationInformation } = res;
-      if (mappedTypeArgs == void 0) {
-        return this;
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const res = this.internalSpecializeViaMap(scope, typeArguments);
+      if (res.success == false) {
+        return res;
       }
-      const expression = new SpecializedTypeExpression(this.expression, mappedTypeArgs.map((t) => t.typeArg.expression));
-      const s = new _StructTypeDefinition(this.symbolInformation, expression, this.name, mappedFieldTypes, void 0, newSpecializationInformation);
-      this.addTypeInstantiation(s);
-      return s;
+      const instantiatedType = new _StructTypeDefinition(this.symbolInformation, this.expression, this.name, res.mappedFieldTypes, void 0);
+      return { success: true, type: instantiatedType };
     }
     canonicalize() {
-      const canonicalTypeParams = this.typeInstantiationInformation?.typeArgs.map((t) => t.typeArg.canonicalize()) ?? [];
-      return new CanonicalTypeDefinition(this.declaringScope, "Struct", this.name, canonicalTypeParams, this);
+      return this.canonicalizeInternal("Struct");
     }
     sizeInBytes() {
-      return [...this.fields.values()].reduce((acc, f) => acc + f.sizeInBytes(), 0);
+      return [...this._components.values()].reduce((acc, f) => acc + f.sizeInBytes(), 0);
     }
     toString() {
       return super.formatToString("Struct");
     }
+    fields() {
+      return this._components;
+    }
+    cases() {
+      return void 0;
+    }
   };
-  var UnionTypeDefinition = class _UnionTypeDefinition extends CompositeTypeDefinition {
+  var UnionTypeDefinition = class _UnionTypeDefinition extends AlgebraicDataTypeDefinition {
     static {
       __name(this, "UnionTypeDefinition");
     }
     symbolInformation;
     expression;
     name;
-    fields;
+    _components;
     typeParameters;
-    typeInstantiationInformation;
-    declaringScope;
-    constructor(symbolInformation, expression, name, fields, typeParameters, typeInstantiationInformation) {
+    constructor(symbolInformation, expression, name, _components, typeParameters) {
       super(symbolInformation);
       this.symbolInformation = symbolInformation;
       this.expression = expression;
       this.name = name;
-      this.fields = fields;
+      this._components = _components;
       this.typeParameters = typeParameters;
-      this.typeInstantiationInformation = typeInstantiationInformation;
       this.declaringScope = symbolInformation.declaringScope;
     }
-    instantiateType(typeArguments) {
-      const out = super.instantiateType(typeArguments);
-      if (!(out instanceof _UnionTypeDefinition)) {
-        throw new Error("Unable to instantiate Union type definition");
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const res = this.internalSpecializeViaMap(scope, typeArguments);
+      if (res.success == false) {
+        return res;
       }
-      return out;
-    }
-    instantiateViaMap(typeArguments) {
-      const res = this.internalSpecializeViaMap(typeArguments);
-      const { mappedTypeArgs, mappedFieldTypes, newSpecializationInformation } = res;
-      if (mappedTypeArgs == void 0) {
-        return this;
-      }
-      const expression = new SpecializedTypeExpression(this.expression, mappedTypeArgs.map((t) => t.typeArg.expression));
-      const s = new _UnionTypeDefinition(this.symbolInformation, expression, this.name, mappedFieldTypes, void 0, newSpecializationInformation);
-      this.addTypeInstantiation(s);
-      return s;
+      const instantiatedType = new _UnionTypeDefinition(this.symbolInformation, this.expression, this.name, res.mappedFieldTypes, void 0);
+      return { success: true, type: instantiatedType };
     }
     canonicalize() {
-      const canonicalTypeParams = this.typeInstantiationInformation?.typeArgs.map((t) => t.typeArg.canonicalize()) ?? [];
-      return new CanonicalTypeDefinition(this.declaringScope, "Union", this.name, canonicalTypeParams, this);
+      return this.canonicalizeInternal("Union");
     }
     sizeInBytes() {
       let size2 = 0;
-      for (const f of this.fields.values()) {
+      for (const f of this._components.values()) {
         size2 = Math.max(size2, f.sizeInBytes());
       }
       return size2;
@@ -330491,8 +331190,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toString() {
       return super.formatToString("Union");
     }
+    // Unions have fields (and no tag), but they write to the same location. TBH, I'm going to deprecate unions
+    // so I don't really care too much what I do here.
+    fields() {
+      return this._components;
+    }
+    cases() {
+      return void 0;
+    }
   };
-  var VariantTypeDefinition = class _VariantTypeDefinition extends CompositeTypeDefinition {
+  var VariantTypeDefinition = class _VariantTypeDefinition extends AlgebraicDataTypeDefinition {
     static {
       __name(this, "VariantTypeDefinition");
     }
@@ -330500,52 +331207,37 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     expression;
     name;
     backingTagType;
-    fields;
+    _components;
     typeParameters;
-    typeInstantiationInformation;
-    declaringScope;
     fieldNameToBackingValue = /* @__PURE__ */ new Map();
-    constructor(symbolInformation, expression, name, backingTagType, fields, typeParameters, typeInstantiationInformation) {
+    constructor(symbolInformation, expression, name, backingTagType, _components, typeParameters) {
       super(symbolInformation);
       this.symbolInformation = symbolInformation;
       this.expression = expression;
       this.name = name;
       this.backingTagType = backingTagType;
-      this.fields = fields;
+      this._components = _components;
       this.typeParameters = typeParameters;
-      this.typeInstantiationInformation = typeInstantiationInformation;
       this.declaringScope = symbolInformation.declaringScope;
       let index = 0;
-      for (const f of fields.keys()) {
+      for (const f of _components.keys()) {
         this.fieldNameToBackingValue.set(f, index++);
       }
     }
-    instantiateType(typeArguments) {
-      const out = super.instantiateType(typeArguments);
-      if (!(out instanceof _VariantTypeDefinition)) {
-        throw new Error("Unable to instantiate Variant type definition");
+    replaceTypeParametersViaMap(scope, typeArguments) {
+      const res = this.internalSpecializeViaMap(scope, typeArguments);
+      if (res.success == false) {
+        return res;
       }
-      return out;
-    }
-    instantiateViaMap(typeArguments) {
-      const res = this.internalSpecializeViaMap(typeArguments);
-      const { mappedTypeArgs, mappedFieldTypes, newSpecializationInformation } = res;
-      if (mappedTypeArgs == void 0) {
-        return this;
-      }
-      const expression = new SpecializedTypeExpression(this.expression, mappedTypeArgs.map((t) => t.typeArg.expression));
-      const s = new _VariantTypeDefinition(this.symbolInformation, expression, this.name, this.backingTagType, mappedFieldTypes, void 0, newSpecializationInformation);
-      this.addTypeInstantiation(s);
-      return s;
+      const instantiatedType = new _VariantTypeDefinition(this.symbolInformation, this.expression, this.name, this.backingTagType, res.mappedFieldTypes, void 0);
+      return { success: true, type: instantiatedType };
     }
     canonicalize() {
-      const canonicalTypeParams = this.typeInstantiationInformation?.typeArgs.map((t) => t.typeArg.canonicalize()) ?? [];
-      const out = new CanonicalTypeDefinition(this.declaringScope, "Variant", this.name, canonicalTypeParams, this);
-      return out;
+      return this.canonicalizeInternal("Variant");
     }
     sizeInBytes() {
       let unionSize = 0;
-      for (const f of this.fields.values()) {
+      for (const f of this._components.values()) {
         unionSize = Math.max(unionSize, f.sizeInBytes());
       }
       const tagSize = this.backingTagType.sizeInBytes();
@@ -330554,333 +331246,336 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toString() {
       return super.formatToString("Variant");
     }
-  };
-  var TupleTypeDefinition = class _TupleTypeDefinition extends CompositeTypeDefinition {
-    static {
-      __name(this, "TupleTypeDefinition");
+    fields() {
+      return void 0;
     }
-    types;
-    declaringScope;
-    // the declaring scope is always the global scope
-    expression;
-    fields;
-    typeParameters = void 0;
-    // I guess there's no name for an anonymous tuple, so leave this as undefined
-    name = void 0;
-    constructor(scope, types) {
-      const filtered = types.filter((f) => f.resolveType() != void 0).map((f) => f.resolveType());
-      const expression = new TupleTypeExpression(FAKE_PARSE_TREE_NODE, filtered.map((t) => t.expression));
-      super(void 0);
-      this.types = types;
-      this.declaringScope = scope.getGlobalScope();
-      this.expression = expression;
-      this.fields = /* @__PURE__ */ new Map();
-      for (let i = 0; i < filtered.length; i++) {
-        this.fields.set(`_${i}`, filtered[i]);
-      }
-    }
-    instantiateType(typeArguments) {
-      throw new Error("Method not implemented.");
-    }
-    instantiateViaMap(typeArguments) {
-      return new _TupleTypeDefinition(this.declaringScope, this.types.map((t) => t.instantiateViaMap(typeArguments)));
-    }
-    sizeInBytes() {
-      return [...this.fields.values()].reduce((acc, f) => acc + f.sizeInBytes(), 0);
-    }
-    canonicalize() {
-      const canonicalFields = [...this.fields.values()].map((t) => t.canonicalize());
-      return new CanonicalTypeDefinition(this.declaringScope, "Tuple", "", canonicalFields, this);
-    }
-    equals(other) {
-      if (this == other) {
-        return true;
-      }
-      const out = this.canonicalize().equals(other.canonicalize());
-      return out;
-    }
-    toString() {
-      const typeStrings = [...this.fields.values()].map((t) => t.toString()).join(", ");
-      return `( ${typeStrings} )`;
-    }
-    toShortString() {
-      const typeStrings = [...this.fields.values()].map((t) => t.toShortString()).join(", ");
-      return `( ${typeStrings} )`;
-    }
-    isGeneric() {
-      return false;
+    cases() {
+      return this._components;
     }
   };
-  var FunctionTypeDefinition = class _FunctionTypeDefinition extends InstantiableTypeDefinition {
+
+  // ../compiler/dist/src/compiler/TypeDefinition.js
+  var TypeBoundDefinition = class {
     static {
-      __name(this, "FunctionTypeDefinition");
+      __name(this, "TypeBoundDefinition");
     }
+    name;
+    definitionScope;
     typeParameters;
-    paramTypes;
-    returnType;
-    declaringScope;
-    // the declaring scope is always the global scope
-    expression;
-    // There's no name for function types
-    name = void 0;
-    constructor(scope, typeParameters, paramTypes, returnType) {
-      const expression = new FunctionTypeExpression(FAKE_PARSE_TREE_NODE, typeParameters?.map((p) => p.expression), paramTypes.map((p) => p.expression), returnType.expression);
-      super(void 0);
+    requirements;
+    requirementsMap;
+    constructor(name, definitionScope, typeParameters, requirements) {
+      this.name = name;
+      this.definitionScope = definitionScope;
       this.typeParameters = typeParameters;
-      this.paramTypes = paramTypes;
-      this.returnType = returnType;
-      this.declaringScope = scope.getGlobalScope();
-      this.expression = expression;
-    }
-    instantiateType(typeArguments) {
-      if (typeArguments.length != this.typeParameters?.length) {
-        throw new Error(`Underspecified (or overspecified) type instantiation for type: ${this.name}. Expected: ${this.typeParameters?.length}, actual: ${typeArguments.length}`);
+      this.requirements = requirements;
+      this.requirementsMap = /* @__PURE__ */ new Map();
+      for (const r of this.requirements) {
+        this.requirementsMap.set(r.name, r.functionSignatures);
       }
-      const typeArgsToGenericParams = new Array();
+    }
+    /**
+     * Converts a list of type arguments (e.g. [T, i32]) to a map of type arguments based on the positional arguments
+     * in the TypeBoundDefinition -> so it would return something like {A: T, B: i32}.
+     *
+     * This is used to convert the function definitions generated by the requirements of the typebounds to be typed in terms
+     * of the using function's type arguments (and not the type bounds arguments)
+     * - For example TypeBound<A> { tbReq: (A) => i32}, function f<T>(a: T): i32 { return tbReq(a); } // tbReq needs to be mapped to accept T(f.scope) not A(tb.scope)
+     */
+    createTypeArgumentsMap(typeArguments) {
+      if (typeArguments.length != this.typeParameters.length) {
+        throw new Error(`Incorrect number of type arguments to TypeBound: ${this.name}. (Expected ${this.typeParameters.length}, Received: ${typeArguments.length})`);
+      }
+      const out = [];
       for (let i = 0; i < this.typeParameters.length; i++) {
-        typeArgsToGenericParams.push({
-          typeArg: typeArguments[i],
-          genericParam: this.typeParameters[i]
-        });
+        const temp = {
+          genericParam: this.typeParameters[i],
+          typeArg: typeArguments[i]
+        };
+        out.push(temp);
       }
-      return this.instantiateViaMap(typeArgsToGenericParams);
+      return out;
     }
-    instantiateViaMap(typeArguments) {
-      const instantiatedFunctionParams = this.paramTypes.map((t) => t.instantiateViaMap(typeArguments));
-      const instantiatedReturnType = this.returnType.instantiateViaMap(typeArguments);
-      const s = new _FunctionTypeDefinition(
-        this.declaringScope,
-        // it should always be the global scope I think
-        void 0,
-        instantiatedFunctionParams,
-        instantiatedReturnType
-      );
-      return s;
-    }
-    sizeInBytes() {
-      throw new Error("Not implemented");
-    }
-    canonicalize() {
-      const mappedParams = this.paramTypes.map((p) => p.canonicalize()).map((t) => {
-        if (t.typeType == "TypeParam") {
-          t.declaringScope = t.declaringScope.getGlobalScope();
-        }
-        return t;
+    // I guess in the future I'll probably have to support an array, but I'm not there yet.
+    doesTypeSatisfyTypeBound(useSiteScope, type) {
+      const typeArgsToGenericParams = this.typeParameters.map((tp) => {
+        return { genericParam: tp, typeArg: type };
       });
-      const canonicalParams = new CanonicalTypeDefinition(this.declaringScope, "Args", "", mappedParams, this);
-      const mappedReturn = this.returnType.canonicalize();
-      if (mappedReturn.typeType == "TypeParam") {
-        mappedReturn.declaringScope = mappedReturn.declaringScope.getGlobalScope();
-      }
-      const canonicalReturn = new CanonicalTypeDefinition(this.declaringScope, "ReturnType", "", [mappedReturn], this);
-      const out = new CanonicalTypeDefinition(this.declaringScope, "Function", "", [canonicalParams, canonicalReturn], this);
-      return out;
-    }
-    equals(other) {
-      if (this == other) {
-        return true;
-      }
-      const out = this.canonicalize().equals(other.canonicalize());
-      return out;
-    }
-    toString() {
-      const params = this.paramTypes.map((p) => p.toString()).join(", ");
-      const returnStr = this.returnType.toString();
-      return `( ${params} ) => ${returnStr}`;
-    }
-    toShortString() {
-      const params = this.paramTypes.map((p) => p.toShortString()).join(", ");
-      const returnStr = this.returnType.toShortString();
-      return `( ${params} ) => ${returnStr}`;
-    }
-    isGeneric() {
-      return this.returnType.isGeneric() || this.paramTypes.some((t) => t.isGeneric());
-    }
-  };
-  var ArrayTypeDefinition = class _ArrayTypeDefinition extends InstantiableTypeDefinition {
-    static {
-      __name(this, "ArrayTypeDefinition");
-    }
-    backingType;
-    length;
-    expression;
-    declaringScope;
-    // the name for the array type is not actually set since its a built-in
-    name = void 0;
-    constructor(scope, backingType, length) {
-      super(void 0);
-      this.backingType = backingType;
-      this.length = length;
-      this.expression = new ArrayTypeExpression(FAKE_PARSE_TREE_NODE, backingType.expression, length);
-      this.declaringScope = scope.getGlobalScope();
-    }
-    instantiateType(typeArguments) {
-      throw new Error("Method not implemented.");
-    }
-    instantiateViaMap(typeArguments) {
-      throw new Error("Not implemented");
-    }
-    resolveType() {
-      return this;
-    }
-    canonicalize() {
-      throw new Error("Not implemented");
-    }
-    toString() {
-      const temp = super.toString();
-      return temp;
-    }
-    toShortString() {
-      const temp = super.toString();
-      return temp;
-    }
-    sizeInBytes() {
-      return this.backingType.sizeInBytes();
-    }
-    equals(other) {
-      if (!(other instanceof _ArrayTypeDefinition)) {
-        return false;
-      }
-      if (this.length != other.length) {
-        return false;
-      }
-      return this.backingType.equals(other.backingType);
-    }
-    isGeneric() {
-      return false;
-    }
-  };
-  var UnitTypeDefinition = class _UnitTypeDefinition extends TupleTypeDefinition {
-    static {
-      __name(this, "UnitTypeDefinition");
-    }
-    expression = new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE);
-    constructor(declaringScope) {
-      const globalScope = declaringScope.getGlobalScope();
-      super(globalScope, []);
-      this.name = "unit";
-    }
-    sizeInBytes() {
-      return 0;
-    }
-    equals(other) {
-      if (other instanceof _UnitTypeDefinition) {
-        return true;
-      }
-      if (other instanceof TupleTypeDefinition) {
-        return this.fields.size == other.fields.size;
-      }
-      return false;
-    }
-    toString() {
-      return "unit";
-    }
-    isGeneric() {
-      return false;
-    }
-  };
-  var PointerTypeDefinition = class extends InstantiableTypeDefinition {
-    static {
-      __name(this, "PointerTypeDefinition");
-    }
-    expression;
-    // A pointer itself is a scalar type (usually an i32, maybe an i64 if I eventually support 64-bit addressing)
-    // The value it points to may not be a scalar though
-    name = void 0;
-    declaringScope;
-    constructor(expression, scope) {
-      super(void 0);
-      this.expression = expression;
-      this.declaringScope = scope.getGlobalScope();
-    }
-    instantiateType(typeArguments) {
-      throw new Error("Specialization is not implemented for pointer types");
-    }
-    instantiateViaMap(typeArguments) {
-      throw new Error("Not implemented");
-    }
-    dereferencedType() {
-      return this.declaringScope.resolveTypeDefinition(this.expression.internal);
-    }
-    resolveType() {
-      return this;
-    }
-    canonicalize() {
-      const internalType = this.dereferencedType().canonicalize();
-      return new CanonicalTypeDefinition(this.declaringScope, "Pointer", "", [internalType], this);
-    }
-    sizeInBytes() {
-      const out = BuiltInScalarConfig[CompilerDefaultTypes.PointerAddressType].bytes;
-      if (out == void 0) {
-        throw new Error(`Failed to determine the default size in bytes for a pointer type. This is a big bug in the compiler`);
-      }
-      return out;
-    }
-    toString() {
-      return `${this.expression.toString()}`;
-    }
-    toShortString() {
-      return `*${this.dereferencedType().toShortString()}`;
-    }
-    isGeneric() {
-      return false;
-    }
-  };
-  function mapExpressionToDefinition(scope, typeExpression) {
-    if (typeExpression instanceof PointerTypeExpression) {
-      return new PointerTypeDefinition(typeExpression, scope);
-    }
-    const symbolName = typeExpression.symbolName;
-    const symbol = scope.findSymbolWithType(
-      symbolName,
-      "Type"
-      /* SymbolType.Type */
-    );
-    if (symbol == void 0) {
-      throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName}`);
-    }
-    if (symbol.symbolDefinition.symbolType != "Type") {
-      throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName} - symbol is not a type and is instead ${symbol.symbolDefinition.symbolType}`);
-    }
-    const symbolInformation = symbol;
-    const symbolDefinition = symbolInformation.symbolDefinition;
-    if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
-      return new ScalarTypeDefinition(symbolInformation);
-    } else if (symbolDefinition.genericTypeParamInfo != void 0) {
-      return new GenericParameterTypeDefinition(symbolInformation, symbolDefinition.genericTypeParamInfo.position);
-    } else if (symbolDefinition.astCompositeDefinitionNode instanceof AstCompositeDefinition) {
-      const typeDefAstNode = symbolDefinition.astCompositeDefinitionNode;
-      const astFields = typeDefAstNode.fieldMap;
-      const definitionScope = typeDefAstNode.definitionScope;
-      const genericParameters = typeDefAstNode.typeParameters?.types.map((t) => {
-        const td = definitionScope.resolveTypeDefinition(new BaseTypeExpression(t.identifier.parseTreeNode, t.identifier));
-        if (!(td instanceof GenericParameterTypeDefinition)) {
-          throw new Error(`Unable to resolve type definition ${t.identifier.name} to generic type parameter`);
+      const failedLookups = [];
+      const noMatchingTypes = [];
+      const successes = [];
+      for (const requirement of this.requirements) {
+        const name = requirement.name;
+        const uninstantiatedFunctionSignatures = requirement.functionSignatures;
+        const lookup = useSiteScope.findCallableSymbol(name);
+        if (lookup.success == false) {
+          failedLookups.push(name);
+          continue;
         }
-        return td;
-      });
-      const resolvedFields = /* @__PURE__ */ new Map();
-      for (const field of astFields.entries()) {
-        const resolvedFieldType = definitionScope.resolveTypeDefinition(field[1].typeExpression);
-        resolvedFields.set(field[0], resolvedFieldType);
-      }
-      if (typeDefAstNode.compositeType == "Struct") {
-        return new StructTypeDefinition(symbolInformation, typeExpression, symbolName, resolvedFields, genericParameters, void 0);
-      } else if (typeDefAstNode.compositeType == "Union") {
-        return new UnionTypeDefinition(symbolInformation, typeExpression, symbolName, resolvedFields, genericParameters, void 0);
-      } else if (typeDefAstNode.compositeType == "Variant") {
-        if (resolvedFields.size > 255 || resolvedFields.size < 1) {
-          throw new Error(`FIXME: support larger backing types for variant types. Size was: ${resolvedFields.size}`);
+        for (const uninstantiatedFunctionSignature of uninstantiatedFunctionSignatures) {
+          const requirementFunctionTypeResp = uninstantiatedFunctionSignature.replaceTypeParametersViaMap(useSiteScope, typeArgsToGenericParams);
+          if (requirementFunctionTypeResp.success == false) {
+            const out = {
+              isSatisfied: false,
+              failedLookups: [],
+              noMatchingTypes: [],
+              matches: []
+            };
+            return out;
+          }
+          const requirementFunctionType = requirementFunctionTypeResp.type;
+          let hasMatch = false;
+          let symbol = lookup.symbol;
+          while (symbol != void 0) {
+            for (const overload of symbol.symbolDefinition.overloads) {
+              const instantiatedOverloadType = overload.typeDefinition;
+              const functionParamTypesEqual = requirementFunctionType.areParamTypesEqual(instantiatedOverloadType);
+              const returnTypeEqual = requirementFunctionType.returnType.equals(instantiatedOverloadType.returnType);
+              if (returnTypeEqual && functionParamTypesEqual) {
+                hasMatch = true;
+                const match2 = {
+                  name,
+                  overload,
+                  requirementType: requirementFunctionType
+                };
+                successes.push(match2);
+                break;
+              }
+            }
+            const getCallableParent = /* @__PURE__ */ __name((root) => {
+              if (root.shadow == void 0) {
+                return void 0;
+              }
+              const shadow = root.shadow;
+              if (shadow.symbolDefinition.symbolType == "Function" || shadow.symbolDefinition.symbolType == "Operator") {
+                return shadow;
+              }
+              return getCallableParent(shadow);
+            }, "getCallableParent");
+            symbol = getCallableParent(symbol);
+          }
+          if (!hasMatch) {
+            const noMatch = {
+              name,
+              requirementType: requirementFunctionType
+            };
+            noMatchingTypes.push(noMatch);
+          }
         }
-        const u8ScalarType = scope.resolveTypeDefinition(BuiltInScalarConfig["u8"].astValues.typeExpression);
-        return new VariantTypeDefinition(symbolInformation, typeExpression, symbolName, u8ScalarType, resolvedFields, genericParameters, void 0);
+      }
+      if (failedLookups.length == 0 && noMatchingTypes.length == 0) {
+        return {
+          isSatisfied: true,
+          matches: successes
+        };
       } else {
-        throw new Error(`Unable to resolve type for composite type: ${typeDefAstNode.compositeType}`);
+        return {
+          isSatisfied: false,
+          failedLookups,
+          // I think this will eventually be removed - there shouldn't be cases where function NAMES can't be found
+          noMatchingTypes,
+          matches: successes
+        };
       }
     }
-    throw new Error(`Not yet implemented for type: ${symbolDefinition.typeExpression.toString()}`);
-  }
-  __name(mapExpressionToDefinition, "mapExpressionToDefinition");
+    equals(other) {
+      return this.name == other.name && this.definitionScope.id == other.definitionScope.id;
+    }
+    alphaEquivalent(other) {
+      if (this.typeParameters.length != other.typeParameters.length) {
+        return false;
+      }
+      for (let i = 0; i < this.typeParameters.length; i++) {
+        if (!this.typeParameters[i].alphaEquivalent(other.typeParameters[i])) {
+          return false;
+        }
+      }
+      if (this.requirements.length != other.requirements.length) {
+        return false;
+      }
+      const compareRequirement = /* @__PURE__ */ __name((a, b) => {
+        const nameEqual = a.name.localeCompare(b.name);
+        if (nameEqual != 0) {
+          return nameEqual;
+        }
+        const aFuncSigs = a.functionSignatures.map((f) => f.toString()).join(",");
+        const bFuncSigs = b.functionSignatures.map((f) => f.toString()).join(",");
+        return aFuncSigs.localeCompare(bFuncSigs);
+      }, "compareRequirement");
+      const thisRequirementsOrdered = this.requirements.toSorted((a, b) => compareRequirement(a, b));
+      const otherRequirementsOrdered = other.requirements.toSorted((a, b) => compareRequirement(a, b));
+      for (let i = 0; i < this.requirements.length; i++) {
+        const a = thisRequirementsOrdered[i];
+        const b = otherRequirementsOrdered[i];
+        if (a.name != b.name) {
+          return false;
+        }
+        if (a.functionSignatures.length != b.functionSignatures.length) {
+          return false;
+        }
+        const aOrderedFuncs = a.functionSignatures.toSorted((a2, b2) => a2.canonicalize().toString().localeCompare(b2.canonicalize().toString()));
+        const bOrderedFuncs = b.functionSignatures.toSorted((a2, b2) => a2.canonicalize().toString().localeCompare(b2.canonicalize().toString()));
+        for (let j = 0; j < aOrderedFuncs.length; j++) {
+          if (!aOrderedFuncs[j].alphaEquivalent(bOrderedFuncs[j])) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+    toShortString() {
+      return `${this.name}<${this.typeParameters.map((t) => t.name).join(",")}>`;
+    }
+    toString() {
+      const typeParamsFormatted = this.typeParameters.map((t) => t.name).join(", ");
+      const requirementsFormatted = [...this.requirementsMap.entries()].map((r) => r[1].map((f) => `${r[0]}:${f.toShortString()}`)).join("; ");
+      return `${this.name} <${typeParamsFormatted}> {${requirementsFormatted}}`;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/type/UninstantiableTypes.js
+  var UndeterminedTypeTypeDefinition = class _UndeterminedTypeTypeDefinition {
+    static {
+      __name(this, "UndeterminedTypeTypeDefinition");
+    }
+    _id = getTypeInstantiationCounter();
+    symbolInformation = void 0;
+    name = "UndeterminedType";
+    static instance = new _UndeterminedTypeTypeDefinition();
+    constructor() {
+    }
+    resolveType() {
+      return void 0;
+    }
+    toString() {
+      return this.name;
+    }
+    toShortString() {
+      return this.name;
+    }
+    isGeneric() {
+      return false;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [];
+    }
+  };
+  var ScalarLiteralType = class {
+    static {
+      __name(this, "ScalarLiteralType");
+    }
+    _id = getTypeInstantiationCounter();
+    symbolInformation = void 0;
+    constructor() {
+    }
+    toString() {
+      return this.name;
+    }
+    toShortString() {
+      return this.name;
+    }
+    isGeneric() {
+      return false;
+    }
+    components() {
+      return void 0;
+    }
+    fields() {
+      return void 0;
+    }
+    cases() {
+      return void 0;
+    }
+    getReferencedTypes() {
+      return [];
+    }
+  };
+  var IntegerLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "IntegerLiteralType");
+    }
+    value;
+    _id = getTypeInstantiationCounter();
+    name = "IntegerLiteral";
+    declaringScope;
+    // this value will be set if during an assignment the type of the LHS is specified.
+    // otherwise when resolving the type, it will fallback to the default type of the literal
+    resolvedType = void 0;
+    constructor(scope, value) {
+      super();
+      this.value = value;
+      this.declaringScope = scope.getGlobalScope();
+    }
+    resolveType() {
+      if (this.resolvedType != void 0) {
+        return this.resolvedType;
+      }
+      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.IntLiteralDefaultType));
+      const res = this.declaringScope.resolveTypeDefinition(typeExpression);
+      if (!res.success) {
+        throw new Error("TODO");
+      }
+      return res.type;
+    }
+  };
+  var FloatLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "FloatLiteralType");
+    }
+    _id = getTypeInstantiationCounter();
+    name = "FloatLiteral";
+    declaringScope;
+    resolvedType;
+    constructor(scope) {
+      super();
+      this.declaringScope = scope.getGlobalScope();
+    }
+    resolveType() {
+      if (this.resolvedType != void 0) {
+        return this.resolvedType;
+      }
+      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.FloatLiteralDefaultType));
+      const res = this.declaringScope.resolveTypeDefinition(typeExpression);
+      if (!res.success) {
+        throw new Error("TODO");
+      }
+      return res.type;
+    }
+  };
+  var NullLiteralType = class extends ScalarLiteralType {
+    static {
+      __name(this, "NullLiteralType");
+    }
+    declaringScope;
+    _id = getTypeInstantiationCounter();
+    name = "NullLiteral";
+    resolvedType = void 0;
+    // leave as undef for now
+    constructor(declaringScope) {
+      super();
+      this.declaringScope = declaringScope;
+    }
+    resolveType() {
+      const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.NullLiteralDefaultType));
+      const typeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
+      const res = this.declaringScope.resolveTypeDefinition(typeExpression);
+      if (!res.success) {
+        throw new Error("TODO");
+      }
+      return res.type;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/type/TypeUtils.js
   function areTypesAssignable(lhsType, rhsType) {
     if (lhsType instanceof UndeterminedTypeTypeDefinition && rhsType instanceof ScalarLiteralType) {
       return {
@@ -330894,7 +331589,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         resolvedLhsType: rhsType.resolveType(),
         resolvedRhsType: rhsType.resolveType()
       };
-    } else if (lhsType instanceof InstantiableTypeDefinition && rhsType instanceof NullLiteralType) {
+    } else if (lhsType instanceof InstantiableTypeDefinition && (rhsType instanceof NullLiteralType || rhsType instanceof NeverTypeDefinition)) {
       return {
         isAcceptable: true,
         resolvedLhsType: lhsType.resolveType(),
@@ -330910,7 +331605,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             isAcceptable: false,
             resolvedLhsType: lhsType.resolveType(),
             resolvedRhsType: rhsType.resolveType(),
-            errorMessage: `Unable to assign to type: '${lhsType.name}' with literal value: '${rhsType.value}' as the valid range for the type is [${range3.min}, ${range3.max}]`
+            errorMessage: `Unable to assign to type: '${lhsType.name}' with literal value: '${rhsType.value}' as the valid range for the type is [${range3.min}, ${range3.max}]`,
+            errorType: "IntLiteralOutOfRange"
           };
         }
       }
@@ -330936,21 +331632,130 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     };
   }
   __name(areTypesAssignable, "areTypesAssignable");
+  function mapExpressionToDefinition(scope, typeExpression, recursionDepth) {
+    if (typeExpression instanceof PointerTypeExpression) {
+      return { success: true, type: new PointerTypeDefinition(typeExpression, scope) };
+    }
+    const symbolName = typeExpression.symbolName;
+    const symbol = scope.findSymbolWithType(
+      symbolName,
+      "Type"
+      /* SymbolType.Type */
+    );
+    if (symbol == void 0) {
+      throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName}`);
+    }
+    if (symbol.symbolDefinition.symbolType != "Type") {
+      throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName} - symbol is not a type and is instead ${symbol.symbolDefinition.symbolType}`);
+    }
+    const symbolInformation = symbol;
+    const symbolDefinition = symbolInformation.symbolDefinition;
+    if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
+      return { success: true, type: new ScalarTypeDefinition(symbolInformation) };
+    } else if (symbolDefinition.genericTypeParamInfo != void 0) {
+      const genericParamInfo = symbolDefinition.genericTypeParamInfo;
+      let typeBoundInfo = void 0;
+      if (genericParamInfo.typeBoundInfo != void 0) {
+        const typeParameterExpression = genericParamInfo.typeBoundInfo.typeParameterExpression;
+        const typeBoundSymbol = genericParamInfo.typeBoundInfo.typeBoundSymbol;
+        const respTypeBound = scope.resolveTypeBound(typeBoundSymbol.symbolName);
+        if (respTypeBound.success == false) {
+          throw new Error(`Failed to resolve type bound with name ${typeBoundSymbol.symbolName}.`);
+        }
+        const typeBoundDef = respTypeBound.definition;
+        const typeBoundArgsExpression = typeParameterExpression.typeBoundExpression.typeArguments;
+        if (typeBoundArgsExpression == void 0) {
+          return resolveTypeResponseFailSingleError("NoTypeArgumentsToTypeBound", `No type arguments to type bound with name ${typeBoundDef.name} for generic param: ${typeExpression.toString()}`);
+        }
+        const typeBoundArgsDefs = typeBoundArgsExpression.map((argTypeExpression) => {
+          if (typeExpression.equals(argTypeExpression)) {
+            return new SelfReferenceTypeDefinition();
+          }
+          const resp = scope.resolveTypeDefinition(argTypeExpression, recursionDepth + 1);
+          if (resp.success == false) {
+            return resp;
+          }
+          return resp.type;
+        });
+        if (typeBoundArgsDefs.length != typeBoundDef.typeParameters.length) {
+          return resolveTypeResponseFailSingleError("WrongNumberOfTypeArgumentsToTypeBound", `Received incorrect number of type arguments to type bound with name: ${typeBoundDef.name} with type expression: ${typeBoundArgsExpression.map((t) => t.toString()).join(", ")}.
+          Expecting ${typeBoundDef.typeParameters.length} number of type args, but instead received: ${typeBoundArgsDefs.length}`);
+        }
+        typeBoundInfo = {
+          typeBound: typeBoundDef,
+          typeBoundTypeArguments: typeBoundArgsDefs
+        };
+      }
+      const out = new TypeParameterDefinition(symbolInformation, symbolDefinition.genericTypeParamInfo.position, typeBoundInfo);
+      return { success: true, type: out };
+    } else if (symbolDefinition.astCompositeDefinitionNode instanceof AstCompositeDefinition) {
+      const typeDefAstNode = symbolDefinition.astCompositeDefinitionNode;
+      const astFields = typeDefAstNode.fieldMap;
+      const definitionScope = typeDefAstNode.definitionScope;
+      const genericParameters = typeDefAstNode.typeParameters?.map((t) => {
+        const td = definitionScope.resolveTypeDefinition(new BaseTypeExpression(t.identifier.parseTreeNode, t.identifier), recursionDepth + 1);
+        if (!td.success || !(td.type instanceof TypeParameterDefinition)) {
+          throw new Error(`Unable to resolve type definition ${t.identifier.name} to generic type parameter`);
+        }
+        return td.type;
+      });
+      const resolvedFields = /* @__PURE__ */ new Map();
+      const errAcc = [];
+      for (const field of astFields.entries()) {
+        const resolvedFieldResp = definitionScope.resolveTypeDefinition(field[1].typeExpression, recursionDepth + 1);
+        if (resolvedFieldResp.success == false) {
+          return resolvedFieldResp;
+        }
+        const resolvedFieldType = resolvedFieldResp.type;
+        if (resolvedFieldType instanceof AlgebraicDataTypeDefinition && resolvedFieldType.typeParameters != void 0) {
+          const error = resolveTypeResponseFailSingleError("NoTypeArgumentsToGenericType", `For type declaration: ${symbolName}, the field with name ${field[0]} has an error. 
+          Type ${resolvedFieldType.name} expected generic parameters, but there are no type parameters supplied`);
+          errAcc.push(error);
+        }
+        resolvedFields.set(field[0], resolvedFieldType);
+      }
+      if (errAcc.length > 0) {
+        const err = {
+          success: false,
+          errors: errAcc.flatMap((e) => e.errors)
+        };
+        return err;
+      }
+      let out;
+      if (typeDefAstNode.compositeType == "Struct") {
+        out = new StructTypeDefinition(symbolInformation, typeExpression, symbolName, resolvedFields, genericParameters);
+      } else if (typeDefAstNode.compositeType == "Union") {
+        out = new UnionTypeDefinition(symbolInformation, typeExpression, symbolName, resolvedFields, genericParameters);
+      } else if (typeDefAstNode.compositeType == "Variant") {
+        if (resolvedFields.size > 255) {
+          throw new Error(`FIXME: support larger backing types for variant types. Size was: ${resolvedFields.size}`);
+        }
+        const resp = scope.resolveTypeDefinition(BuiltInScalarConfig["u8"].astValues.typeExpression, recursionDepth + 1);
+        if (resp.success == false) {
+          throw new Error("Unable to resolve the built-in u8 type");
+        }
+        const u8ScalarType = resp.type;
+        out = new VariantTypeDefinition(symbolInformation, typeExpression, symbolName, u8ScalarType, resolvedFields, genericParameters);
+      } else {
+        throw new Error(`Unable to resolve type for composite type: ${typeDefAstNode.compositeType}`);
+      }
+      return { success: true, type: out };
+    }
+    throw new Error(`Not yet implemented for type: ${symbolDefinition.typeExpression.toString()}`);
+  }
+  __name(mapExpressionToDefinition, "mapExpressionToDefinition");
 
-  // ../compiler/dist/src/compiler/SymbolTable.js
-  var scopeId = 0;
+  // ../compiler/dist/src/compiler/symbol/Scope.js
   var Scope = class {
     static {
       __name(this, "Scope");
     }
     scopeName;
     parent;
-    id;
     _backingMap = /* @__PURE__ */ new Map();
     constructor(scopeName, parent) {
       this.scopeName = scopeName;
       this.parent = parent;
-      this.id = scopeId++;
     }
     /**
      * Finds a symbol by name. It will first attempt to find it in the local scope, and if its not found there,
@@ -330998,18 +331803,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return void 0;
     }
   };
+
+  // ../compiler/dist/src/compiler/symbol/SymbolTable.js
+  var symbolTableId = 0;
   var SymbolTable = class extends Scope {
     static {
       __name(this, "SymbolTable");
     }
     scopeName;
     parent;
+    id;
     _childrenContexts = [];
     constructor(scopeName, parent) {
       super(scopeName, parent);
       this.scopeName = scopeName;
       this.parent = parent;
       parent?._childrenContexts.push(this);
+      this.id = symbolTableId++;
     }
     /**
      * Finds the symbol and the scope that the name is defined in.
@@ -331070,6 +331880,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return { success: false, symbol: s };
     }
+    findTypeBoundSymbol(symbolName) {
+      const s = this.findSymbol(symbolName);
+      if (s != void 0 && s.symbolDefinition.symbolType == "TypeBound") {
+        return { success: true, symbol: s };
+      }
+      return { success: false, symbol: s };
+    }
     findCallableSymbol(symbolName) {
       const s = this.findSymbol(symbolName);
       if (s != void 0 && (s.symbolDefinition.symbolType == "Function" || s.symbolDefinition.symbolType == "Operator")) {
@@ -331113,13 +331930,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         declaredType: variable.typeExpression,
         resolvedType: void 0,
         scopeType,
-        definitionNode: node
+        definitionNode: node,
+        isConst: variable.isConstant
       };
       const symbol = {
         symbolName: node.symbolName,
         declaringScope: this,
         symbolDefinition: t,
-        isConst: variable.isConstant,
         shadow,
         isShadowable: true,
         // I guess variables should always be shadowable
@@ -331145,13 +331962,38 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         typeExpression,
         definitionNode: node,
         genericTypeParamInfo: void 0,
-        astCompositeDefinitionNode: compositeDef
+        astCompositeDefinitionNode: compositeDef,
+        typeDefinition: void 0
+        // will be resolved in the checker
       };
       const symbol = {
         symbolName: node.symbolName,
         declaringScope: this,
         symbolDefinition: t,
-        isConst: true,
+        shadow,
+        isShadowable: !isBuiltIn,
+        isBuiltIn
+      };
+      this.setSymbol(node.symbolName, symbol);
+      node.augmentedProperties.symbolInfo = symbol;
+      return void 0;
+    }
+    declareTypeBound(node, isBuiltIn = false) {
+      const resp = this.checkForBindingConflicts(node);
+      if (resp.success == false) {
+        return resp.error;
+      }
+      const shadow = resp.shadow;
+      const t = {
+        symbolType: "TypeBound",
+        definitionNode: node,
+        typeBoundDefinition: void 0
+        // set to undefined at the start, will be set when use
+      };
+      const symbol = {
+        symbolName: node.symbolName,
+        declaringScope: this,
+        symbolDefinition: t,
         shadow,
         isShadowable: !isBuiltIn,
         isBuiltIn
@@ -331170,6 +332012,69 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Symbol type mapping is not defined for the type: ${node.constructor.name}`);
       }
       return this.bindCallableName({ type: symbolType, node }, isBuiltIn);
+    }
+    // Imports the functions defined in the type bound into the symbol table.
+    // This is intended to be called from the function's definitionScope so that the function signatures for
+    // the type bound are defined in the function
+    declareTypeBoundFunctions(typeParameter, symbol) {
+      const typeBoundName = symbol.symbolName;
+      const typeBoundDefinitionScope = symbol.symbolDefinition.definitionNode.definitionScope;
+      if (typeBoundDefinitionScope == void 0) {
+        throw new Error(`The scope for type bound ${typeBoundName} should have been bound and this is a compiler bug`);
+      }
+      for (const requirement of symbol.symbolDefinition.definitionNode.requirements) {
+        let symbolType;
+        if (requirement.callableType == "Operator") {
+          symbolType = "Operator";
+        } else if (requirement.callableType == "Function") {
+          symbolType = "Function";
+        } else {
+          throw new Error(`Unable to map callable type of: ${requirement.callableType} to symbol type`);
+        }
+        const identifierName = requirement.callableName;
+        const typeExpression = requirement.typeExpression;
+        if (!(typeExpression instanceof FunctionTypeExpression)) {
+          const err = {
+            firstToken: identifierName.firstToken,
+            type: "NonFunctionTypeBoundRequirement",
+            message: formatErrorMessage(`
+            Cannot use type bound: ${typeBoundName} as there's a requirement with name: ${requirement.symbolName} that doesn't have a function type expression.
+            Instead its type expression is: ${requirement.typeExpression.toString()}.
+            Referenced on: ${identifierName.firstToken.createTokenSourceString()}
+            `)
+          };
+          return err;
+        }
+        const returnTypeExpression = typeExpression.returnType ?? new AstUnitTypeExpression(FAKE_PARSE_TREE_NODE);
+        const fakeParameterNodes = typeExpression.parameterTypes.map((parameterType, index) => {
+          const placeholderName = `${index}`;
+          const fakeVariableNode = new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, placeholderName));
+          return new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, fakeVariableNode, parameterType);
+        });
+        const fakeDefinitionNode = new AstTypeBoundRequirementFakeNode(FAKE_PARSE_TREE_NODE, identifierName, void 0, fakeParameterNodes, returnTypeExpression);
+        const typeBoundInformation = {
+          typeParameterExpression: typeParameter,
+          typeBoundSymbol: symbol,
+          resolvedTypeBoundInfo: void 0
+        };
+        const overload = {
+          definitionNode: fakeDefinitionNode,
+          declaringScope: this,
+          typeParametersExpression: void 0,
+          typeParameterDefinitions: void 0,
+          typeExpression,
+          typeDefinition: void 0,
+          specializations: [],
+          typeBoundSource: typeBoundInformation,
+          isBuiltIn: false
+        };
+        const existingInThisScope = this.findSymbolInThisScopeOfKind(requirement.symbolName, symbolType);
+        const shadow = this.findSymbolAndScope(requirement.symbolName);
+        const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(fakeDefinitionNode, shadow, existingInThisScope, overload, symbolType, false);
+        fakeDefinitionNode.definitionScope = typeBoundDefinitionScope;
+        fakeDefinitionNode.symbolInformation = { symbol: symbolInfo, overload };
+      }
+      return void 0;
     }
     /**
      * Creates an entry into the symbol table for the callable
@@ -331212,7 +332117,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (!allowedNumberOfArgs.includes(node.params.length)) {
           const error = {
             firstToken: node.firstToken,
-            type: "ReferencedBeforeDefined",
+            type: "WrongNumberOfArgumentsForOperatorOverload",
             message: `Attempting to create an operator: '${node.symbolName}', with params: '${node.params.map((p) => p.typeExpression?.toString())}' 
           with ${node.params.length} args but expecting ${allowedNumberOfArgs}.
           Referenced starting at: ${node.firstToken.createTokenSourceString()}`
@@ -331221,59 +332126,85 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
       }
       const overload = {
-        generics: node.typeParameters,
-        functionParams: node.params.map((p) => p),
-        returnType: node.returnType,
         definitionNode: node,
-        declaredScope: this,
-        typeExpression: node.functionSignature,
+        declaringScope: this,
+        typeParametersExpression: node.typeParameters,
+        typeParameterDefinitions: void 0,
+        typeExpression: node.functionSignatureExpression,
         typeDefinition: void 0,
-        specializations: []
+        specializations: [],
+        typeBoundSource: void 0,
+        isBuiltIn
       };
-      if (existingInThisScope != void 0) {
-        existingInThisScope.symbolDefinition.overloads.push(overload);
+      const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(node, shadow, existingInThisScope, overload, input.type, isBuiltIn);
+      node.symbolInformation = {
+        symbol: symbolInfo,
+        overload
+      };
+      node.augmentedProperties.symbolInfo = node.symbolInformation;
+      return void 0;
+    }
+    addOverloadToSymbolInfoOrCreateNewSymbol(node, shadow, existingSymbolInScope, overload, type, isBuiltIn) {
+      if (existingSymbolInScope != void 0) {
+        existingSymbolInScope.symbolDefinition.overloads.push(overload);
+        return existingSymbolInScope;
       } else {
         const functionDefinition = {
-          symbolType: input.type,
+          symbolType: type,
           overloads: [overload]
         };
         const symbolInfo = {
           symbolName: node.symbolName,
           declaringScope: this,
           symbolDefinition: functionDefinition,
-          isConst: true,
           shadow: shadow?.info,
           isShadowable: !isBuiltIn,
           isBuiltIn
         };
         this.setSymbol(node.symbolName, symbolInfo);
-        node.symbolInformation = {
-          symbol: symbolInfo,
-          overload
-        };
-        node.augmentedProperties.symbolInfo = node.symbolInformation;
+        return symbolInfo;
       }
-      return void 0;
     }
-    bindFunctionType(node) {
-    }
-    bindGenericType(node, position, isBuiltIn = false) {
+    bindGenericType(node, isBuiltIn = false) {
       const resp = this.checkForBindingConflicts(node);
       if (resp.success == false) {
         return resp.error;
       }
-      const typeExpression = new BaseTypeExpression(node.parseTreeNode, node);
+      const boundsOnAstNode = node.typeBoundExpression;
+      let symbolBoundsInfo = void 0;
+      if (boundsOnAstNode != void 0) {
+        const boundsSymbolResp = this.findTypeBoundSymbol(boundsOnAstNode.symbolName);
+        if (boundsSymbolResp.success == false) {
+          const err = {
+            firstToken: node.firstToken,
+            type: "SymbolTypeMismatch",
+            message: formatErrorMessage(`
+            Expecting the type bounds for generic parameter: ${node._identifier.name} to be a type bounds symbol, but instead 
+            it was a ${boundsSymbolResp.symbol?.symbolDefinition?.symbolType} symbol.
+            Referenced on: ${node.firstToken.createTokenSourceString()}
+            `)
+          };
+          return err;
+        }
+        const boundsSymbol = boundsSymbolResp.symbol;
+        symbolBoundsInfo = {
+          typeParameterExpression: node,
+          // typeBoundExpression: boundsOnAstNode,
+          typeBoundSymbol: boundsSymbol,
+          resolvedTypeBoundInfo: void 0
+        };
+      }
       const t = {
         symbolType: "Type",
-        typeExpression,
-        genericTypeParamInfo: { position },
-        definitionNode: node
+        typeExpression: node,
+        genericTypeParamInfo: { position: node.typeParameterIndex, typeBoundInfo: symbolBoundsInfo },
+        definitionNode: node,
+        typeDefinition: void 0
       };
       const symbol = {
-        symbolName: node.name,
+        symbolName: node.identifier.name,
         declaringScope: this,
         symbolDefinition: t,
-        isConst: true,
         shadow: resp.shadow,
         isShadowable: !isBuiltIn,
         isBuiltIn
@@ -331351,36 +332282,63 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (currentScope == void 0) {
           break;
         }
-        const scope = currentScope;
         const overloads = symbol.symbolDefinition.overloads;
-        const acceptableFunctionSignatures = overloads.filter((overload) => {
+        const preFilteredAcceptableFunctionSignatures = overloads.filter((overload) => {
           if (typeArguments === void 0) {
-            return overload.typeDefinition?.typeParameters == void 0;
+            return overload.typeParametersExpression == void 0;
           } else {
-            return typeArguments.length === overload.typeDefinition?.typeParameters?.length;
+            return typeArguments.length === overload.typeParametersExpression?.length;
           }
         }).map((overload) => {
           const overloadScope = overload.definitionNode.definitionScope;
           if (overloadScope == void 0) {
             throw new Error("Overload definition scope should have been defined");
           }
-          const functionType = overloadScope.resolveTypeDefinition(overload.typeExpression);
+          const functionType = overload.typeDefinition;
           if (!(functionType instanceof FunctionTypeDefinition)) {
-            throw new Error("Should have resolved to a function type");
+            throw new Error(`Should have resolved to a function type. The overload type was instead ${functionType}`);
           }
           let typeDef;
           if (typeArguments != void 0) {
-            typeDef = functionType.instantiateType(typeArguments);
+            if (typeArguments.length != overload.typeParametersExpression?.length) {
+              throw new Error("Should have been checked above in the filter");
+            }
+            const typeArgsToGenericParams = new Array();
+            for (let i = 0; i < overload.typeParametersExpression.length; i++) {
+              typeArgsToGenericParams.push({
+                typeArg: typeArguments[i],
+                genericParam: overloadScope.resolveGenericTypeDefinition(overload.typeParametersExpression[i])
+              });
+            }
+            const resp = functionType.replaceTypeParametersViaMap(this, typeArgsToGenericParams);
+            if (resp.success == false) {
+              return resp;
+            }
+            typeDef = resp.type;
           } else {
             typeDef = functionType;
           }
-          return {
+          const out2 = {
+            success: true,
             overload,
-            typeDefinition: typeDef,
+            instantiatedFunctionTypeDefinition: typeDef,
             originalFunctionType: functionType
           };
-        }).filter((overloadAndType) => {
-          const specializedType = overloadAndType.typeDefinition;
+          return out2;
+        });
+        const failedToInstantiateFunctions = preFilteredAcceptableFunctionSignatures.filter((t) => !t.success);
+        if (failedToInstantiateFunctions.length > 0) {
+          console.log(failedToInstantiateFunctions.map((f) => {
+            if (f.success == false)
+              return JSON.stringify(f.errors);
+            else
+              return "";
+          }));
+          console.log("Some functions failed to instantiate and I should look into this!");
+        }
+        const acceptableFunctionSignatures = preFilteredAcceptableFunctionSignatures.filter((t) => t.success == true).filter((overloadAndType) => {
+          overloadAndType = overloadAndType;
+          const specializedType = overloadAndType.instantiatedFunctionTypeDefinition;
           if (specializedType == void 0 || specializedType.paramTypes == void 0) {
             console.log(specializedType);
           }
@@ -331404,7 +332362,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const flattened = acceptableFunctionSignatures;
         if (typeArguments != void 0) {
           flattened.forEach((f) => {
-            if (f.typeDefinition.typeParameters?.length == 0) {
+            if (f.overload.typeParametersExpression?.length == 0) {
               throw new Error(`I shouldn't be supporting 0 length generic type params - they should either be undef or len > 1. ${f.overload.definitionNode.symbolName}`);
             }
           });
@@ -331415,7 +332373,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             overload: x.overload,
             symbol,
             typeArguments,
-            functionType: x.typeDefinition
+            resolvedFunctionType: x.instantiatedFunctionTypeDefinition
           };
           return y;
         });
@@ -331425,13 +332383,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
           const overload = callableInfo.overload;
           for (const specialization of overload.specializations) {
-            if (callableInfo.functionType.equals(specialization.instantiatedType)) {
+            if (callableInfo.resolvedFunctionType.equals(specialization.instantiatedType)) {
               return;
             }
           }
           overload.specializations.push({
             typeArguments: callableInfo.typeArguments,
-            instantiatedType: callableInfo.functionType
+            instantiatedType: callableInfo.resolvedFunctionType
           });
         });
         return out;
@@ -331440,49 +332398,164 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     resolveGenericTypeDefinition(typeExpression) {
       const out = this.resolveTypeDefinition(typeExpression);
-      if (out instanceof GenericParameterTypeDefinition) {
-        return out;
+      if (out.success && out.type instanceof TypeParameterDefinition) {
+        return out.type;
+      } else if (out.success) {
+        throw new Error(`Failed to resolve ${typeExpression.toString()} to a generic type parameter. Found symbol: ${out.success} of ${out.type.toString()} instead`);
       }
-      throw new Error(`Failed to resolve ${typeExpression.toString()} to a generic type parameter`);
+      let errStr;
+      const x = out;
+      if (x.errors) {
+        errStr = `${JSON.stringify(x.errors)}`;
+      }
+      throw new Error(`Failed to resolve ${typeExpression.toString()} as lookup failed. ${errStr}`);
     }
     /**
      * Returns the type definition for the input type expression.
      * @param typeExpression
      */
-    resolveTypeDefinition(typeExpression) {
+    resolveTypeDefinition(typeExpression, recursionDepth = 0) {
+      if (recursionDepth > MAX_TYPE_DEF_RECURSION) {
+        const out = resolveTypeResponseFailSingleError("RecursiveTypeDefinition", `Unable to resolve type expression: ${typeExpression.toString()} as resolving it blew up the stack.`);
+        return out;
+      }
       const symbolName = typeExpression.symbolName;
       if (symbolName == void 0) {
         if (typeExpression instanceof AstUnitTypeExpression) {
-          return new UnitTypeDefinition(this);
+          return { success: true, type: new UnitTypeDefinition(this) };
+        } else if (typeExpression instanceof AstNeverTypeExpression) {
+          return { success: true, type: new NeverTypeDefinition(this) };
         } else if (typeExpression instanceof TupleTypeExpression) {
-          return new TupleTypeDefinition(this, typeExpression.types.map((typeExp) => this.resolveTypeDefinition(typeExp)));
+          const mappedTypes = typeExpression.types.map((typeExp) => this.resolveTypeDefinition(typeExp, recursionDepth + 1));
+          const errors = mappedTypes.filter((t) => t.success == false).map((t) => t);
+          if (errors.length > 0) {
+            const out2 = {
+              success: false,
+              errors: errors.flatMap((e) => e.errors)
+            };
+            return out2;
+          }
+          const out = mappedTypes.map((resp) => {
+            if (resp.success) {
+              return resp.type;
+            } else {
+              throw new Error("This error shouldn't be thrown, it should have been filtered out above");
+            }
+          });
+          return { success: true, type: new TupleTypeDefinition(this, out) };
         } else if (typeExpression instanceof ArrayTypeExpression) {
-          return new ArrayTypeDefinition(this, this.resolveTypeDefinition(typeExpression.internalType), typeExpression.length);
-        } else if (typeExpression instanceof SpecializedTypeExpression) {
-          const base = this.resolveTypeDefinition(typeExpression.typeConstructor);
-          const specializations = typeExpression.typeArgs.map((e) => this.resolveTypeDefinition(e));
-          return base.instantiateType(specializations);
+          const mappedType = this.resolveTypeDefinition(typeExpression.internalType, recursionDepth + 1);
+          if (mappedType.success == false) {
+            throw new Error("TODO");
+          }
+          const t = new ArrayTypeDefinition(this, mappedType.type, typeExpression.length);
+          return { success: true, type: t };
+        } else if (typeExpression instanceof TypeInstantiatingTypeExpression) {
+          const base = this.resolveTypeDefinition(typeExpression.typeConstructor, recursionDepth + 1);
+          if (base.success == false || !(base.type instanceof AlgebraicDataTypeDefinition)) {
+            throw new Error("TODO: Failed to resolve base type");
+          }
+          const specializations = typeExpression.typeArgs.map((e) => this.resolveTypeDefinition(e, recursionDepth + 1)).map((resp2) => {
+            if (resp2.success) {
+              return resp2.type;
+            } else {
+              throw new Error("TODO: Failed to resolve specialization");
+            }
+          });
+          const resp = base.type.instantiateType(this, specializations);
+          return resp;
         } else if (typeExpression instanceof PointerTypeExpression) {
-          return new PointerTypeDefinition(typeExpression, this);
+          return { success: true, type: new PointerTypeDefinition(typeExpression, this) };
         } else if (typeExpression instanceof FunctionTypeExpression) {
-          return new FunctionTypeDefinition(this.getGlobalScope(), typeExpression.typeParameters?.map((p) => this.resolveGenericTypeDefinition(p)), typeExpression.parameterTypes.map((p) => this.resolveTypeDefinition(p)), typeExpression.returnType != void 0 ? this.resolveTypeDefinition(typeExpression.returnType) : new UnitTypeDefinition(this));
+          const resolvedParamTypes = typeExpression.parameterTypes.map((p) => this.resolveTypeDefinition(p, recursionDepth + 1));
+          const failures = resolvedParamTypes.filter((p) => p.success == false);
+          if (failures.length > 0) {
+            const err = {
+              success: false,
+              errors: failures.flatMap((f) => f.errors)
+            };
+            return err;
+          }
+          const mappedParamTypes = resolvedParamTypes.map((resp) => {
+            if (resp.success) {
+              return resp.type;
+            } else {
+              throw new Error("This shouldn't happen, failure cases should have been filtered out above.");
+            }
+          });
+          let resolvedReturnType;
+          if (typeExpression.returnType == void 0) {
+            resolvedReturnType = new UnitTypeDefinition(this);
+          } else {
+            const resp = this.resolveTypeDefinition(typeExpression.returnType, recursionDepth + 1);
+            if (resp.success == false) {
+              return resp;
+            } else {
+              resolvedReturnType = resp.type;
+            }
+          }
+          const out = new FunctionTypeDefinition(this.getGlobalScope(), mappedParamTypes, resolvedReturnType);
+          return { success: true, type: out };
         } else {
           throw new Error(`Resolving type for expression: ${typeExpression.toString()} is not yet defined (missing symbol case)`);
         }
       }
       const typeSymbol = this.findSymbol(symbolName);
       if (typeSymbol == void 0) {
-        throw new Error(`Type lookup failed for type with name '${symbolName}' and ctor: ${typeExpression.constructor.name} as the type cannot be found in scope: ${this.scopeName}`);
+        return resolveTypeResponseFailSingleError("TypeLookupFailed", `Type lookup failed for type with name '${symbolName}' and ctor: ${typeExpression.constructor.name} as the type cannot be found in scope: ${this.scopeName}`);
       }
       if (typeSymbol.symbolDefinition.symbolType != "Type") {
-        throw new Error(`Type lookup for name ${symbolName} failed in scope: ${this.scopeName} as the symbol is of type: ${typeSymbol.symbolDefinition.symbolType}`);
+        return resolveTypeResponseFailSingleError("TypeLookupFailed", `Type lookup for name ${symbolName} failed in scope: ${this.scopeName} as the symbol is of type: ${typeSymbol.symbolDefinition.symbolType}`);
       }
       if (typeSymbol.symbolDefinition.typeDefinition != void 0) {
-        return typeSymbol.symbolDefinition.typeDefinition;
+        return { success: true, type: typeSymbol.symbolDefinition.typeDefinition };
       } else {
-        const typeDef = mapExpressionToDefinition(this, typeExpression);
-        typeSymbol.symbolDefinition.typeDefinition = typeDef;
-        return typeDef;
+        const response = mapExpressionToDefinition(this, typeExpression, recursionDepth);
+        if (response.success == false) {
+          return response;
+        }
+        typeSymbol.symbolDefinition.typeDefinition = response.type;
+        return { success: true, type: typeSymbol.symbolDefinition.typeDefinition };
+      }
+    }
+    resolveTypeBound(symbolName) {
+      const symbol = this.findSymbol(symbolName);
+      if (symbol == void 0) {
+        return { success: false, existingSymbol: void 0 };
+      } else if (symbol.symbolDefinition.symbolType != "TypeBound") {
+        return { success: false, existingSymbol: symbol };
+      } else {
+        if (symbol.symbolDefinition.typeBoundDefinition != void 0) {
+          return { success: true, definition: symbol.symbolDefinition.typeBoundDefinition };
+        }
+        const defNode = symbol.symbolDefinition.definitionNode;
+        const definitionScope = defNode.definitionScope;
+        const typeParameterDefinitions = defNode.typeParameters?.map((g) => {
+          const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, g.identifier);
+          return definitionScope.resolveGenericTypeDefinition(typeExpression);
+        });
+        const mappedRequirements = symbol.symbolDefinition.definitionNode.requirements.map((r) => {
+          const resp = definitionScope.resolveTypeDefinition(r.typeExpression);
+          if (resp.success == false) {
+            throw new Error("TODO");
+          }
+          return {
+            name: r.identifier.name,
+            functionSignature: resp.type
+          };
+        });
+        const map = /* @__PURE__ */ new Map();
+        for (const r of mappedRequirements) {
+          const arr = map.get(r.name) ?? [];
+          if (!(r.functionSignature instanceof FunctionTypeDefinition)) {
+            throw new Error("Unexpected type");
+          }
+          arr.push(r.functionSignature);
+          map.set(r.name, arr);
+        }
+        const typeBoundDefinition = new TypeBoundDefinition(symbol.symbolDefinition.definitionNode.identifier.name, definitionScope, typeParameterDefinitions, [...map.entries()].map((r) => ({ name: r[0], functionSignatures: r[1] })));
+        symbol.symbolDefinition.typeBoundDefinition = typeBoundDefinition;
+        return { success: true, definition: typeBoundDefinition };
       }
     }
     resolveVariableTypeDefinition(variableName) {
@@ -331597,51 +332670,110 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     /**
      * Returns the content of the table, formatted as a markdown string
-     * Call from the global, it will populate with all the child scopes
+     * Call from the global scope, it will populate with all the child scopes
      */
-    toMarkdownString(includeBuiltIn = false, includeHeader = true) {
+    toMarkdownString(includeBuiltIn = false, includeHeader = true, automaticPadToLength = true) {
       const IDENTIFIER_PADDING = 20;
       const KIND_PADDING = 15;
       const TYPE_EXPRESSION_PADDING = 25;
       const SCOPE_PADDING = 35;
       const TYPE_DEF_PADDING = 35;
-      const SOURCE_PADDING = 10;
+      const SOURCE_LOCATION_PADDING = 10;
+      const paddingConfig = {
+        identifierPadding: IDENTIFIER_PADDING,
+        kindPadding: KIND_PADDING,
+        typeExpressionPadding: TYPE_EXPRESSION_PADDING,
+        scopePadding: SCOPE_PADDING,
+        typeDefPadding: TYPE_DEF_PADDING,
+        sourceLocationPadding: SOURCE_LOCATION_PADDING
+      };
       let rows = [];
+      this.getRowsForMarkdownString(rows, includeBuiltIn);
       let content2 = "";
-      for (const [key, value] of this._backingMap.entries()) {
-        const isConstString = value.isConst ? "C " : "V ";
-        const symbolType = value.symbolDefinition.symbolType;
+      if (automaticPadToLength) {
+        const getNextMultiple = /* @__PURE__ */ __name((n, multiple) => {
+          return n + n % multiple;
+        }, "getNextMultiple");
+        const TEXT_BUFFER = 2;
+        for (const row of rows) {
+          paddingConfig.identifierPadding = Math.max(paddingConfig.identifierPadding, row.identifier.length + TEXT_BUFFER);
+          paddingConfig.kindPadding = Math.max(paddingConfig.kindPadding, row.symbolType.length + TEXT_BUFFER);
+          paddingConfig.typeExpressionPadding = Math.max(paddingConfig.typeExpressionPadding, row.typeExpression.length + TEXT_BUFFER);
+          paddingConfig.scopePadding = Math.max(paddingConfig.scopePadding, row.scope.length + TEXT_BUFFER);
+          paddingConfig.typeDefPadding = Math.max(paddingConfig.typeDefPadding, row.typeDefinition.length + TEXT_BUFFER);
+          paddingConfig.sourceLocationPadding = Math.max(paddingConfig.sourceLocationPadding, row.source.length + TEXT_BUFFER);
+        }
+        let key;
+        for (key in paddingConfig) {
+          paddingConfig[key] = getNextMultiple(paddingConfig[key], 4);
+        }
+      }
+      rows = rows.map((r) => {
+        const out = {
+          identifier: r.identifier.padEnd(paddingConfig.identifierPadding),
+          symbolType: r.symbolType.padEnd(paddingConfig.kindPadding),
+          typeExpression: r.typeExpression.padEnd(paddingConfig.typeExpressionPadding),
+          scope: r.scope.padEnd(paddingConfig.scopePadding),
+          typeDefinition: r.typeDefinition.padEnd(paddingConfig.typeDefPadding),
+          source: r.source.padEnd(paddingConfig.sourceLocationPadding)
+        };
+        return out;
+      });
+      let header = "";
+      if (includeHeader) {
+        header = `|${"identifier".padEnd(paddingConfig.identifierPadding)} |${"kind".padEnd(paddingConfig.kindPadding)} |${"type expression".padEnd(paddingConfig.typeExpressionPadding)} |${"scope".padEnd(paddingConfig.scopePadding)} |${"type".padEnd(paddingConfig.typeDefPadding)} |${"source".padEnd(paddingConfig.sourceLocationPadding)} |
+`;
+        header += `|${"-".repeat(paddingConfig.identifierPadding + 1)}|${"-".repeat(paddingConfig.kindPadding + 1)}|${"-".repeat(paddingConfig.typeExpressionPadding + 1)}|${"-".repeat(paddingConfig.scopePadding + 1)}|${"-".repeat(paddingConfig.typeDefPadding + 1)}|${"-".repeat(paddingConfig.sourceLocationPadding + 1)}|
+`;
+      }
+      content2 += header;
+      for (const row of rows) {
+        content2 += `|${row.identifier} |${row.symbolType} |${row.typeExpression} |${row.scope} |${row.typeDefinition} |${row.source} |
+`;
+      }
+      return content2;
+    }
+    getRowsForMarkdownString(outParamRows, includeBuiltIn = false) {
+      for (const [key, symbol] of this._backingMap.entries()) {
+        const symbolType = symbol.symbolDefinition.symbolType;
         const scopeName = this.scopeName + ` (${this.id})`;
-        if (value.isBuiltIn && !includeBuiltIn) {
+        const isBuiltIn = symbol.symbolDefinition.symbolType != "Operator" || symbol.symbolDefinition.symbolType != "Operator" ? symbol.isBuiltIn : false;
+        if (isBuiltIn && !includeBuiltIn) {
           continue;
         }
         const formatTypeString = /* @__PURE__ */ __name((t) => {
           return t?.toString() ?? "inferred";
         }, "formatTypeString");
-        if (value.symbolDefinition.symbolType == "Variable") {
-          const typeExpressionString = formatTypeString(value.symbolDefinition.declaredType);
-          const typeDefinitionString = value.symbolDefinition.resolvedType?.toString() ?? "error?";
+        if (symbol.symbolDefinition.symbolType == "Variable") {
+          const typeExpressionString = formatTypeString(symbol.symbolDefinition.declaredType);
+          const typeDefinitionString = symbol.symbolDefinition.resolvedType?.toShortString() ?? "unknown?";
+          const isConstString = symbol.symbolDefinition.isConst ? "C" : "V";
+          const scopeType = symbol.symbolDefinition.scopeType;
           const row = {
             identifier: key,
-            symbolType: isConstString + symbolType,
+            symbolType: `${symbolType} (${isConstString}) [${scopeType}]`,
             typeExpression: typeExpressionString,
             scope: scopeName,
             typeDefinition: typeDefinitionString,
-            source: value.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
+            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
           };
-          rows.push(row);
-        } else if (value.symbolDefinition.symbolType == "Type") {
-          let typeDefinitionString = "UNRESOLVED";
-          let typeExpressionString = "??";
+          outParamRows.push(row);
+        } else if (symbol.symbolDefinition.symbolType == "Type") {
+          const typeDefinitionString = symbol.symbolDefinition.typeDefinition?.toString() ?? "unresolved";
+          const typeExpressionString = symbol.symbolDefinition.typeExpression.toString();
           const specializations = [];
+          let resp;
           try {
-            const resolvedType = this.resolveTypeDefinition(value.symbolDefinition.typeExpression);
-            typeDefinitionString = resolvedType.toString();
-            typeExpressionString = resolvedType.expression.toString();
+            resp = this.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
+          } catch (ex) {
+            resp = resolveTypeResponseFailSingleError("TypeLookupFailed", ex.message);
+          }
+          if (resp.success == true && resp.type instanceof AlgebraicDataTypeDefinition) {
+            const resolvedType = resp.type;
             for (const f of resolvedType.typeInstantiations ?? []) {
               const specRow = {
                 identifier: key,
-                symbolType: "S " + symbolType,
+                symbolType: "Type Instance",
                 typeExpression: f.expression.toString(),
                 scope: f.declaringScope.scopeName + ` (${f.declaringScope.id})`,
                 typeDefinition: f.toString(),
@@ -331650,71 +332782,64 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
               };
               specializations.push(specRow);
             }
-          } catch (ex) {
           }
           const row = {
             identifier: key,
-            symbolType: isConstString + symbolType,
+            symbolType,
             typeExpression: typeExpressionString,
             scope: scopeName,
             typeDefinition: typeDefinitionString,
-            source: value.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
+            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
           };
-          rows.push(row);
-          rows.push(...specializations);
-        } else if (value.symbolDefinition.symbolType == "Function" || value.symbolDefinition.symbolType == "Operator") {
-          for (const overload of value.symbolDefinition.overloads) {
+          outParamRows.push(row);
+          outParamRows.push(...specializations);
+        } else if (symbol.symbolDefinition.symbolType == "TypeBound") {
+          const typeParameters = symbol.symbolDefinition.definitionNode.typeParameters?.map((t) => t.identifier.name) ?? [];
+          const requirementDefString = symbol.symbolDefinition.typeBoundDefinition?.toString() ?? "UNBOUND";
+          const row = {
+            identifier: symbol.symbolDefinition.definitionNode.identifier.name,
+            symbolType: symbol.symbolDefinition.symbolType,
+            typeExpression: `${symbol.symbolName}<${typeParameters.join(",")}>`,
+            scope: scopeName,
+            typeDefinition: requirementDefString,
+            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
+          };
+          outParamRows.push(row);
+        } else if (symbol.symbolDefinition.symbolType == "Function" || symbol.symbolDefinition.symbolType == "Operator") {
+          for (const overload of symbol.symbolDefinition.overloads) {
+            if (overload.isBuiltIn && !includeBuiltIn) {
+              continue;
+            }
+            const isCreatedFromTypeBoundStr = overload.typeBoundSource ? "*" : "";
+            const genericParams = overload.typeParametersExpression ? `<${overload.typeParametersExpression.map((t) => t.toString()).join(", ")}> ` : "";
+            const typeParameterString = overload.typeParameterDefinitions == void 0 ? "" : `<${overload.typeParameterDefinitions.map((t) => t.name).join(",")}>`;
             const typeDefinitionString = overload.typeDefinition?.toString() ?? "ERROR";
             const overloadRow = {
               identifier: key,
-              symbolType: "O " + symbolType,
-              typeExpression: overload.typeExpression.toString(),
-              typeDefinition: typeDefinitionString,
-              scope: overload.declaredScope.scopeName + ` (${overload.declaredScope.id})`,
+              symbolType: `O${isCreatedFromTypeBoundStr} ` + symbolType,
+              typeExpression: `${genericParams}${overload.typeExpression.toString()}`,
+              typeDefinition: `${typeParameterString}${typeDefinitionString}`,
+              scope: overload.declaringScope.scopeName + ` (${overload.declaringScope.id})`,
               source: overload.definitionNode.firstToken.createTokenSourceString()
             };
-            rows.push(overloadRow);
+            outParamRows.push(overloadRow);
             for (const specialization of overload.specializations ?? []) {
               const specializationRow = {
                 identifier: key,
-                symbolType: "S " + symbolType,
+                symbolType: `S${isCreatedFromTypeBoundStr} ` + symbolType,
                 typeExpression: specialization.instantiatedType.expression.toString(),
                 typeDefinition: specialization.instantiatedType.toString(),
-                scope: overload.declaredScope.scopeName + ` (${overload.declaredScope.id})`,
+                scope: overload.declaringScope.scopeName + ` (${overload.declaringScope.id})`,
                 source: overload.definitionNode.firstToken.createTokenSourceString()
               };
-              rows.push(specializationRow);
+              outParamRows.push(specializationRow);
             }
           }
         }
       }
-      rows = rows.map((r) => {
-        const out = {
-          identifier: r.identifier.padEnd(IDENTIFIER_PADDING),
-          symbolType: r.symbolType.padEnd(KIND_PADDING),
-          typeExpression: r.typeExpression.padEnd(TYPE_EXPRESSION_PADDING),
-          scope: r.scope.padEnd(SCOPE_PADDING),
-          typeDefinition: r.typeDefinition.padEnd(TYPE_DEF_PADDING),
-          source: r.source.padEnd(SOURCE_PADDING)
-        };
-        return out;
-      });
-      let header = "";
-      if (includeHeader) {
-        header = `|${"identifier".padEnd(IDENTIFIER_PADDING)} |${"kind".padEnd(KIND_PADDING)} |${"type expression".padEnd(TYPE_EXPRESSION_PADDING)} |${"scope".padEnd(SCOPE_PADDING)} |${"type".padEnd(TYPE_DEF_PADDING)} |${"source".padEnd(SOURCE_PADDING)} |
-`;
-        header += `|${"-".repeat(IDENTIFIER_PADDING + 1)}|${"-".repeat(KIND_PADDING + 1)}|${"-".repeat(TYPE_EXPRESSION_PADDING + 1)}|${"-".repeat(SCOPE_PADDING + 1)}|${"-".repeat(TYPE_DEF_PADDING + 1)}|${"-".repeat(SOURCE_PADDING + 1)}|
-`;
-      }
-      content2 += header;
-      for (const row of rows) {
-        content2 += `|${row.identifier} |${row.symbolType} |${row.typeExpression} |${row.scope} |${row.typeDefinition} |${row.source} |
-`;
-      }
       for (const child of this._childrenContexts) {
-        content2 += child.toMarkdownString(includeBuiltIn, false);
+        child.getRowsForMarkdownString(outParamRows, includeBuiltIn);
       }
-      return content2;
     }
   };
   function createGlobalSymbolTable() {
@@ -331739,15 +332864,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       t.definitionScope = definitionScope;
       t.bodyScope = bodyScope;
       for (const param of t.params) {
-        const err2 = definitionScope.declareVariable(param, "Param", true);
+        const err2 = bodyScope.declareVariable(param, "Param", true);
         if (err2) {
           console.log(err2);
           throw new Error(`Error during bind`);
         }
-        const type = definitionScope.resolveTypeDefinition(param.typeExpression);
-        definitionScope.bindVariableType(param.identifier.name, type);
+        const resp = bodyScope.resolveTypeDefinition(param.typeExpression);
+        if (resp.success == false) {
+          throw new Error("Error during bind");
+        }
+        bodyScope.bindVariableType(param.identifier.name, resp.type);
       }
-      table.bindFunctionType(t);
     }
     return table;
   }
@@ -331776,6 +332903,216 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         node.augmentedProperties.scope = returnedContext.table;
       }
       return returnedContext;
+    }
+    // assorted grammatical constructs
+    traverseGroupNode(groupNode, context) {
+      groupNode.astNodes.forEach((node) => {
+        if (node instanceof AstAbstractCallableDefinition) {
+          let error;
+          if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition) {
+            error = context.table.declareCallable(node, false);
+          } else {
+            throw new Error(`Not implemented for type: ${node.constructor.name}`);
+          }
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+        } else if (node instanceof AstCompositeDefinition) {
+          const error = context.table.declareType(node);
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+        } else if (node instanceof AstTypeBoundDefinition) {
+          const error = context.table.declareTypeBound(node);
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+        }
+      });
+      groupNode.astNodes.forEach((n) => {
+        if (!(n instanceof AstTypeDefinitionStatement)) {
+          this.traverse(n, context);
+        }
+      });
+      return context;
+    }
+    traverseBlockNode(node, context, createNewScope = true) {
+      node.augmentedProperties.scope = context.table;
+      let newContext;
+      if (createNewScope) {
+        newContext = this.createBlockContext("_block", context);
+      } else {
+        newContext = {
+          table: context.table,
+          violations: context.violations
+        };
+      }
+      node.bodyScope = newContext.table;
+      node.astNodes.forEach((n) => {
+        this.traverse(n, newContext);
+      });
+      node.augmentedProperties.scope = newContext.table;
+      return context;
+    }
+    // definitions
+    traverseFunctionDefinition(node, context) {
+      const newContext = this.internalTraverseCallableDefinition(
+        node,
+        context,
+        "Function"
+        /* SymbolType.Function */
+      );
+      this.traverseBlockNode(node.body, newContext, false);
+      return context;
+    }
+    traverseWatFunctionDefinition(node, context) {
+      this.internalTraverseCallableDefinition(
+        node,
+        context,
+        "Function"
+        /* SymbolType.Function */
+      );
+      return context;
+    }
+    traverseOperatorDefinition(node, context) {
+      const newContext = this.internalTraverseCallableDefinition(
+        node,
+        context,
+        "Operator"
+        /* SymbolType.Operator */
+      );
+      this.traverseBlockNode(node.body, newContext, false);
+      return context;
+    }
+    traverseWatOperatorDefinition(node, context) {
+      this.internalTraverseCallableDefinition(
+        node,
+        context,
+        "Operator"
+        /* SymbolType.Operator */
+      );
+      return context;
+    }
+    traverseCompositeDefinition(node, context) {
+      const fields = node.fields;
+      const seenFieldNames = /* @__PURE__ */ new Set();
+      for (const field of fields) {
+        const name = field.variable.name;
+        if (seenFieldNames.has(name)) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "CompositeFieldDuplicateName",
+            message: formatErrorMessage(`The ${node.compositeType} '${node.identifier.name}' has fields with duplicate names. 
+          The duplicated name is '${name}'. 
+          Referenced ${node.firstToken.createTokenSourceString()}`)
+          };
+          context.violations.push(error);
+          return context;
+        }
+        seenFieldNames.add(name);
+      }
+      const scope = context.table;
+      const compositeDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope);
+      node.definitionScope = compositeDefinitionScope;
+      const definitionContext = {
+        table: compositeDefinitionScope,
+        violations: context.violations
+      };
+      if (node.typeParameters != void 0) {
+        for (const typeParameter of node.typeParameters) {
+          this.traverse(typeParameter, definitionContext);
+        }
+      }
+      for (const field of fields) {
+        if (field.typeExpression != void 0) {
+          this.traverse(field.typeExpression, definitionContext);
+        }
+      }
+      return definitionContext;
+    }
+    traverseTypeBoundDefinition(node, context) {
+      const requirements = node.requirements;
+      const scope = context.table;
+      const typeBoundDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope);
+      node.definitionScope = typeBoundDefinitionScope;
+      const definitionContext = {
+        table: typeBoundDefinitionScope,
+        violations: context.violations
+      };
+      if (node.typeParameters != void 0) {
+        for (const typeParameter of node.typeParameters) {
+          this.traverse(typeParameter, definitionContext);
+        }
+      }
+      for (const field of requirements) {
+        if (field.typeExpression != void 0) {
+          this.traverse(field.typeExpression, definitionContext);
+        }
+        if (field.callableType == "Operator") {
+          const op = field.callableName.name;
+          const allowedNumberOfArgs = [];
+          if ([...Object.values(BINARY_OPERATORS)].indexOf(op) >= 0) {
+            allowedNumberOfArgs.push(2);
+          }
+          if ([...Object.values(UNARY_OPERATORS)].indexOf(op) >= 0) {
+            allowedNumberOfArgs.push(1);
+          }
+          if (field.typeExpression instanceof FunctionTypeExpression && !allowedNumberOfArgs.includes(field.typeExpression.parameterTypes.length)) {
+            const parameterTypes = field.typeExpression.parameterTypes;
+            const error = {
+              firstToken: node.firstToken,
+              type: "WrongNumberOfArgumentsForOperatorOverload",
+              message: `Attempting to create an operator: '${node.symbolName}', with params: ${parameterTypes.toString()}' 
+            with ${parameterTypes.length} args but expecting ${allowedNumberOfArgs}.
+            Referenced starting at: ${node.firstToken.createTokenSourceString()}`
+            };
+            context.violations.push(error);
+          }
+        }
+      }
+      return definitionContext;
+    }
+    traverseDefinitionTypeParameter(node, context) {
+      if (node.typeBoundExpression == void 0) {
+        const error2 = context.table.bindGenericType(node);
+        if (error2 != void 0) {
+          context.violations.push(error2);
+        }
+        return context;
+      }
+      const boundSymbol = context.table.findSymbol(node.typeBoundExpression.symbolName);
+      if (boundSymbol == void 0) {
+        const error2 = {
+          firstToken: node.typeBoundExpression.firstToken,
+          type: "ReferenceNotDefined",
+          message: formatErrorMessage(`
+            For generic parameter ${node.identifier.name}, Type bound with name ${node.typeBoundExpression.identifier.name} could not be found in the current scope.
+            Referenced on: ${node.firstToken.createTokenSourceString()}
+          `)
+        };
+        context.violations.push(error2);
+        return context;
+      }
+      if (boundSymbol.symbolDefinition.symbolType != "TypeBound") {
+        const error2 = {
+          firstToken: node.typeBoundExpression.firstToken,
+          type: "SymbolTypeMismatch",
+          message: formatErrorMessage(`
+            For generic parameter ${node.identifier.name}, Type bound with name ${node.typeBoundExpression.identifier.name} should be a type bound but instead the symbol definition was a ${boundSymbol.symbolDefinition.symbolType}.
+            Referenced on: ${node.firstToken.createTokenSourceString()}
+          `)
+        };
+        context.violations.push(error2);
+        return context;
+      }
+      const error = context.table.bindGenericType(node);
+      if (error != void 0) {
+        context.violations.push(error);
+      }
+      for (const arg of node.typeBoundExpression.typeArguments ?? []) {
+        this.traverse(arg, context);
+      }
+      return context;
     }
     // literals
     // The simple literals (numbers, bools, nulls) don't require any looksups or entries into
@@ -331824,7 +333161,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (existingSymbol == void 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "ReferencedBeforeDefined",
+          type: "ReferenceNotDefined",
           message: formatErrorMessage(`Identifier '${node.name}' is referenced before being defined. 
         Referenced ${node.firstToken.createTokenSourceString()}`)
         };
@@ -331903,13 +333240,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseUnitTypeExpression(node, context) {
       return context;
     }
+    traverseNeverTypeExpression(node, context) {
+      return context;
+    }
     traverseBaseTypeExpression(node, context) {
       const resp = context.table.findTypeSymbol(node.symbolName);
       if (resp.success == false) {
         if (resp.symbol == void 0) {
           const error = {
             firstToken: node.firstToken,
-            type: "ReferencedBeforeDefined",
+            type: "ReferenceNotDefined",
             message: formatErrorMessage(`
         Type '${node.symbolName}' is referenced before being defined. 
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -331976,14 +333316,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (existingDefinition == void 0) {
         const error = {
           firstToken: node.lhs.firstToken,
-          type: "ReferencedBeforeDefined",
+          type: "ReferenceNotDefined",
           message: formatErrorMessage(`Variable ${name} is referenced before being defined. 
         Referenced ${node.lhs.firstToken.createTokenSourceString()}`)
         };
         context.violations.push(error);
         return context;
       }
-      if (existingDefinition != void 0 && existingDefinition.isConst) {
+      if (existingDefinition.symbolDefinition.symbolType == "Variable" && existingDefinition.symbolDefinition.isConst) {
         const error = {
           firstToken: node.lhs.firstToken,
           type: "ConstReassigned",
@@ -332142,7 +333482,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return context;
     }
-    // definitions
+    // declarations
     traverseVariableDeclaration(node, context) {
       if (node.expression != void 0) {
         this.traverse(node.expression, context);
@@ -332163,50 +333503,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.variable;
       return context;
     }
-    traverseFunctionDefinition(node, context) {
-      const newContext = this.internalTraverseCallableDefinition(
-        node,
-        context,
-        "Function"
-        /* SymbolType.Function */
-      );
-      this.traverseBlockNode(node.body, newContext, false);
-      return context;
-    }
-    traverseWatFunctionDefinition(node, context) {
-      this.internalTraverseCallableDefinition(
-        node,
-        context,
-        "Function"
-        /* SymbolType.Function */
-      );
-      return context;
-    }
-    traverseOperatorDefinition(node, context) {
-      const newContext = this.internalTraverseCallableDefinition(
-        node,
-        context,
-        "Operator"
-        /* SymbolType.Operator */
-      );
-      this.traverseBlockNode(node.body, newContext, false);
-      return context;
-    }
-    traverseWatOperatorDefinition(node, context) {
-      this.internalTraverseCallableDefinition(
-        node,
-        context,
-        "Operator"
-        /* SymbolType.Operator */
-      );
-      return context;
-    }
     internalTraverseCallableDefinition(node, context, expectedSymbolType) {
       const functionDeclaration = context.table.findSymbol(node.symbolName);
       if (functionDeclaration == void 0 || functionDeclaration.symbolDefinition == void 0 || functionDeclaration.symbolDefinition.symbolType != expectedSymbolType) {
         const error = {
           firstToken: node.firstToken,
-          type: "ReferencedBeforeDefined",
+          type: "ReferenceNotDefined",
           message: formatErrorMessage(`Function with name: ${node.symbolName} was not properly bound. Check the other errors to see why 
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
@@ -332219,15 +333521,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const bodyScope = new SymbolTable(`${functionName}.body`, definitionScope);
       node.definitionScope = definitionScope;
       node.bodyScope = bodyScope;
-      if (node.typeParameters != void 0) {
-        for (let i = 0; i < node.typeParameters.types.length; i++) {
-          const typeParameter = node.typeParameters.types[i];
-          const error = definitionScope.bindGenericType(typeParameter.identifier, i);
-          if (error != void 0) {
-            context.violations.push(error);
-          }
-        }
-      }
       const definitionContext = {
         table: definitionScope,
         violations: context.violations
@@ -332236,9 +333529,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         table: bodyScope,
         violations: context.violations
       };
+      if (node.typeParameters != void 0) {
+        for (const typeParameter of node.typeParameters) {
+          this.traverse(typeParameter, definitionContext);
+          if (typeParameter.typeBoundExpression != void 0) {
+            const bounds = typeParameter.typeBoundExpression;
+            const typeBoundSymbol = context.table.findSymbol(bounds.symbolName);
+            if (typeBoundSymbol == void 0 || typeBoundSymbol.symbolDefinition.symbolType != "TypeBound") {
+              const errorType = typeBoundSymbol == void 0 ? "ReferenceNotDefined" : "SymbolTypeMismatch";
+              const error = {
+                firstToken: typeParameter.firstToken,
+                type: errorType,
+                message: formatErrorMessage(`
+                expecting symbol with name: ${bounds.symbolName} to be a type bound, but instead it was: ${typeBoundSymbol?.symbolDefinition?.symbolType}
+                Referenced on: ${bounds.firstToken.createTokenSourceString()}
+              `)
+              };
+              context.violations.push(error);
+              continue;
+            }
+            definitionContext.table.declareTypeBoundFunctions(typeParameter, typeBoundSymbol);
+          }
+        }
+      }
       node.params.forEach((param) => {
         this.traverse(param.typeExpression, definitionContext);
-        const error = definitionScope.declareVariable(
+        const error = bodyScope.declareVariable(
           param,
           "Param"
           /* ScopeType.Param */
@@ -332247,7 +333563,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           context.violations.push(error);
         }
       });
-      this.traverse(node.returnType, definitionContext);
+      this.traverse(node.returnTypeExpression, definitionContext);
       return bodyContext;
     }
     traverseTypeDefinition(node, context) {
@@ -332256,95 +333572,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.violations.push(error);
       }
       return this.traverse(node.typeExpression, context);
-    }
-    traverseCompositeDefinition(node, context) {
-      const fields = node.fields;
-      const seenFieldNames = /* @__PURE__ */ new Set();
-      for (const field of fields) {
-        const name = field.variable.name;
-        if (seenFieldNames.has(name)) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "CompositeFieldDuplicateName",
-            message: formatErrorMessage(`The ${node.compositeType} '${node.identifier.name}' has fields with duplicate names. 
-          The duplicated name is '${name}'. 
-          Referenced ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.violations.push(error);
-          return context;
-        }
-        seenFieldNames.add(name);
-      }
-      const scope = context.table;
-      const compositeDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope);
-      node.definitionScope = compositeDefinitionScope;
-      if (node.typeParameters != void 0) {
-        for (let i = 0; i < node.typeParameters.types.length; i++) {
-          const g = node.typeParameters.types[i];
-          const bounds = g.bounds;
-          if (bounds != void 0) {
-            throw new Error(`Type bounds in generics is not yet supported`);
-          }
-          const err = compositeDefinitionScope.bindGenericType(g.identifier, i, false);
-          if (err != void 0) {
-            context.violations.push(err);
-          }
-        }
-      }
-      const newContext = {
-        table: compositeDefinitionScope,
-        violations: context.violations
-      };
-      for (const field of fields) {
-        if (field.typeExpression != void 0) {
-          this.traverse(field.typeExpression, newContext);
-        }
-      }
-      return newContext;
-    }
-    traverseGroupNode(groupNode, context) {
-      groupNode.astNodes.forEach((node) => {
-        if (node instanceof AstAbstractCallableDefinition) {
-          let error;
-          if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition) {
-            error = context.table.declareCallable(node, false);
-          } else {
-            throw new Error(`Not implemented for type: ${node.constructor.name}`);
-          }
-          if (error != void 0) {
-            context.violations.push(error);
-          }
-        } else if (node instanceof AstCompositeDefinition) {
-          const error = context.table.declareType(node);
-          if (error != void 0) {
-            context.violations.push(error);
-          }
-        }
-      });
-      groupNode.astNodes.forEach((n) => {
-        if (!(n instanceof AstTypeDefinitionStatement)) {
-          this.traverse(n, context);
-        }
-      });
-      return context;
-    }
-    traverseBlockNode(node, context, createNewScope = true) {
-      node.augmentedProperties.scope = context.table;
-      let newContext;
-      if (createNewScope) {
-        newContext = this.createBlockContext("_block", context);
-      } else {
-        newContext = {
-          table: context.table,
-          violations: context.violations
-        };
-      }
-      node.bodyScope = newContext.table;
-      node.astNodes.forEach((n) => {
-        this.traverse(n, newContext);
-      });
-      node.augmentedProperties.scope = newContext.table;
-      return context;
     }
     createBlockContext(blockTypeLabel, parentContext) {
       const newScopeName = `${parentContext.table.scopeName}_${blockTypeLabel}_${this.scopeIdCounter++}`;
@@ -332362,16 +333589,290 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     static {
       __name(this, "Checker");
     }
+    // TODO: wrap the initialization, scanning and traversal into a single static method so the class is slightly easier to use
     symbolTableScanned = false;
     // used to log warnings during traversal if the table scan was not completed
     initContext() {
       throw new Error("Method not implemented.");
     }
     /**
-     * Checks the symbol table for any violations (right now just duplicate function signatures)
-     * It will in-place add any errors to the passed in context
+     * This function is run before the AST is traversed and checks that there's no issues in the symbol table.
+     * It will in-place add any errors to the context (but not halt processing).
      */
     scanSymbolTable(context) {
+      this.bindTypeDefsToAllTypeSymbols(context);
+      this.bindTypeBoundDefsToAllTypeBoundSymbols(context);
+      this.bindTypeBoundInfoToTypeParameters(context);
+      this.bindFunctionTypeDefsToFunctions(context);
+      this.checkSymbolTableForDuplicateFunctionSigs(context);
+      context.table.childContexts.forEach((c) => {
+        const newContext = {
+          table: c,
+          typeMismatches: context.typeMismatches
+        };
+        this.scanSymbolTable(newContext);
+      });
+      this.symbolTableScanned = true;
+    }
+    bindTypeDefsToAllTypeSymbols(context) {
+      const typeSymbols = [...context.table.findAllSymbolsByTypeInThis(
+        "Type"
+        /* SymbolType.Type */
+      )];
+      for (const typeSymbol of typeSymbols) {
+        const resp = context.table.resolveTypeDefinition(typeSymbol.symbolDefinition.typeExpression);
+        if (resp.success == false) {
+          const defNode = typeSymbol.symbolDefinition.definitionNode;
+          resp.errors.forEach((e) => {
+            const mappedError = ResolveTypeErrorToSemanticError[e.error];
+            const out = {
+              firstToken: defNode.firstToken,
+              type: mappedError,
+              message: formatErrorMessage(`${e.message}. 
+            Referenced on: ${defNode.firstToken.createTokenSourceString()}`)
+            };
+            context.typeMismatches.push(out);
+          });
+          const cascadingError = {
+            firstToken: defNode.firstToken,
+            type: "CascadingError",
+            message: formatErrorMessage(`Failed to bind type def to symbol: ${typeSymbol.symbolName}, expression: ${typeSymbol.symbolDefinition.typeExpression}.
+            Referenced on: ${defNode.firstToken.createTokenSourceString()}`)
+          };
+          context.typeMismatches.push(cascadingError);
+        } else {
+          const resolvedType = resp.type;
+          if (resolvedType instanceof AlgebraicDataTypeDefinition) {
+            for (const typeParameter of resolvedType.typeParameters ?? []) {
+              if (typeParameter.typeBoundInfo == void 0) {
+                continue;
+              }
+              throw new Error("Handling type bounds for generic ADTs aren't implemented yet");
+            }
+          }
+          if (typeSymbol.symbolDefinition.typeDefinition == void 0) {
+            typeSymbol.symbolDefinition.typeDefinition = resp.type;
+          } else {
+            if (!typeSymbol.symbolDefinition.typeDefinition.equals(resp.type)) {
+              throw new Error(`Rebinding type def to symbol ${typeSymbol.symbolName}. Before it was: ${typeSymbol.symbolDefinition.typeDefinition.toString()}, new binding is ${resp.type.toString()}`);
+            }
+          }
+        }
+      }
+    }
+    bindTypeBoundDefsToAllTypeBoundSymbols(context) {
+      const typeBoundSymbols = [...context.table.findAllSymbolsByTypeInThis(
+        "TypeBound"
+        /* SymbolType.TypeBound */
+      )];
+      for (const typeBoundSymbol of typeBoundSymbols) {
+        const node = typeBoundSymbol.symbolDefinition.definitionNode;
+        const traversalScope = node.definitionScope;
+        if (traversalScope == void 0) {
+          throw new Error(`Scope is not properly bound to node with symbolname: ${node.symbolName}`);
+        }
+        if (node.typeParameters == void 0 || node.typeParameters.length < 1) {
+          const error = {
+            firstToken: node.firstToken,
+            type: "NoTypeArgumentsToTypeBound",
+            message: formatErrorMessage(`
+        Unable to create type bound with name: ${node.identifier.name}.
+        A type bound must have at least 1 type parameter defined, otherwise it is pretty useless. 
+        Typebound definition on: ${node.firstToken.createTokenSourceString()}
+        `)
+          };
+          context.typeMismatches.push(error);
+        }
+        const namesToSignatures = /* @__PURE__ */ new Map();
+        const badTypedRequirements = new Array();
+        for (const requirement of node.requirements) {
+          const requirementName = requirement.callableName.name;
+          const typeResp = traversalScope.resolveTypeDefinition(requirement.typeExpression);
+          if (typeResp.success == false) {
+            throw new Error(`FIXME: add better error handling. Failed to resolve ${requirement.typeExpression.toString()}`);
+          }
+          const typeDef = typeResp.type;
+          if (!(typeDef instanceof FunctionTypeDefinition)) {
+            badTypedRequirements.push([requirement.callableName.name, typeDef]);
+          } else {
+            const currentlyBound = namesToSignatures.get(requirementName) ?? [];
+            currentlyBound.push(typeDef);
+            namesToSignatures.set(requirementName, currentlyBound);
+          }
+        }
+        if (badTypedRequirements.length > 0) {
+          const formattedBadRequirements = badTypedRequirements.map((r) => `${r[0]}:${r[1].toShortString()}`).join(", ");
+          const error = {
+            firstToken: node.firstToken,
+            type: "NonFunctionTypeBoundRequirement",
+            message: formatErrorMessage(`
+        Unable to create type bound with name: ${node.identifier.name}.
+        All requirements of the type bound must be function types. Failing cases are: ${formattedBadRequirements}
+        Typebound definition on: ${node.firstToken.createTokenSourceString()}
+        `)
+          };
+          context.typeMismatches.push(error);
+        }
+        const duplicateFunctionParamSigs = new Array();
+        for (const entry of namesToSignatures.entries()) {
+          const name = entry[0];
+          const functionTypeSigs = entry[1];
+          for (let i = 0; i < functionTypeSigs.length; i++) {
+            for (let j = i + 1; j < functionTypeSigs.length; j++) {
+              const a_functionDef = functionTypeSigs[i];
+              const b_functionDef = functionTypeSigs[j];
+              if (a_functionDef.areParamTypesEqual(b_functionDef)) {
+                duplicateFunctionParamSigs.push([name, a_functionDef]);
+              }
+            }
+          }
+        }
+        if (duplicateFunctionParamSigs.length > 0) {
+          const formattedBadRequirements = badTypedRequirements.map((r) => `${r[0]}:${r[1].toShortString()}`).join(", ");
+          const error = {
+            firstToken: node.firstToken,
+            type: "FunctionSignatureAlreadyDefined",
+            message: formatErrorMessage(`
+        Unable to create type bound with name: ${node.identifier.name}.
+        All requirements must have function types with different parameter types. Requirements with duplicate types are: ${formattedBadRequirements}
+        Typebound definition on: ${node.firstToken.createTokenSourceString()}
+        `)
+          };
+          context.typeMismatches.push(error);
+        }
+        const resp = context.table.resolveTypeBound(node.symbolName);
+        if (resp.success == false) {
+          console.error(resp);
+          throw new Error("Failed to resolve type bound");
+        }
+      }
+    }
+    bindTypeBoundInfoToTypeParameters(context) {
+      const typeSymbols = [...context.table.findAllSymbolsByTypeInThis(
+        "Type"
+        /* SymbolType.Type */
+      )];
+      for (const typeSymbol of typeSymbols) {
+        if (typeSymbol.symbolDefinition.genericTypeParamInfo == void 0) {
+          continue;
+        }
+        const typeBoundInfo = typeSymbol.symbolDefinition.genericTypeParamInfo.typeBoundInfo;
+        if (typeBoundInfo == void 0) {
+          continue;
+        }
+        const typeParameterExp = typeBoundInfo.typeParameterExpression;
+        const typeBoundDef = typeBoundInfo.typeBoundSymbol.symbolDefinition.typeBoundDefinition;
+        if (typeBoundDef == void 0) {
+          throw new Error(`The type bound definition was undefined, but this should have been set earlier`);
+        }
+        const unfilteredMappedTypeParams = typeParameterExp.typeBoundExpression?.typeArguments?.map((t) => {
+          const resp = context.table.resolveTypeDefinition(t);
+          if (resp.success) {
+            return resp.type;
+          } else if (resp.success == false) {
+            const errors = resp.errors.map((e) => {
+              const out = {
+                firstToken: t.firstToken,
+                type: ResolveTypeErrorToSemanticError[e.error],
+                message: e.message
+              };
+              return out;
+            });
+            context.typeMismatches.push(...errors);
+            return void 0;
+          } else {
+            throw new Error("Should not happen");
+          }
+        });
+        if (unfilteredMappedTypeParams == void 0 || unfilteredMappedTypeParams.some((t) => t == void 0)) {
+          const cascadingError = {
+            firstToken: typeParameterExp.firstToken,
+            type: "CascadingError",
+            message: formatErrorMessage(`Failed to create type bound. See earlier messages for root cause.
+              Referenced on: ${typeParameterExp.firstToken.createTokenSourceString()}`)
+          };
+          context.typeMismatches.push(cascadingError);
+          return void 0;
+        }
+        const mappedTypeParams = unfilteredMappedTypeParams;
+        const resolvedTypeBoundInfo = {
+          definition: typeBoundDef,
+          arguments: mappedTypeParams
+        };
+        typeBoundInfo.resolvedTypeBoundInfo = resolvedTypeBoundInfo;
+      }
+    }
+    bindFunctionTypeDefsToFunctions(context) {
+      const callableSymbols = [
+        ...context.table.findAllSymbolsByTypeInThis(
+          "Function"
+          /* SymbolType.Function */
+        ),
+        ...context.table.findAllSymbolsByTypeInThis(
+          "Operator"
+          /* SymbolType.Operator */
+        )
+      ];
+      for (const symbol of callableSymbols) {
+        const overloads = symbol.symbolDefinition.overloads;
+        for (let i = 0; i < overloads.length; i++) {
+          const overload = overloads[i];
+          const overloadScope = overload.definitionNode.definitionScope;
+          if (overloadScope == void 0) {
+            throw new Error(`Unbound definition scope`);
+          }
+          const typeParametersDefinition = overload.typeParametersExpression?.map((e) => overloadScope.resolveGenericTypeDefinition(e));
+          overload.typeParameterDefinitions = typeParametersDefinition;
+          const overloadTypeResp = overloadScope.resolveTypeDefinition(overload.typeExpression);
+          if (overloadTypeResp.success == false) {
+            const errs = overloadTypeResp.errors.map((e) => {
+              const out = {
+                firstToken: overload.definitionNode.firstToken,
+                type: ResolveTypeErrorToSemanticError[e.error],
+                message: e.message
+              };
+              console.log(`!!Failing to resolve type for scope: ${overloadScope.scopeName}`);
+              return out;
+            });
+            context.typeMismatches.push(...errs);
+            continue;
+          }
+          const overloadType = overloadTypeResp.type;
+          if (!(overloadType instanceof FunctionTypeDefinition)) {
+            throw new Error("Failed to resolve the function to a function type");
+          }
+          if (overload.typeBoundSource == void 0) {
+            if (overload.typeDefinition != void 0 && !overload.typeDefinition?.equals(overloadType)) {
+              throw new Error(`rebinding type of a to a different type? ${overload.typeDefinition?.toString()} ${overloadType.toString()}`);
+            }
+            overload.typeDefinition = overloadType;
+          } else {
+            const typeBoundDefinitionResp = context.table.resolveTypeBound(overload.typeBoundSource.typeBoundSymbol.symbolName);
+            if (typeBoundDefinitionResp.success == false) {
+              throw new Error("FIXME: bad error handling");
+            }
+            const typeBoundDef = typeBoundDefinitionResp.definition;
+            const typeBoundTypeArgExpression = overload.typeBoundSource.typeParameterExpression.typeBoundExpression?.typeArguments;
+            const typeBoundTypeArgs = typeBoundTypeArgExpression.map((t) => {
+              const resp = context.table.resolveTypeDefinition(t);
+              if (resp.success == false) {
+                throw new Error("FIXME: bad error handling");
+              } else {
+                return resp.type;
+              }
+            });
+            const argMap = typeBoundDef.createTypeArgumentsMap(typeBoundTypeArgs);
+            const replacedType = overloadType.replaceTypeParametersViaMap(overloadScope, argMap);
+            if (replacedType.success) {
+              overload.typeDefinition = replacedType.type;
+            } else {
+              throw new Error("FIXME: error handling");
+            }
+          }
+        }
+      }
+    }
+    checkSymbolTableForDuplicateFunctionSigs(context) {
       const callableSymbols = [
         ...context.table.findAllSymbolsByTypeInThis(
           "Function"
@@ -332386,26 +333887,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const overloads = symbol.symbolDefinition.overloads;
         for (let i = 0; i < overloads.length; i++) {
           const a = overloads[i];
-          const aScope = a.definitionNode.definitionScope;
-          if (aScope == void 0) {
-            throw new Error(`Unbound definition scope`);
+          const aType = a.typeDefinition;
+          if (aType == void 0) {
+            continue;
           }
-          const aType = aScope.resolveTypeDefinition(a.typeExpression);
-          if (!(aType instanceof FunctionTypeDefinition)) {
-            throw new Error("Failed to resolve the function to a function type");
-          }
-          if (a.typeDefinition != void 0 && !a.typeDefinition?.equals(aType)) {
-            throw new Error(`rebinding type of a to a different type? ${a.typeDefinition?.toString()} ${aType.toString()}`);
-          }
-          a.typeDefinition = aType;
           for (let j = i + 1; j < overloads.length; j++) {
             const b = overloads[j];
-            const bScope = b.definitionNode.definitionScope;
-            if (bScope == void 0) {
-              throw new Error(`Unbound definition scope`);
+            const bType = b.typeDefinition;
+            if (bType == void 0) {
+              continue;
             }
-            const bType = bScope.resolveTypeDefinition(b.typeExpression);
-            if (aType.equals(bType)) {
+            if (a.typeParametersExpression?.length == b.typeParametersExpression?.length && aType.alphaEquivalent(bType)) {
               const err = {
                 firstToken: b.definitionNode.firstToken,
                 type: "FunctionSignatureAlreadyDefined",
@@ -332420,14 +333912,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
         }
       }
-      context.table.childContexts.forEach((c) => {
-        const newContext = {
-          table: c,
-          typeMismatches: context.typeMismatches
-        };
-        this.scanSymbolTable(newContext);
-      });
-      this.symbolTableScanned = true;
     }
     /**
      * The output of this call is the Acceptable types for the node.
@@ -332444,18 +333928,94 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return typeDefinition;
     }
+    traverseBlockNode(node, context) {
+      for (const n of node.astNodes) {
+        this.traverse(n, context);
+      }
+      return UndeterminedTypeTypeDefinition.instance;
+    }
+    traverseGroupNode(node, context) {
+      for (const n of node.astNodes) {
+        this.traverse(n, context);
+      }
+      return UndeterminedTypeTypeDefinition.instance;
+    }
+    // definition statements (function, struct, etc) don't actually have any types after they've been set up
+    // I might want to set up some kind of control-flow graph to ensure
+    // all code paths return a value, but not yet
+    traverseFunctionDefinition(node, context) {
+      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
+      const newContext = {
+        typeMismatches: context.typeMismatches,
+        table: node.bodyScope
+      };
+      this.traverse(node.body, newContext);
+      return functionTypeDefinition;
+    }
+    traverseWatFunctionDefinition(node, context) {
+      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
+      return functionTypeDefinition;
+    }
+    traverseOperatorDefinition(node, context) {
+      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
+      const newContext = {
+        typeMismatches: context.typeMismatches,
+        table: node.bodyScope
+      };
+      this.traverse(node.body, newContext);
+      return functionTypeDefinition;
+    }
+    traverseWatOperatorDefinition(node, context) {
+      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
+      return functionTypeDefinition;
+    }
+    traverseTypeDefinition(node, context) {
+      return UndeterminedTypeTypeDefinition.instance;
+    }
+    traverseCompositeDefinition(node, context) {
+      const scope = context.table;
+      const symbol = scope.findSymbol(node.symbolName);
+      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Type") {
+        const error = {
+          firstToken: node.firstToken,
+          type: "SymbolTypeMismatch",
+          message: formatErrorMessage(`
+        Unable to resolve symbol '${node.symbolName} to struct type. Entry type in the symbol table was ${symbol?.symbolDefinition.symbolType}
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const typeDefResp = scope.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
+      if (typeDefResp.success == false) {
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      return typeDefResp.type;
+    }
+    traverseTypeBoundDefinition(node, context) {
+      const resp = context.table.resolveTypeBound(node.symbolName);
+      if (resp.success == false) {
+        console.error(resp);
+        throw new Error("Failed to resolve type bound");
+      }
+      return UndeterminedTypeTypeDefinition.instance;
+    }
     // literals
     traverseNumberLiteral(node, context) {
       if (node instanceof AstIntLiteral) {
         return new IntegerLiteralType(context.table, node.value);
       } else if (node instanceof AstFloatLiteral) {
-        return new FloatLiteralType(context.table, node.value);
+        return new FloatLiteralType(context.table);
       } else {
         throw new Error(`Failed to find types for number literal: ${node.constructor.name}`);
       }
     }
     traverseBoolLiteral(node, context) {
-      return context.table.resolveTypeDefinition(BuiltInScalarConfig.bool.astValues.typeExpression);
+      const resp = context.table.resolveTypeDefinition(BuiltInScalarConfig.bool.astValues.typeExpression);
+      if (resp.success == false) {
+        throw new Error("Unable to resolve bool literal type");
+      }
+      return resp.type;
     }
     traverseNullLiteral(node, context) {
       return new NullLiteralType(context.table);
@@ -332469,10 +334029,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (resolvedTypes.some((t) => t instanceof UndeterminedTypeTypeDefinition)) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
-          // I haven't figured out how to handle this yet
+          type: "CascadingError",
           message: formatErrorMessage(`
-            TODO: error message on handling being unable to resolve the type for tuples 
+            Unable to construct tuple literal. This is a cascading error so check the other error messages 
             Referenced on ${node.firstToken.createTokenSourceString()}
           `)
         };
@@ -332486,13 +334045,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const typesForNode = this.traverse(v, context).resolveType();
         return typesForNode;
       }).filter((a) => a != void 0);
-      if (arrayTypes.length < 1) {
+      if (arrayTypes.length < 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "ZeroLengthArray",
-          // I haven't figured out how to handle this yet
+          type: "NegativeLengthArray",
           message: formatErrorMessage(`
-          Found zero-length array literal, and I haven't determined what to do with that.
+          Found negative-length array literal, and I haven't determined what to do with that.
           Maybe I'll make it an unknown type with 0-length?
           Referenced on ${node.firstToken.createTokenSourceString()}
         `)
@@ -332531,15 +334089,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return UndeterminedTypeTypeDefinition.instance;
         }
       }
-      return new ArrayTypeDefinition(context.table, arrayTypes[0], arrayTypes.length);
+      const arrayType = arrayTypes.at(0) ?? new UnitTypeDefinition(context.table);
+      return new ArrayTypeDefinition(context.table, arrayType, arrayTypes.length);
     }
     traverseCompositeLiteral(node, context) {
       const resp = context.table.findTypeSymbol(node.compositeSymbolName);
       if (resp.success == false) {
         const error = {
           firstToken: node.firstToken,
-          type: "CompositeFromNonCompositeType",
-          message: formatErrorMessage(`Composite literal found for something that's not a composite. 
+          type: "SymbolTypeMismatch",
+          message: formatErrorMessage(`Composite literal found for a symbol that's not a type. 
         The type of '${node.compositeSymbolName}' was '${resp.symbol?.symbolDefinition?.symbolType}'
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
@@ -332559,10 +334118,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      if (!(typeDefinition instanceof CompositeTypeDefinition)) {
+      const compositeDefinitionComponents = typeDefinition.components();
+      if (compositeDefinitionComponents == void 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "CompositeFromNonCompositeType",
+          type: "CompositeLiteralFromNonCompositeType",
           message: formatErrorMessage(`Composite literal found for something that's not a composite. 
         The type of '${node.compositeSymbolName}' was '${typeDefinition.toString()}'
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -332570,10 +334130,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const compositeDefFields = typeDefinition.fields;
       const literalFields = node.assignments;
       const fieldNameCounter = /* @__PURE__ */ new Map();
-      for (const field of compositeDefFields) {
+      for (const field of compositeDefinitionComponents) {
         const name = field[0];
         fieldNameCounter.set(name, 0);
       }
@@ -332586,7 +334145,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             firstToken: node.firstToken,
             type: "CompositeFieldNotDefined",
             message: formatErrorMessage(`Attempting to set field on composite for a field that's not part of the composite definition. 
-          Type definition name: ${typeDefinition.name}. field name: '${lhs.name}' 
+          Type definition: ${typeDefinition.toShortString()}. field name: '${lhs.name}' 
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
@@ -332595,14 +334154,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         currentCount += 1;
         fieldNameCounter.set(lhs.name, currentCount);
       }
+      for (const field of literalFields) {
+        const structDefField = compositeDefinitionComponents.get(field.symbolName);
+        if (structDefField == void 0) {
+          throw new Error("Bug in type checking the struct literal's fields");
+        }
+        const fieldRhs = this.traverse(field.rhs, context);
+        const ans = areTypesAssignable(structDefField, fieldRhs);
+        if (!ans.isAcceptable) {
+          const error = {
+            firstToken: node.firstToken,
+            type: ans.errorType ?? "TypeMismatch",
+            message: formatErrorMessage(`Cannot assign value to Composite field: '${node.compositeSymbolName}.${field.symbolName}'. 
+          Expecting type of: (${structDefField.toString()}) but received types: (${fieldRhs.toString()})
+          Referenced on: ${node.firstToken.createTokenSourceString()}`)
+          };
+          context.typeMismatches.push(error);
+          return typeDefinition;
+        }
+      }
       for (const e of fieldNameCounter.entries()) {
         const count = e[1];
         let hasError = false;
         if (count > 1) {
           const error = {
             firstToken: node.firstToken,
-            type: "VariableRedeclared",
-            message: formatErrorMessage(`Field on composite ${typeDefinition.name} is set multiple times. The field name was: '${e[0]}'. 
+            type: "CompositeFieldDuplicateName",
+            message: formatErrorMessage(`Field on composite ${typeDefinition.toShortString()} is set multiple times. The field name was: '${e[0]}'. 
           Referenced: ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
@@ -332612,26 +334190,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return typeDefinition;
         }
       }
-      for (const field of literalFields) {
-        const structDefField = compositeDefFields.get(field.symbolName);
-        if (structDefField == void 0) {
-          throw new Error("Bug in type checking the struct literal's fields");
-        }
-        const fieldRhs = this.traverse(field.rhs, context);
-        const ans = areTypesAssignable(structDefField, fieldRhs);
-        if (!ans.isAcceptable) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "TypeMismatch",
-            message: formatErrorMessage(`Cannot assign value to Composite field: '${node.compositeSymbolName}.${field.symbolName}'. 
-          Expecting type of: (${structDefField.toString()}) but received types: (${fieldRhs.toString()})
-          Referenced on: ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.typeMismatches.push(error);
-          return typeDefinition;
-        }
-      }
-      if (typeDefinition instanceof StructTypeDefinition) {
+      if (typeDefinition.fields() != void 0) {
         for (const [name, count] of fieldNameCounter.entries()) {
           if (count < 1) {
             const error = {
@@ -332644,7 +334203,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             context.typeMismatches.push(error);
           }
         }
-      } else if (typeDefinition instanceof UnionTypeDefinition || typeDefinition instanceof VariantTypeDefinition) {
+      }
+      if (typeDefinition.cases() != void 0) {
         let isSet = false;
         for (const [name, count] of fieldNameCounter.entries()) {
           if (isSet == true && count == 1) {
@@ -332670,24 +334230,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const scope = context.table;
       const symbol = scope.findSymbol(node.symbolName);
       if (symbol.symbolDefinition.symbolType == "Variable") {
-        let type = context.table.resolveVariableTypeDefinition(node.name);
-        if (type == void 0) {
-          type = UndeterminedTypeTypeDefinition.instance;
-        }
-        return type;
-      } else if (symbol.symbolDefinition.symbolType == "Function") {
+        const type = context.table.resolveVariableTypeDefinition(node.name);
+        return type ?? UndeterminedTypeTypeDefinition.instance;
       }
-      throw new Error(`Checker traverse identifier is not implemented for type ${symbol.symbolDefinition.symbolType} for identifier ${node.name}`);
+      const error = {
+        firstToken: node.firstToken,
+        type: "ReferenceNotDefined",
+        message: formatErrorMessage(`
+      Checker traverse identifier is not implemented for type ${symbol.symbolDefinition.symbolType} for identifier ${node.name}
+      Referenced on: ${node.firstToken.createTokenSourceString()}`)
+      };
+      context.typeMismatches.push(error);
+      return UndeterminedTypeTypeDefinition.instance;
     }
     traverseTypeCastingExpression(node, context) {
       const internalType = this.traverse(node.expression, context);
-      const thisType = context.table.resolveTypeDefinition(node.type);
-      return thisType;
+      const resp = context.table.resolveTypeDefinition(node.type);
+      if (resp.success == false) {
+        throw new Error("Typecasting expressions I think aren't implemented yet");
+      }
+      return resp.type;
     }
     traverseFieldAccessExpression(node, context) {
-      const left = node.expression;
-      const leftType = this.traverse(left, context);
-      if (!(leftType instanceof CompositeTypeDefinition)) {
+      const leftExpression = node.expression;
+      const leftType = this.traverse(leftExpression, context);
+      const fields = leftType.fields();
+      if (fields == void 0) {
         const error = {
           firstToken: node.firstToken,
           type: "FieldAccessOnNonSupportingType",
@@ -332699,35 +334267,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      if (leftType instanceof VariantTypeDefinition) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "FieldAccessOnNonSupportingType",
-          message: formatErrorMessage(`Attempting to directly access a field on variant type.
-        Instead of using a field access expression, use a switch statement to access the fields. 
-        Type was: '${leftType.toString()}'
-        Referenced on: ${node.firstToken.createTokenSourceString()} 
-        `)
-        };
-        context.typeMismatches.push(error);
-        return UndeterminedTypeTypeDefinition.instance;
-      }
-      const fields = leftType.fields;
       const rhs = node.field;
-      const fieldType = fields.get(rhs.name);
-      if (fieldType == void 0) {
+      const rhsFieldType = fields.get(rhs.name);
+      if (rhsFieldType == void 0) {
         const error = {
           firstToken: node.firstToken,
           type: "FieldDoesNotExistOnType",
           message: formatErrorMessage(`Attempting to access field on struct, but struct doesn't have that field defined. 
-        Struct was: '${leftType.name}' and field name was: '${rhs.name}'
+        Struct was: '${leftType.toShortString()}' and field name was: '${rhs.name}'
         Referenced on: ${node.firstToken.createTokenSourceString()} 
         `)
         };
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      return fieldType;
+      return rhsFieldType;
     }
     // "callable" expressions
     traverseUnaryOperation(node, context) {
@@ -332741,7 +334295,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (dispatchedTo instanceof UndeterminedTypeTypeDefinition) {
         return dispatchedTo;
       }
-      return dispatchedTo.functionType.returnType;
+      return dispatchedTo.resolvedFunctionType.returnType;
     }
     traverseBinaryOperation(node, context) {
       if (node.operator == "[]") {
@@ -332755,7 +334309,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (dispatchedTo instanceof UndeterminedTypeTypeDefinition) {
         return dispatchedTo;
       }
-      return dispatchedTo.functionType.returnType;
+      return dispatchedTo.resolvedFunctionType.returnType;
     }
     traverseCallExpression(node, context) {
       const errorLength = context.typeMismatches.length;
@@ -332779,7 +334333,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      return resolvedOverloadTypeDefinition.functionType.returnType;
+      return resolvedOverloadTypeDefinition.resolvedFunctionType.returnType;
     }
     // This handles mapping to the correct function - its a call expression
     dispatchToFunctionLike(node, context) {
@@ -332859,7 +334413,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.builtInFunction == "SizeOf") {
         const pointerTypeName = CompilerDefaultTypes.UnsignedPointerType;
         const pointerTypeExpression = BuiltInScalarConfig[pointerTypeName].astValues.typeExpression;
-        const out = context.table.resolveTypeDefinition(pointerTypeExpression);
+        const resp = context.table.resolveTypeDefinition(pointerTypeExpression);
+        if (resp.success == false) {
+          throw new Error("TODO");
+        }
+        const out = resp.type;
         if (node.args.length != 1) {
           const error = {
             firstToken: node.firstToken,
@@ -332890,9 +334448,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseUnitTypeExpression(node, context) {
       return new UnitTypeDefinition(context.table);
     }
+    traverseNeverTypeExpression(node, context) {
+      return new NeverTypeDefinition(context.table);
+    }
     traverseBaseTypeExpression(node, context) {
-      const resolvedType = context.table.resolveTypeDefinition(node);
-      if (resolvedType.typeParameters != void 0) {
+      const resolvedResp = context.table.resolveTypeDefinition(node);
+      if (resolvedResp.success == false) {
+        const errs = resolvedResp.errors.map((e) => {
+          const out = {
+            firstToken: node.firstToken,
+            type: ResolveTypeErrorToSemanticError[e.error],
+            message: e.message
+          };
+          return out;
+        });
+        const cascadingError = {
+          firstToken: node.firstToken,
+          type: "CascadingError",
+          message: formatErrorMessage(`Unable to resolve type definition for expressison ${node.toString()}
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(...errs);
+        context.typeMismatches.push(cascadingError);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const resolvedType = resolvedResp.type;
+      if (resolvedType instanceof AlgebraicDataTypeDefinition && resolvedType.typeParameters != void 0) {
         const err = {
           firstToken: node.firstToken,
           type: "NoTypeArgumentsToGenericType",
@@ -332906,25 +334487,45 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return resolvedType;
     }
     traversePointerTypeExpression(node, context) {
-      return context.table.resolveTypeDefinition(node);
+      const resolvedResp = context.table.resolveTypeDefinition(node);
+      if (resolvedResp.success == false) {
+        throw new Error(`Unable to resolve pointer type expression for: ${node.toString()}`);
+      }
+      return resolvedResp.type;
     }
     traverseArrayTypeExpression(node, context) {
-      return context.table.resolveTypeDefinition(node);
+      const resolvedResp = context.table.resolveTypeDefinition(node);
+      if (resolvedResp.success == false) {
+        throw new Error(`Unable to resolve array type expression for: ${node.toString()}`);
+      }
+      return resolvedResp.type;
     }
     traverseTupleTypeExpression(node, context) {
-      return context.table.resolveTypeDefinition(node);
+      const resolvedResp = context.table.resolveTypeDefinition(node);
+      if (resolvedResp.success == false) {
+        throw new Error(`Unable to resolve tuple type expression for: ${node.toString()}`);
+      }
+      return resolvedResp.type;
     }
     traverseFunctionTypeExpression(node, context) {
-      return context.table.resolveTypeDefinition(node);
+      const resolvedResp = context.table.resolveTypeDefinition(node);
+      if (resolvedResp.success == false) {
+        throw new Error(`Unable to resolve function type expression for: ${node.toString()}`);
+      }
+      return resolvedResp.type;
     }
     traverseTypeInstantiatingExpression(node, context) {
-      const baseType = context.table.resolveTypeDefinition(node.typeConstructor);
-      if (baseType.typeParameters == void 0) {
+      const baseTypeResp = context.table.resolveTypeDefinition(node.typeConstructor);
+      if (baseTypeResp.success == false) {
+        throw new Error(`Unable to resolve generic: ${node.toString()} for the base type`);
+      }
+      const baseType = baseTypeResp.type;
+      if (!(baseType instanceof AlgebraicDataTypeDefinition)) {
         const err = {
           firstToken: node.firstToken,
           type: "TypeArgumentsOnNonGenericType",
           message: formatErrorMessage(`
-        Attempting to pass type arguments to a type: ${baseType.name} that doesn't have type parameters.
+        Attempting to pass type arguments to a type: ${baseType.toShortString()} that doesn't have type parameters.
         Type toString: ${baseType.toString()}.
         Referenced on: ${node.firstToken.createTokenSourceString()}
         `)
@@ -332932,13 +334533,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(err);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      node.typeArgs.map((t) => this.traverse(t, context));
-      if (baseType.typeParameters.length != node.typeArgs.length) {
+      node.typeArgs.forEach((t) => this.traverse(t, context));
+      if (baseType.typeParameters?.length != node.typeArgs.length) {
         const err = {
           firstToken: node.firstToken,
           type: "WrongNumberOfTypeArgumentsToGenericType",
           message: formatErrorMessage(`
-        Attempting to pass ${node.typeArgs.length} type arguments to a type: ${baseType.name} that accepts ${baseType.typeParameters.length}.
+        Attempting to pass ${node.typeArgs.length} type arguments to a type: ${baseType.toShortString()} that accepts ${baseType.typeParameters?.length}.
         Type toString: ${baseType.toString()}, typeArgs: ${node.typeArgs.map((t) => t.toString())}.
         Referenced on: ${node.firstToken.createTokenSourceString()}
         `)
@@ -332946,8 +334547,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(err);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const type = context.table.resolveTypeDefinition(node);
-      return type;
+      const typeResp = context.table.resolveTypeDefinition(node);
+      if (typeResp.success == false) {
+        const err = {
+          firstToken: node.firstToken,
+          type: "TypeBoundsNotSatisfied",
+          message: formatErrorMessage(`
+        ${typeResp}
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(err);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      return typeResp.type;
     }
     // statements
     traverseAssignmentStatement(node, context) {
@@ -332968,11 +334580,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const ans = areTypesAssignable(lhsType, rhsType);
       if (!ans.isAcceptable) {
         let error;
+        const errorType = ans.errorType ?? "TypeMismatch";
         if (node.lhs instanceof AstVariableFieldAccess) {
           error = {
             firstToken: node.firstToken,
-            type: "TypeMismatch",
-            message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name + "." + node.lhs.fields.map((f) => f.name).join(".")}' 
+            type: errorType,
+            message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name + "." + node.lhs.fieldNames.map((f) => f.name).join(".")}' 
                 due to type mismatch. ${ans.errorMessage ?? ""}
                 Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
                 Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -332980,7 +334593,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (node.lhs instanceof AstVariableDereference) {
           error = {
             firstToken: node.firstToken,
-            type: "TypeMismatch",
+            type: errorType,
             message: formatErrorMessage(`Unable to assign to dereferenced variable: '${node.lhs.identifier.name}' due to type mismatch. ${ans.errorMessage ?? ""}
                 Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
                 Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -332988,7 +334601,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (node.lhs instanceof AstSimpleVariableAccess) {
           error = {
             firstToken: node.firstToken,
-            type: "TypeMismatch",
+            type: errorType,
             message: formatErrorMessage(`Unable to assign to variable: '${node.lhs.identifier.name}' due to type mismatch. ${ans.errorMessage ?? ""}
               Expecting a type of (${lhsType.toString()}), but assignment RHS is of type (${rhsType.toString()}).
               Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -333018,7 +334631,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseVariableFieldAccess(node, context) {
       const lhsType = this.traverse(node.variable, context);
-      if (!(lhsType instanceof CompositeTypeDefinition)) {
+      const fields = lhsType.fields();
+      if (fields == void 0) {
         const error = {
           firstToken: node.firstToken,
           type: "FieldAccessOnNonSupportingType",
@@ -333029,37 +334643,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      if (lhsType instanceof VariantTypeDefinition) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "FieldAccessOnNonSupportingType",
-          message: formatErrorMessage(`Attempting to access a field for '${node.identifier.name}' of type
-        '${lhsType?.toString()}', but the type is a variant type.
-        You can't directly assign to fields of a variant type, instead you need to create a new instance 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-        };
-        context.typeMismatches.push(error);
-        return UndeterminedTypeTypeDefinition.instance;
-      }
       let fieldType = lhsType;
       let i = 0;
-      let typeString;
-      if (lhsType instanceof StructTypeDefinition) {
-        typeString = "struct";
-      } else if (lhsType instanceof TupleTypeDefinition) {
-        typeString = "tuple";
-      } else {
-        typeString = "Unimplemented type";
-      }
-      while (i < node.fields.length - 1) {
-        const fieldName = node.fields[i].name;
-        const field = fieldType.fields.get(fieldName);
-        if (!(field instanceof CompositeTypeDefinition)) {
+      while (i < node.fieldNames.length - 1) {
+        const fieldName = node.fieldNames[i].name;
+        const field = fieldType.fields()?.get(fieldName);
+        if (field == void 0 || field?.fields() == void 0) {
           const error = {
             firstToken: node.firstToken,
             type: "CompositeFieldNotDefined",
             message: formatErrorMessage(`Attempting to access a field: '${fieldName}' on variable: '${node.identifier.name}' 
-          but field with that name is not defined on ${typeString} type: '${fieldType.name}'. (Fields are: '{${[...fieldType.fields.entries()].map((f) => f[0])}"}')
+          but field with that name is not defined on ${lhsType.toString()} type: '${fieldType.toShortString()}'.
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(error);
@@ -333068,14 +334662,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         fieldType = field;
         i++;
       }
-      const finalFieldName = node.fields[node.fields.length - 1];
-      const finalField = fieldType.fields.get(finalFieldName.name);
+      const finalFieldName = node.fieldNames[node.fieldNames.length - 1];
+      const finalField = fieldType.fields()?.get(finalFieldName.name);
       if (fieldType == void 0 || finalField == void 0) {
         const error = {
           firstToken: node.firstToken,
           type: "CompositeFieldNotDefined",
-          message: formatErrorMessage(`Attempting to access a field: '${finalFieldName.name}' on variable: '${node.identifier.name}' 
-          but field with that name is not defined on ${typeString} type: '${fieldType.name}'. (Fields are: '{${[...fieldType.fields.entries()].map((f) => f[0])}"}')
+          message: formatErrorMessage(`Attempting to access a field: '${finalFieldName.name}' on variable: '${node.identifier.name}'
+            String representation is: ${lhsType.toString()}, fields are: ${[...fields.keys()]}.
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
@@ -333108,12 +334702,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return UndeterminedTypeTypeDefinition.instance;
     }
     traverseIfStatement(node, context) {
-      const expressionType = this.traverse(node.condition, context);
-      if (!(expressionType instanceof ScalarTypeDefinition) || expressionType.name != BuiltInScalarConfig.bool.name) {
+      const conditionType = this.traverse(node.condition, context);
+      if (!(conditionType instanceof ScalarTypeDefinition) || conditionType.name != BuiltInScalarConfig.bool.name) {
         const error = {
           firstToken: node.condition.firstToken,
           type: "TypeMismatch",
-          message: formatErrorMessage(`If statement condition is expected to be of type bool, but is instead '${expressionType.toString()}'
+          message: formatErrorMessage(`If statement condition is expected to be of type bool, but is instead '${conditionType.toString()}'
         Referenced on: ${node.condition.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
@@ -333137,22 +334731,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return UndeterminedTypeTypeDefinition.instance;
     }
     traverseWhileStatement(node, context) {
-      const expressionType = this.traverse(node.condition, context);
-      if (!(expressionType instanceof ScalarTypeDefinition) || expressionType.name != BuiltInScalarConfig.bool.name) {
+      const conditionType = this.traverse(node.condition, context);
+      if (!(conditionType instanceof ScalarTypeDefinition) || conditionType.name != BuiltInScalarConfig.bool.name) {
         const error = {
           firstToken: node.condition.firstToken,
           type: "TypeMismatch",
-          message: `While statement condition is expected to be of type bool, but is instead '${expressionType.toString()}'
+          message: `While statement condition is expected to be of type bool, but is instead '${conditionType.toString()}'
         Referenced on: ${node.condition.firstToken.createTokenSourceString()}`
         };
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const newContext = {
+      const bodyContext = {
         typeMismatches: context.typeMismatches,
         table: node.body.bodyScope
       };
-      this.traverse(node.body, newContext);
+      this.traverse(node.body, bodyContext);
       return UndeterminedTypeTypeDefinition.instance;
     }
     traverseForStatement(node, context) {
@@ -333160,7 +334754,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseSwitchStatement(node, switchContext) {
       const nodeExpressionType = this.traverse(node.expression, switchContext);
-      if (!(nodeExpressionType instanceof VariantTypeDefinition)) {
+      const cases = nodeExpressionType.cases();
+      if (cases == void 0) {
         const error = {
           firstToken: node.expression.firstToken,
           type: "SwitchOnNonVariantType",
@@ -333177,17 +334772,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         this.traverse(node.elseStatement, elseContext);
       }
-      const typeDefFields = nodeExpressionType.fields;
-      const typeDefFieldCount = new Map([...nodeExpressionType.fields.keys()].map((key) => [key, 0]));
+      const typeDefFields = cases;
+      const typeDefFieldCount = new Map([...cases.keys()].map((key) => [key, 0]));
       for (const c of node.caseStatements) {
         const name = c.condition.identifier.symbolName;
         if (!typeDefFieldCount.has(name)) {
           const idenName = c.condition.identifier.symbolName;
-          const variantName = nodeExpressionType.name;
           const error = {
             firstToken: c.firstToken,
-            type: "TypeMismatch",
-            message: formatErrorMessage(`Found case statement on '${idenName}' but that field doesn't exist on variant type: '${variantName}'
+            type: "SwitchCaseOnNonExistentField",
+            message: formatErrorMessage(`Found case statement on '${idenName}' but that field doesn't exist on variant type: '${nodeExpressionType.toShortString()}'
             Referenced on: ${c.firstToken.createTokenSourceString()}`)
           };
           switchContext.typeMismatches.push(error);
@@ -333200,7 +334794,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           if (!res.isAcceptable) {
             const error = {
               firstToken: c.firstToken,
-              type: "TypeMismatch",
+              type: res.errorType ?? "TypeMismatch",
               message: formatErrorMessage(`
               For case statement with identifier: '${name}' expecting type: '${fieldType.toString()}' but instead received type: '${conditionType.toString()}'
               Referenced on: ${c.firstToken.createTokenSourceString()}`)
@@ -333225,7 +334819,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (unassignedFieldNames.length > 0 && node.elseStatement == void 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
+          type: "NonExhaustiveSwitchStatement",
           message: formatErrorMessage(`
           Switch statement is not doing an exhaustive check - fields (${unassignedFieldNames.join(", ")}) do not have case statements
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -333236,7 +334830,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (doubleCheckedFieldNames.length > 0) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
+          type: "SwitchCaseFieldAppearsMultipleTimes",
           message: formatErrorMessage(`
           Switch statement is checking fields twice - fields (${doubleCheckedFieldNames.join(", ")}) are checked multiple times
           Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -333250,15 +334844,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (!(parentFunction instanceof AstAbstractCallableDefinition)) {
         throw new Error("Return in non-function call");
       }
-      const functionReturnType = parentFunction.returnType;
+      const functionReturnTypeExpr = parentFunction.returnTypeExpression;
       if (node.expression != void 0) {
         const expressionType = this.traverse(node.expression, context);
-        const returnType = context.table.resolveTypeDefinition(functionReturnType);
+        const returnResp = context.table.resolveTypeDefinition(functionReturnTypeExpr);
+        if (returnResp.success == false) {
+          throw new Error(`Unable to resolve return type for: ${functionReturnTypeExpr.toString()}`);
+        }
+        const returnType = returnResp.type;
         const ans = areTypesAssignable(returnType, expressionType);
         if (!ans.isAcceptable) {
           const error = {
             firstToken: node.firstToken,
-            type: "TypeMismatch",
+            type: ans.errorType ?? "TypeMismatch",
             message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
         Function signature return type: ${returnType.toString()}, but returning type: ${expressionType.toString()}.
         Function declared on ${parentFunction.firstToken.createTokenSourceString()}
@@ -333269,13 +334867,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         return returnType;
       } else if (node.expression == void 0) {
-        const isUnitReturn = parentFunction.returnType instanceof AstUnitTypeExpression;
+        const isUnitReturn = parentFunction.returnTypeExpression instanceof AstUnitTypeExpression;
         if (!isUnitReturn) {
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
             message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
-          Function expects: ${parentFunction.returnType.toString()} but the return statement has no expression.
+          Function expects: ${parentFunction.returnTypeExpression.toString()} but the return statement has no expression.
           Function declared on ${parentFunction.firstToken.createTokenSourceString()}
           Return on ${node.firstToken.createTokenSourceString()}`)
           };
@@ -333312,7 +334910,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
       }
       for (const builtInPointerType of BUILT_IN_POINTER_TYPE_EXPRESSIONS) {
-        if (variableTypeDefinition instanceof InstantiableTypeDefinition && variableTypeDefinition.name == builtInPointerType.baseTypeExpression.toString()) {
+        if (variableTypeDefinition instanceof InstantiableTypeDefinition && variableTypeDefinition.toString() == builtInPointerType.baseTypeExpression.toString()) {
           const error = {
             firstToken: node.firstToken,
             type: "UnassignableType",
@@ -333328,7 +334926,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (!ans.isAcceptable) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
+          type: ans.errorType ?? "TypeMismatch",
           message: `Unable to assign to variable '${node.symbolName}' due to type mismatch. ${ans.errorMessage ?? ""}
         Declaration expecting type of '${variableTypeDefinition.toString()}' but RHS of the declaration is of type '${expressionType.toString()}'.
         Referenced on: ${node.firstToken.createTokenSourceString()}`
@@ -333343,61 +334941,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return variableTypeDefinition;
     }
-    // definition statements (function, struct, etc) don't actually have any types after they've been set up
-    // I might want to set up some kind of control-flow graph to ensure
-    // all code paths return a value, but not yet
-    traverseFunctionDefinition(node, context) {
-      const newContext = {
-        typeMismatches: context.typeMismatches,
-        table: node.bodyScope
-      };
-      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
-      this.traverse(node.body, newContext);
-      return functionTypeDefinition;
-    }
-    traverseWatFunctionDefinition(node, context) {
-      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
-      return functionTypeDefinition;
-    }
-    traverseOperatorDefinition(node, context) {
-      const newContext = {
-        typeMismatches: context.typeMismatches,
-        table: node.bodyScope
-      };
-      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
-      this.traverse(node.body, newContext);
-      return functionTypeDefinition;
-    }
-    traverseWatOperatorDefinition(node, context) {
-      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
-      return functionTypeDefinition;
-    }
     traverseCallableDefinition(node, context) {
       const definitionScope = node.definitionScope;
       const bodyScope = node.bodyScope;
       if (definitionScope == void 0 || bodyScope == void 0) {
         throw new Error(`Not all scopes bound for function with name ${node.symbolName}. definitionScope: ${definitionScope?.scopeName}, bodyScope: ${bodyScope?.scopeName}`);
       }
-      const genericParamExpression = node.typeParameters;
-      let genericParamTypes;
-      if (genericParamExpression == void 0) {
-        genericParamTypes = void 0;
-      } else if (genericParamExpression != void 0) {
-        genericParamTypes = genericParamExpression.types.map((t) => {
-          const resp = definitionScope.findTypeSymbol(t.identifier.name);
-          if (resp.success == false || resp.symbol.symbolDefinition.genericTypeParamInfo == void 0) {
-            throw new Error(`Lookup for symbol: ${t.identifier.name} failed.`);
-          }
-          const resolvedType = definitionScope.resolveGenericTypeDefinition(resp.symbol.symbolDefinition.typeExpression);
-          return resolvedType;
-        });
-      }
       const defContext = {
         typeMismatches: context.typeMismatches,
         table: definitionScope
       };
+      if (node.typeParameters != void 0) {
+        for (const typeParameter of node.typeParameters) {
+          this.traverse(typeParameter, defContext);
+        }
+      }
       const argTypes = node.params.map((p) => this.traverse(p.typeExpression, defContext).resolveType());
-      const returnType = this.traverse(node.returnType, defContext).resolveType();
+      const returnType = this.traverse(node.returnTypeExpression, defContext).resolveType();
       if (returnType == void 0 || argTypes.some((t) => t == void 0)) {
         const err = {
           firstToken: node.firstToken,
@@ -333409,118 +334969,62 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return UndeterminedTypeTypeDefinition.instance;
       }
       for (const p of node.params) {
-        const resolvedType = definitionScope.resolveTypeDefinition(p.typeExpression);
+        const resolvedTypeResp = definitionScope.resolveTypeDefinition(p.typeExpression);
+        if (resolvedTypeResp.success == false) {
+          throw new Error(`Unable to resolve type expression for ${p.typeExpression.toString()}`);
+        }
+        const resolvedType = resolvedTypeResp.type;
         bodyScope.bindVariableType(p.identifier.name, resolvedType);
       }
-      const out = this.traverse(node.functionSignature, defContext);
+      const out = this.traverse(node.functionSignatureExpression, defContext);
       if (!(out instanceof FunctionTypeDefinition)) {
         throw new Error("Resolving a callable definition's type should resolve to a function type definition");
       }
       return out;
     }
-    traverseTypeDefinition(node, context) {
-      return UndeterminedTypeTypeDefinition.instance;
-    }
-    traverseCompositeDefinition(node, context) {
-      const scope = node.definitionScope;
-      if (scope == void 0) {
-        throw new Error(`Scope is not properly bound to node with symbolname: ${node.symbolName}`);
+    traverseDefinitionTypeParameter(node, context) {
+      if (node.typeBoundExpression == void 0) {
+        return UndeterminedTypeTypeDefinition.instance;
       }
-      const symbol = scope.findSymbol(node.symbolName);
-      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Type") {
+      const resp = context.table.resolveTypeBound(node.typeBoundExpression.symbolName);
+      if (resp.success == false) {
         const error = {
           firstToken: node.firstToken,
-          type: "TypeMismatch",
+          type: "SymbolTypeMismatch",
           message: formatErrorMessage(`
-        Unable to resolve symbol '${node.symbolName} to struct type. Entry type in the symbol table was ${symbol?.symbolDefinition.symbolType}
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        Expecting ${node.symbolName} to be a type bound, but instead it was a ${resp.existingSymbol?.symbolDefinition.symbolType ?? "UNDEFINED"}.
+        Referenced on: ${node.firstToken.createTokenSourceString()}
+        `)
         };
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const astDefinition = symbol.symbolDefinition.astCompositeDefinitionNode;
-      if (!(astDefinition instanceof AstCompositeDefinition)) {
+      const typeBoundDefinition = resp.definition;
+      if (node.typeBoundExpression.typeArguments == void 0 && typeBoundDefinition.typeParameters.length != void 0) {
         const error = {
-          firstToken: node.firstToken,
-          type: "CompositeFromNonCompositeType",
+          firstToken: node.typeBoundExpression.firstToken,
+          type: "NoTypeArgumentsToTypeBound",
           message: formatErrorMessage(`
-          Type with name: '${node.symbolName} is not a composite type. It is instead of type: '${symbol.symbolDefinition.typeExpression.toString()}'
-          Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        For generic parameter: ${node.identifier.name} with bound: ${node.typeBoundExpression.identifier.name}.
+        Expecting ${typeBoundDefinition.typeParameters.length} number of type arguments, but instead received no arguments.
+        Referenced on: ${node.firstToken.createTokenSourceString()}
+        `)
         };
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const stack = [...astDefinition.fieldMap.entries()].map((entry) => {
-        return {
-          typeName: astDefinition.symbolName,
-          expression: entry[1].typeExpression
+      if (node.typeBoundExpression.typeArguments?.length != typeBoundDefinition.typeParameters.length) {
+        const error = {
+          firstToken: node.typeBoundExpression.firstToken,
+          type: "WrongNumberOfTypeArgumentsToTypeBound",
+          message: formatErrorMessage(`
+        For generic parameter: ${node.identifier.name} with bound: ${node.typeBoundExpression.identifier.name}.
+        Expecting ${typeBoundDefinition.typeParameters.length} number of type arguments, but instead found ${node.typeBoundExpression.typeArguments?.length} parameters.
+        Referenced on: ${node.firstToken.createTokenSourceString()}
+        `)
         };
-      });
-      const alreadyExplored = /* @__PURE__ */ new Set();
-      while (stack.length > 0) {
-        const current = stack.pop();
-        if (current.expression instanceof BaseTypeExpression) {
-          const symbol2 = scope.findSymbolWithType(
-            current.expression.symbolName,
-            "Type"
-            /* SymbolType.Type */
-          );
-          const astDefinition2 = (symbol2?.symbolDefinition).astCompositeDefinitionNode;
-          if (astDefinition2 == void 0) {
-            continue;
-          }
-          if (alreadyExplored.has(astDefinition2.symbolName)) {
-            const error = {
-              firstToken: node.firstToken,
-              type: "SelfReferentialStruct",
-              // the message is only useful if there's a direct recursive relationship.
-              // if there's a mutual recursion, it will get found, but the message is not that useful.
-              message: formatErrorMessage(`Unable to create struct of name '${node.symbolName}' 
-            as the field '${current.typeName}' has the type '${current.expression.toString()}' recursively references itself
-            Referenced on: ${node.firstToken.createTokenSourceString()}`)
-            };
-            context.typeMismatches.push(error);
-            return UndeterminedTypeTypeDefinition.instance;
-          }
-          const fields = [...astDefinition2.fieldMap.entries()].map((entry) => {
-            return {
-              typeName: astDefinition2.symbolName,
-              expression: entry[1].typeExpression
-            };
-          });
-          stack.push(...fields);
-          alreadyExplored.add(current.typeName);
-        }
-        if (stack.length > 5e4) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "SelfReferentialStruct",
-            message: formatErrorMessage(`
-          The struct will expand to over 50_000 scalar values. This will probably not work in most wasm runtimes,
-          which I think have a limit on the number of locals
-          Referenced on: ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.typeMismatches.push(error);
-          return UndeterminedTypeTypeDefinition.instance;
-        }
-      }
-      const typeDef = scope.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
-      return typeDef;
-    }
-    traverseBlockNode(node, context) {
-      for (const n of node.astNodes) {
-        this.traverse(n, context);
-      }
-      return UndeterminedTypeTypeDefinition.instance;
-    }
-    traverseGroupNode(node, context) {
-      for (const n of node.astNodes) {
-        if (n instanceof AstAbstractCallableDefinition) {
-          n.bodyScope.bindFunctionType(n);
-        }
-      }
-      for (const n of node.astNodes) {
-        this.traverse(n, context);
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
       }
       return UndeterminedTypeTypeDefinition.instance;
     }
@@ -333572,6 +335076,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.parseOperatorDefinition(c);
       } else if (c.matchedRule?.name == PARSER_RULE_NAMES.watOperatorDefinition) {
         return this.parseWatOperatorDefinition(c);
+      } else if (c.matchedRule?.name == PARSER_RULE_NAMES.typeboundDefinition) {
+        return this.parseTypeBoundDefinition(c);
       } else if (c.matchedRule?.name == PARSER_RULE_NAMES.controlFlowStatements) {
         return this.parseControlFlowStatement(c);
       }
@@ -333598,6 +335104,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const types = this.parseStructFields(root.children[4]);
       return new AstCompositeDefinition(root, compositeType, identifier3, genericTypeExpression, types);
     }
+    parseTypeBoundDefinition(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.typeboundDefinition);
+      this.expectNumberOfChildren(root, 6);
+      const identifier3 = this.parseIdentifier(root.children[1]);
+      const genericTypeExpression = this.parseOptionalTypeParameters(root.children[2]);
+      const fields = this.parseTypeBoundRequirements(root.children[4]);
+      return new AstTypeBoundDefinition(root, identifier3, genericTypeExpression, fields);
+    }
     parseOptionalTypeParameters(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.optionalTypeParameters);
       this.expectNumberOfChildren(root, 0, 1);
@@ -333609,8 +335123,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseTypeParameters(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeParameters);
       this.expectNumberOfChildren(root, 3);
-      const identifiers = this.parseGenericTypeFields(root.children[1].children[0]);
-      return new TypeParamsTypeExpression(root, identifiers);
+      const typeParameters = this.parseGenericTypeFields(root.children[1].children[0]);
+      return typeParameters;
     }
     parseGenericTypeFields(root) {
       this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeParameterCommaList}`);
@@ -333619,26 +335133,35 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const genericFields = root.children[0];
       this.expectNumberOfChildren(genericFields, 3);
-      const firstField = this.parseGenericIdentifier(genericFields.children[0]);
-      const identifiers = [firstField];
+      const firstField = this.parseTypeParameter(genericFields.children[0], 0);
+      const typeParameters = [firstField];
       const additionalArgs = genericFields.children[1];
       for (let i = 0; i < additionalArgs.children.length; i++) {
         const n = additionalArgs.children[i].children[1];
-        const x = this.parseGenericIdentifier(n);
-        identifiers.push(x);
+        const x = this.parseTypeParameter(n, i + 1);
+        typeParameters.push(x);
       }
-      return identifiers;
+      return typeParameters;
     }
-    parseGenericIdentifier(root) {
+    parseTypeParameter(root, typeParameterIndex) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeParameter);
-      const child = root.children[0];
-      let field;
-      if (child.matchedRule?.name == PARSER_RULE_NAMES.identifier) {
-        field = { identifier: this.parseIdentifier(child) };
-      } else {
-        throw new Error(`Not implemented for rule: ${root.children[0].matchedRule?.name}`);
+      this.expectNumberOfChildren(root, 2);
+      const identifier3 = this.parseIdentifier(root.children[0]);
+      const optionalTypeParameterBounds = root.children[1];
+      this.expectParseRuleName(optionalTypeParameterBounds, PARSER_RULE_NAMES.optionalTypeParameterBounds);
+      let bounds = void 0;
+      if (optionalTypeParameterBounds.children.length > 0) {
+        const typeParameterBoundsParseNode = optionalTypeParameterBounds.children[0];
+        bounds = this.parseTypeParameterBounds(typeParameterBoundsParseNode.children[1]);
       }
-      return field;
+      return new AstTypeParameter(root, identifier3, typeParameterIndex, bounds);
+    }
+    parseTypeParameterBounds(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.typeParameterBounds);
+      this.expectNumberOfChildren(root, 2);
+      const identifier3 = this.parseIdentifier(root.children[0]);
+      const typeArgs = this.parseOptionalTypeArguments(root.children[1]);
+      return new AstTypeBoundExpression(root, identifier3, typeArgs);
     }
     parseStructFields(root) {
       this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.compositeFields}`);
@@ -333656,6 +335179,47 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         identifiers.push(x);
       }
       return identifiers;
+    }
+    parseTypeBoundRequirements(root) {
+      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeboundRequirements}`);
+      if (root.children.length == 0) {
+        return [];
+      }
+      const constraintLists = root.children[0];
+      this.expectNumberOfChildren(constraintLists, 3);
+      const firstField = this.parseTypeBoundRequirement(constraintLists.children[0]);
+      const identifiers = [firstField];
+      const additionalArgs = constraintLists.children[1];
+      for (let i = 0; i < additionalArgs.children.length; i++) {
+        const n = additionalArgs.children[i].children[1];
+        const x = this.parseTypeBoundRequirement(n);
+        identifiers.push(x);
+      }
+      return identifiers;
+    }
+    parseTypeBoundRequirement(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.typeboundRequirement);
+      this.expectNumberOfChildren(root, 3);
+      const callableRuleType = root.children[0].children[0].matchedRule?.name;
+      let callableType;
+      if (callableRuleType == PARSER_RULE_NAMES.operatorKeyword) {
+        callableType = "Operator";
+      } else if (callableRuleType == PARSER_RULE_NAMES.functionKeyword) {
+        callableType = "Function";
+      } else {
+        throw new Error(`Parsing type bound requirement for rule: ${root.children[0].matchedRule?.name} has no defined behavior`);
+      }
+      const identifierRule = root.children[1];
+      let identifier3;
+      if (identifierRule.children[0].matchedRule?.name == PARSER_RULE_NAMES.identifier) {
+        identifier3 = this.parseIdentifier(identifierRule.children[0]);
+      } else if (identifierRule.children[0].matchedRule?.name == PARSER_RULE_NAMES.operatorSymbols) {
+        identifier3 = this.parseOperatorSymbol(identifierRule.children[0]);
+      } else {
+        throw new Error(`Failed to parse rule with name: ${identifierRule.children[0].matchedRule?.name}`);
+      }
+      const typeExpression = this.parseTypeExpression(root.children[2].children[1]);
+      return new AstTypeBoundRequirement(root, callableType, identifier3, typeExpression);
     }
     parseControlFlowStatement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.controlFlowStatements);
@@ -333923,14 +335487,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return new ArrayTypeExpression(child, internal, size2);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.tupleTypeExpression) {
         return this.parseTupleExpression(child);
-      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.functionTypeExpression) {
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.oldStyleFunctionTypeExpression) {
         return this.parseFunctionTypeExpression(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.typescriptStyleFunctionTypeExpression) {
+        return this.parseTypeScriptStyleFunctionTypeExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.unitKeyword) {
         return new AstUnitTypeExpression(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.neverKeyword) {
+        return new AstNeverTypeExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.specializedType) {
         const baseType = new BaseTypeExpression(child, this.parseIdentifier(child.children[0]));
         const typeArguments = this.parseTypeArguments(child.children[1]);
-        return new SpecializedTypeExpression(baseType, typeArguments);
+        return new TypeInstantiatingTypeExpression(baseType, typeArguments);
       }
       throw new Error(`Type expression parsing is not implemented for type: ${child.matchedRule?.name}`);
     }
@@ -333945,12 +335513,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new TupleTypeExpression(root, expressions);
     }
     parseFunctionTypeExpression(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.functionTypeExpression);
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.oldStyleFunctionTypeExpression);
       this.expectNumberOfChildren(root, 5);
       const typeCommaList = root.children[2];
-      const expressions = this.parseOptionalTypeCommaList(typeCommaList);
+      const parameterTypes = this.parseOptionalTypeCommaList(typeCommaList);
       const returnType = this.parseOptionalTypeAnnotation(root.children[4]);
-      return new FunctionTypeExpression(root, void 0, expressions, returnType);
+      return new FunctionTypeExpression(root, parameterTypes, returnType);
+    }
+    parseTypeScriptStyleFunctionTypeExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.typescriptStyleFunctionTypeExpression);
+      this.expectNumberOfChildren(root, 5);
+      const typeCommaList = root.children[1];
+      const parameterTypes = this.parseOptionalTypeCommaList(typeCommaList);
+      const returnType = this.parseTypeExpression(root.children[4]);
+      return new FunctionTypeExpression(root, parameterTypes, returnType);
     }
     parseOptionalTypeCommaList(root) {
       this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeCommaList}`);
@@ -334459,6 +336035,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const idNode = new AstIdentifierNode(root, root.tokens[0].lexeme);
       return idNode;
     }
+    parseOperatorSymbol(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.operatorSymbols);
+      this.expectNumberOfChildren(root, 1);
+      const token = root.children[0];
+      if (token.tokens.length != 1) {
+        throw new Error(`number of tokens in identifier matcher is not as expected: ${token.children[0].tokens.map((t) => t.lexeme)}`);
+      }
+      const idNode = new AstIdentifierNode(root, token.tokens[0].lexeme);
+      return idNode;
+    }
     // throws if not expected
     expectParseRuleName(root, ...names) {
       if (root.matchedRule == void 0 || !names.includes(root.matchedRule.name)) {
@@ -334509,10 +336095,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       ","
       /* TokenType.Comma */
     );
+    const semiColon = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.semiColon,
+      ";"
+      /* TokenType.SemiColon */
+    );
     const dotMatcher = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.dot,
       "."
       /* TokenType.Dot */
+    );
+    const fatRightArrow = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.fatRightArrow,
+      "=>"
+      /* TokenType.FatRightArrow */
     );
     const leftParen = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.leftParen,
@@ -334534,6 +336130,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "}"
       /* TokenType.RightCurly */
     );
+    const colon = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.colon,
+      ":"
+      /* TokenType.Colon */
+    );
     const leftSquare = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.leftSquare,
       "["
@@ -334543,11 +336144,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       PARSER_RULE_NAMES.rightSquare,
       "]"
       /* TokenType.RightSquareBracket */
-    );
-    const colon = parser2.createTokenMatcher(
-      PARSER_RULE_NAMES.colon,
-      ":"
-      /* TokenType.Colon */
     );
     const asterisk = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.asterisk,
@@ -334639,15 +336235,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "||"
       /* TokenType.OrOr */
     );
-    const equals3 = parser2.createTokenMatcher(
+    const operatorSymbols = parser2.createOrderedChoice(PARSER_RULE_NAMES.operatorSymbols, asterisk, exclaim, tilde, minus, plus, slash, percentSymbol, bitwiseOr, bitwiseXor, bitwiseAnd, equality, notEquals, greaterEqual, lessEqual, greater, lessThan, logicalAnd, logicalOr);
+    const equalsAssignment = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.equals,
       "="
       /* TokenType.Equal */
-    );
-    const semiColon = parser2.createTokenMatcher(
-      PARSER_RULE_NAMES.semiColon,
-      ";"
-      /* TokenType.SemiColon */
     );
     const sizeOfKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.sizeOfKeyword,
@@ -334734,6 +336326,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "watoperator"
       /* TokenType.WatOperator */
     );
+    const typeboundKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.typeboundKeyword,
+      "type_bound"
+      /* TokenType.TypeBound */
+    );
+    const typeAliasKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.typeKeyword,
+      "typealias"
+      /* TokenType.TypeAlias */
+    );
     const structKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.structKeyword,
       "struct"
@@ -334749,15 +336351,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "variant"
       /* TokenType.Variant */
     );
-    const typeKeyword = parser2.createTokenMatcher(
-      PARSER_RULE_NAMES.typeKeyword,
-      "typealias"
-      /* TokenType.TypeAlias */
-    );
     const unitKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.unitKeyword,
       "unit"
       /* TokenType.Unit */
+    );
+    const neverKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.neverKeyword,
+      "never"
+      /* TokenType.Never */
     );
     const optionalComma = parser2.createZeroOrOne("optionalComma", commaMatcher);
     function optionalCommaList(ruleName, subRule) {
@@ -334869,7 +336471,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const variableFieldAccess = parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccess, nonLeftVariableAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableFieldAccessTail, parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccessDotIdentifier, dotMatcher, identifierMatcher)));
     assignmentVariableAccess.symbols.push(variableFieldAccess, variableBrackets, variableIndexingAccess, variableDereferenceAccess, simpleVariableAccess);
     nonLeftVariableAccess.symbols.push(variableBrackets, variableDereferenceAccess, simpleVariableAccess);
-    const assignmentOperators = parser2.createOrderedChoice(PARSER_RULE_NAMES.assignmentOperators, equals3);
+    const assignmentOperators = parser2.createOrderedChoice(PARSER_RULE_NAMES.assignmentOperators, equalsAssignment);
     const assignmentStatement = parser2.createSequence(PARSER_RULE_NAMES.assignmentStatement, assignmentVariableAccess, assignmentOperators, expression);
     const structLiteralAssignments = optionalCommaList(PARSER_RULE_NAMES.structLiteralAssignments, assignmentStatement);
     const typeExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeExpression);
@@ -334880,7 +336482,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       colon,
       typeExpression
     );
-    const optionalTypeMatcher = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeAnnotation, typeAnnotation);
+    const optionalTypeAnnotation = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeAnnotation, typeAnnotation);
     const arraySizeMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.arraySizeMatcher, integerLiteral, asterisk);
     const arrayTypeExpression = parser2.createSequence(
       PARSER_RULE_NAMES.arrayTypeExpression,
@@ -334894,17 +336496,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const pointerTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.pointerTypeExpression, asterisk, typeExpression);
     const typeCommaList = optionalCommaList(PARSER_RULE_NAMES.typeCommaList, typeExpression);
     const tupleTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.tupleTypeExpression, leftParen, typeCommaList, rightParen);
-    const functionTypeExpression = parser2.createSequence(
+    const oldStyleFunctionTypeExpression = parser2.createSequence(
       // function(types): type?
       // TODO: I eventually want to change this to (args) => returnType?
-      PARSER_RULE_NAMES.functionTypeExpression,
+      PARSER_RULE_NAMES.oldStyleFunctionTypeExpression,
       functionKeyword,
       leftParen,
       typeCommaList,
       rightParen,
-      optionalTypeMatcher
+      optionalTypeAnnotation
     );
-    const typeParameter = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeParameter, identifierMatcher);
+    const typescriptStyleFunctionTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.typescriptStyleFunctionTypeExpression, leftParen, typeCommaList, rightParen, fatRightArrow, typeExpression);
+    const typeParameterBounds = parser2.createSequence(PARSER_RULE_NAMES.typeParameterBounds);
+    const optionalTypeParameterBounds = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeParameterBounds, parser2.createSequence(PARSER_RULE_NAMES.typeParameterBoundsWithColon, colon, typeParameterBounds));
+    const typeParameter = parser2.createSequence(PARSER_RULE_NAMES.typeParameter, identifierMatcher, optionalTypeParameterBounds);
     const typeParameterList = parser2.createSequence(PARSER_RULE_NAMES.typeParameterList, optionalCommaList(PARSER_RULE_NAMES.typeParameterCommaList, typeParameter));
     const typeExpressionList = parser2.createSequence(PARSER_RULE_NAMES.typeExpressionList, optionalCommaList(PARSER_RULE_NAMES.typeExpressionCommaList, typeExpression));
     const typeParameters = parser2.createSequence(
@@ -334918,8 +336523,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const typeArguments = parser2.createSequence(PARSER_RULE_NAMES.typeArguments, lessThan, typeExpressionList, greater);
     const specializedType = parser2.createSequence(PARSER_RULE_NAMES.specializedType, identifierMatcher, typeArguments);
     typeExpression.symbols.push(
-      functionTypeExpression,
+      oldStyleFunctionTypeExpression,
       // function(i32, i32): i32
+      typescriptStyleFunctionTypeExpression,
+      // (T, A) => X
       pointerTypeExpression,
       // **i32
       arrayTypeExpression,
@@ -334928,12 +336535,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // (i32, i32, i32)
       unitKeyword,
       // matches "unit" - which is an alias for ()
+      neverKeyword,
+      // matches "never"
       specializedType,
       identifierMatcher
     );
     const variableDeclarationOperator = parser2.createOrderedChoice(PARSER_RULE_NAMES.variableDeclarationOperators, constMatcher, varMatcher);
     const optionalTypeParameters = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeParameters, typeParameters);
     const optionalTypeArguments = parser2.createZeroOrMore(PARSER_RULE_NAMES.optionalTypeArguments, typeArguments);
+    typeParameterBounds.symbols.push(identifierMatcher, optionalTypeArguments);
     compositeLiteral.symbols.push(typeExpression, leftCurly, structLiteralAssignments, rightCurly);
     callExpression.symbols.push(fieldAccessExpression, optionalTypeArguments, parser2.createOneOrMore(
       PARSER_RULE_NAMES.callExpressionMultiMatch,
@@ -334945,17 +336555,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       variableDeclarationOperator,
       identifierMatcher,
       // optionalTypeMatcher should be variableDeclarationType
-      optionalTypeMatcher,
+      optionalTypeAnnotation,
       // If the type is not supplied I'll have to do type inference from the RHS expression
-      equals3,
+      equalsAssignment,
       expression
     );
-    const typeAliasDefinitionStatement = parser2.createSequence(PARSER_RULE_NAMES.typeAliasingStatement, typeKeyword, identifierMatcher, equals3, typeExpression);
+    const typeAliasDefinitionStatement = parser2.createSequence(PARSER_RULE_NAMES.typeAliasingStatement, typeAliasKeyword, identifierMatcher, equalsAssignment, typeExpression);
     const simpleStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.simpleStatements, variableDeclaration, assignmentStatement, typeAliasDefinitionStatement, breakKeyword, continueKeyword, returnStatement, expression);
     const statement = parser2.createOrderedChoice(PARSER_RULE_NAMES.statement);
     const statements = parser2.createZeroOrMore(PARSER_RULE_NAMES.statements, statement);
     const paramWithType = parser2.createSequence(PARSER_RULE_NAMES.paramWithType, identifierMatcher, typeAnnotation);
-    const paramWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.paramWithOptionalType, identifierMatcher, optionalTypeMatcher);
+    const paramWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.paramWithOptionalType, identifierMatcher, optionalTypeAnnotation);
+    const typeboundRequirementType = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementType, functionKeyword, operatorKeyword);
+    const typeboundIdentifierMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementIdentifier, operatorSymbols, identifierMatcher);
+    const typeboundRequirement = parser2.createSequence(PARSER_RULE_NAMES.typeboundRequirement, typeboundRequirementType, typeboundIdentifierMatcher, typeAnnotation);
     const block = parser2.createSequence(PARSER_RULE_NAMES.block, leftCurly, statements, rightCurly);
     const elseBlock = parser2.createSequence(PARSER_RULE_NAMES.elseBlock, elseKeyword, block);
     const optElse = parser2.createZeroOrOne("else?", elseBlock);
@@ -334978,7 +336591,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // its maybe slightly weird having the parens at this level and not in the functionDefinitionParameters rule
       functionDefinitionParameters,
       rightParen,
-      optionalTypeMatcher,
+      optionalTypeAnnotation,
       // this is the return type, its optional and should be inferrable?
       block
     );
@@ -334990,21 +336603,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       leftParen,
       functionDefinitionParameters,
       rightParen,
-      optionalTypeMatcher,
+      optionalTypeAnnotation,
       leftCurly,
       watBlob,
       rightCurly
     );
-    const operators2 = parser2.createOrderedChoice(
-      // used for matching operators operator overloading
-      PARSER_RULE_NAMES.operatorMatcher,
-      plus,
-      minus,
-      asterisk,
-      slash
-    );
-    const operatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.operatorDefinition, operatorKeyword, operators2, leftParen, functionDefinitionParameters, rightParen, optionalTypeMatcher, block);
-    const watOperatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.watOperatorDefinition, watOperatorKeyword, operators2, leftParen, functionDefinitionParameters, rightParen, optionalTypeMatcher, leftCurly, watBlob, rightCurly);
+    const operatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.operatorDefinition, operatorKeyword, operatorSymbols, leftParen, functionDefinitionParameters, rightParen, optionalTypeAnnotation, block);
+    const watOperatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.watOperatorDefinition, watOperatorKeyword, operatorSymbols, leftParen, functionDefinitionParameters, rightParen, optionalTypeAnnotation, leftCurly, watBlob, rightCurly);
     const compositeTypeKeywords = parser2.createOrderedChoice(PARSER_RULE_NAMES.compositeTypeKeyword, structKeyword, unionKeyword, variantKeyword);
     const compositeDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.compositeDefinition,
@@ -335016,8 +336621,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // the parser will allow an empty list and then I'll throw a semantic error on an empty list (or duplicate fields)
       rightCurly
     );
+    const typeboundDefinition = parser2.createSequence(
+      PARSER_RULE_NAMES.typeboundDefinition,
+      typeboundKeyword,
+      identifierMatcher,
+      optionalTypeParameters,
+      // while it can be parsed without type parameters, it will fail in the checker as there must be at least 1 type parameter for a type bound to be useful/make sense
+      leftCurly,
+      optionalCommaList(PARSER_RULE_NAMES.typeboundRequirements, typeboundRequirement),
+      rightCurly
+    );
     const controlFlowStatements = parser2.createOrderedChoice(PARSER_RULE_NAMES.controlFlowStatements, ifStatement, whileStatement, forStatement, switchStatement);
-    const complexStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.complexStatement, functionDefinition, watFunctionDefinition, operatorOverloadDefinition, watOperatorOverloadDefinition, compositeDefinition, controlFlowStatements);
+    const complexStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.complexStatement, functionDefinition, watFunctionDefinition, operatorOverloadDefinition, watOperatorOverloadDefinition, compositeDefinition, typeboundDefinition, controlFlowStatements);
     statement.symbols.push(complexStatement, parser2.createSequence(PARSER_RULE_NAMES.statementWithSemicolon, simpleStatement, semiColon), semiColon);
     parser2.root = statements;
     return parser2;
@@ -335179,6 +336794,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       matcher: /^->/,
       tokenType: "->"
       /* TokenType.RightArrow */
+    },
+    {
+      matcher: /^=>/,
+      tokenType: "=>"
+      /* TokenType.FatRightArrow */
     },
     // simple math
     {
@@ -335428,329 +337048,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   }
   __name(parseInt2, "parseInt");
 
-  // ../compiler/dist/src/compiler/ir/IRInstructions.js
-  var IRPlaceholderInstruction = class {
-    static {
-      __name(this, "IRPlaceholderInstruction");
-    }
-    comment = "";
-    toJson(options2) {
-      return ["PLACEHOLDER INSTRUCTION"];
-    }
-  };
-
-  // ../compiler/dist/src/compiler/ir/IRDefinitions.js
-  var IRType = class _IRType {
-    static {
-      __name(this, "IRType");
-    }
-    identifier;
-    typeDefinition;
-    typeParameters;
-    comment = "";
-    static createKey(typeDefinition) {
-      const canonicalized = typeDefinition.canonicalize();
-      const key = {
-        scope: canonicalized.declaringScope,
-        kind: canonicalized.typeType,
-        name: canonicalized.name,
-        typeParameters: canonicalized.canonicalTypeParameters.map((t) => _IRType.convertFromSymbol(t.sourceType))
-      };
-      return key;
-    }
-    static convertFromSymbol(typeDefinition) {
-      const typeParameters = typeDefinition.typeInstantiationInformation?.typeArgs.map((t) => t.typeArg) ?? void 0;
-      const key = _IRType.createKey(typeDefinition);
-      const irType = new _IRType(key, typeDefinition, typeParameters);
-      return irType;
-    }
-    constructor(identifier3, typeDefinition, typeParameters) {
-      this.identifier = identifier3;
-      this.typeDefinition = typeDefinition;
-      this.typeParameters = typeParameters;
-    }
-  };
-  var IRFunction = class _IRFunction {
-    static {
-      __name(this, "IRFunction");
-    }
-    identifier;
-    symbol;
-    callableOverload;
-    functionTypeDefinition;
-    typeParameters;
-    specialization;
-    parameters;
-    locals;
-    returnType;
-    comment = "";
-    tempStoreCounter = 0;
-    // TODO: a function that I can use to create key for looking up IRFunctions
-    static convertFromSymbol(parentSymbol, callableOverload, specialization) {
-      const definitionScope = callableOverload.definitionNode.definitionScope;
-      const typeArguments = specialization?.typeArguments.map((t) => IRType.convertFromSymbol(t));
-      const typeDef = specialization?.instantiatedType ?? callableOverload.typeDefinition;
-      if (typeDef == void 0) {
-        throw new Error(`Type def for function ${parentSymbol.symbolName} not correctly set to ResolvedCallableTypeDefinition`);
-      }
-      const functionTypeParameters = callableOverload.typeDefinition?.typeParameters;
-      if (typeArguments != void 0 && typeArguments?.length != functionTypeParameters?.length) {
-        throw new Error(`Mismatched type args len to type parameters len. TypeArgs: ${typeArguments?.length}, typeParams: ${functionTypeParameters?.length}`);
-      }
-      const mappedArgs = [];
-      const len = typeArguments?.length ?? 0;
-      for (let i = 0; i < len; i++) {
-        mappedArgs.push({ genericParam: functionTypeParameters[i], typeArg: typeArguments[i].typeDefinition });
-      }
-      const key = {
-        scope: parentSymbol.declaringScope,
-        name: parentSymbol.symbolName,
-        typeArguments,
-        funcParamTypes: typeDef.paramTypes.map((p) => IRType.convertFromSymbol(p))
-      };
-      const resolveGenericTypeToTypeArgument = /* @__PURE__ */ __name((type) => {
-        if (typeArguments == void 0 || type == void 0) {
-          return type;
-        }
-        return type.instantiateViaMap(mappedArgs);
-      }, "resolveGenericTypeToTypeArgument");
-      const params = new IRVariables();
-      const paramsList = callableOverload.definitionNode.params.map((p) => definitionScope?.findSymbolInThisScope(p.symbolName)).map((p) => {
-        return { variable: p, type: resolveGenericTypeToTypeArgument(p.symbolDefinition.resolvedType) };
-      }).map((p) => IRVariable.convertFromSymbol(p.variable, p.type));
-      paramsList.forEach((v) => params.putValue(v));
-      const locals = new IRVariables();
-      const localsList = definitionScope.findAllSymbolsByType(
-        "Variable"
-        /* SymbolType.Variable */
-      ).map((v) => v).filter(
-        (v) => v.symbolDefinition.scopeType == "Local"
-        /* ScopeType.Local */
-      ).map((p) => {
-        return { variable: p, type: resolveGenericTypeToTypeArgument(p.symbolDefinition.resolvedType) };
-      }).map((v) => IRVariable.convertFromSymbol(v.variable, v.type));
-      localsList.forEach((v) => locals.putValue(v));
-      const returnTypeDef = resolveGenericTypeToTypeArgument(typeDef.returnType);
-      const returnType = IRType.convertFromSymbol(returnTypeDef);
-      const functionTypeDefinition = new FunctionTypeDefinition(callableOverload.definitionNode.definitionScope, functionTypeParameters, paramsList.map((p) => p.irType.typeDefinition), returnType.typeDefinition);
-      const irFunction = new _IRFunction(key, parentSymbol, callableOverload, functionTypeDefinition, functionTypeParameters, typeArguments?.map((t) => t.typeDefinition), params, locals, returnType);
-      return irFunction;
-    }
-    _instructions;
-    constructor(identifier3, symbol, callableOverload, functionTypeDefinition, typeParameters, specialization, parameters, locals, returnType) {
-      this.identifier = identifier3;
-      this.symbol = symbol;
-      this.callableOverload = callableOverload;
-      this.functionTypeDefinition = functionTypeDefinition;
-      this.typeParameters = typeParameters;
-      this.specialization = specialization;
-      this.parameters = parameters;
-      this.locals = locals;
-      this.returnType = returnType;
-    }
-    get isGenericTemplate() {
-      return this.functionTypeDefinition.isGeneric();
-    }
-    getVariable(key) {
-      if (this.parameters.has(key)) {
-        return this.parameters.get(key);
-      } else if (this.locals.has(key)) {
-        return this.locals.get(key);
-      }
-      throw new Error(`Lookup for variable with identifier: ${key} failed.`);
-    }
-    setInstructions(i) {
-      if (this._instructions != void 0) {
-        throw new Error(`Rebinding instructions to function ${this.identifier.name}`);
-      }
-      this._instructions = i.slice();
-    }
-    /**
-     * Creates a temporary variable to store a variable.
-     */
-    createTemporaryVariable(module2, scope, label, type, typeArguments) {
-      if (typeArguments != void 0) {
-        type = type.instantiateViaMap(typeArguments);
-      }
-      const identifier3 = {
-        scope,
-        name: `${label}.${this.tempStoreCounter++}`
-      };
-      const irType = module2.types.putValueIfMissing(IRType.convertFromSymbol(type));
-      const variable = new IRVariable(identifier3, irType);
-      this.locals.set(identifier3, variable);
-      return variable;
-    }
-    instructions() {
-      if (this._instructions == void 0) {
-        return [new IRPlaceholderInstruction()];
-      }
-      return this._instructions.slice();
-    }
-  };
-  var IRVariable = class _IRVariable {
-    static {
-      __name(this, "IRVariable");
-    }
-    identifier;
-    irType;
-    comment = "";
-    type;
-    static convertFromSymbol(symbol, typeOverride) {
-      if (symbol.symbolDefinition == void 0) {
-        throw new Error(`Failed to resolve symbol for variable with name: ${symbol.symbolName}`);
-      }
-      let resolvedType = symbol.symbolDefinition.resolvedType;
-      if (resolvedType == void 0) {
-        throw new Error(`Failed to resolve type for variable with name: ${symbol.symbolName}`);
-      }
-      if (typeOverride != void 0) {
-        resolvedType = typeOverride;
-      }
-      const variableIdentifier = {
-        name: symbol.symbolName,
-        scope: symbol.declaringScope
-      };
-      const irType = IRType.convertFromSymbol(resolvedType);
-      const irVariable = new _IRVariable(variableIdentifier, irType);
-      return irVariable;
-    }
-    constructor(identifier3, irType) {
-      this.identifier = identifier3;
-      this.irType = irType;
-      this.type = irType.typeDefinition;
-    }
-  };
-  var MergedModuleMap = class {
-    static {
-      __name(this, "MergedModuleMap");
-    }
-    internalMaps;
-    constructor(internalMaps) {
-      this.internalMaps = internalMaps;
-      if (internalMaps.length < 1) {
-        throw new Error(`The MergedModuleMap needs to be created with at least 1 internal map`);
-      }
-    }
-    get(key) {
-      const firstMap = this.internalMaps[0];
-      const keyStr = firstMap.makeKey(key);
-      for (const map of this.internalMaps) {
-        if (map.has(key)) {
-          return map.get(key);
-        }
-      }
-      throw new Error(`Unable to lookup ${keyStr}`);
-    }
-    has(key) {
-      for (const map of this.internalMaps) {
-        if (map.has(key)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    size() {
-      let out = 0;
-      for (const m of this.internalMaps) {
-        out += m.size();
-      }
-      return out;
-    }
-    values() {
-      const out = [];
-      for (const v of this.internalMaps) {
-        out.push(...v.values());
-      }
-      return out.values();
-    }
-  };
-  var ModuleMapImpl = class {
-    static {
-      __name(this, "ModuleMapImpl");
-    }
-    has(key) {
-      const keyStr = this.makeKey(key);
-      return this.backingMap.has(keyStr);
-    }
-    set(key, value) {
-      const keyStr = this.makeKey(key);
-      if (this.backingMap.has(keyStr)) {
-        throw new Error(`Rebinding definition with key: ${keyStr}`);
-      }
-      this.backingMap.set(keyStr, value);
-    }
-    putValue(value) {
-      this.set(value.identifier, value);
-    }
-    get(key) {
-      const keyStr = this.makeKey(key);
-      const out = this.backingMap.get(keyStr);
-      if (out == void 0) {
-        throw new Error(`Failed to lookup value with key: ${keyStr}`);
-      }
-      return out;
-    }
-    getOrPutIfMissing(key, value) {
-      const keyStr = this.makeKey(key);
-      if (this.backingMap.has(keyStr)) {
-        return this.get(key);
-      } else {
-        this.backingMap.set(keyStr, value);
-        return value;
-      }
-    }
-    values() {
-      return this.backingMap.values();
-    }
-    size() {
-      return this.backingMap.size;
-    }
-  };
-  var IRVariables = class _IRVariables extends ModuleMapImpl {
-    static {
-      __name(this, "IRVariables");
-    }
-    backingMap = /* @__PURE__ */ new Map();
-    static idenToString(key) {
-      return `variable:${key.scope.id}.${key.name}`;
-    }
-    makeKey(key) {
-      return _IRVariables.idenToString(key);
-    }
-  };
-  var IRFunctions = class _IRFunctions extends ModuleMapImpl {
-    static {
-      __name(this, "IRFunctions");
-    }
-    backingMap = /* @__PURE__ */ new Map();
-    static idenToKey(key) {
-      const scopeId2 = `${key.scope.id}`;
-      const name = `${key.name}`;
-      const genericsKey = `${key.typeArguments?.map((g) => g.typeDefinition.canonicalize().toString()) ?? ""}`;
-      const funcParamsTypes = `${key.funcParamTypes.map((p) => p.typeDefinition.canonicalize().toString())}`;
-      return `function:${scopeId2}.${name}.(generics:${genericsKey}).${funcParamsTypes}`;
-    }
-    makeKey(key) {
-      return _IRFunctions.idenToKey(key);
-    }
-  };
-  var IRTypes = class _IRTypes extends ModuleMapImpl {
-    static {
-      __name(this, "IRTypes");
-    }
-    backingMap = /* @__PURE__ */ new Map();
-    static idenToKey(key) {
-      const paramTypes = key.typeParameters?.map((p) => _IRTypes.idenToKey(p.identifier));
-      const formattedParamTypes = paramTypes ? `.<${paramTypes.join(",")}>` : "";
-      return `type:${key.scope.id}.${key.kind}.${key.name}.${formattedParamTypes}`;
-    }
-    makeKey(identifier3) {
-      return _IRTypes.idenToKey(identifier3);
-    }
-  };
-
-  // ../compiler/dist/src/compiler/ir/IRVariables.js
+  // ../compiler/dist/src/compiler/ir/instructions/IRVariables.js
   var IRVariableInstruction = class {
     static {
       __name(this, "IRVariableInstruction");
@@ -335837,7 +337135,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/IRExpression.js
+  // ../compiler/dist/src/compiler/ir/instructions/IRExpression.js
   var VARIANT_BACKING_FIELD_NAME = ".backing_field";
   var IRExpression = class {
     static {
@@ -335911,20 +337209,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.astNode = astNode;
       this.irFunction = irFunction;
       this.args = args;
-      this.outputType = irFunction.returnType;
+      this.outputType = irFunction.irReturnType;
     }
     toJson(options2) {
-      const typeArgsStr = this.irFunction.specialization == void 0 ? "" : `< ${this.irFunction.specialization.map((s) => s.expression.toString()).join(", ")} >`;
-      return [
-        "call",
-        this.irFunction.identifier.name,
-        typeArgsStr,
-        `:(${this.irFunction.identifier.funcParamTypes.map((t) => t.typeDefinition.expression.toString())})`,
-        this.args.expressions.map((arg) => arg.toJson(options2))
-      ];
+      return ["call", this.irFunction.identifier.toShortString(), this.args.toJson(options2)];
     }
   };
-  var IRFieldGetExpression = class extends IRExpression {
+  var IRFieldGetExpression = class _IRFieldGetExpression extends IRExpression {
     static {
       __name(this, "IRFieldGetExpression");
     }
@@ -335933,6 +337224,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     lhsExpression;
     field;
     lhsTempStore;
+    outputType;
     /*
       basically my strategy is to do something like below:
     
@@ -335947,26 +337239,32 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       get_temp_c;
       */
     lhsType;
-    outputType;
-    constructor(astNode, lhsCompositeType, lhsExpression, field, lhsTempStore) {
+    constructor(astNode, lhsCompositeType, lhsExpression, field, lhsTempStore, outputType) {
       super(astNode);
       this.astNode = astNode;
       this.lhsCompositeType = lhsCompositeType;
       this.lhsExpression = lhsExpression;
       this.field = field;
       this.lhsTempStore = lhsTempStore;
-      if (!(lhsCompositeType.typeDefinition instanceof CompositeTypeDefinition)) {
-        throw new Error(`The LHS of a field get expression must be a composite type. Instead it was :${lhsCompositeType.typeDefinition.toString()}`);
+      this.outputType = outputType;
+      const hasFields = lhsCompositeType.typeDefinition.components() != void 0;
+      if (!hasFields) {
+        throw new Error(`The LHS of a field get expression must be a composite type. Instead it was: ${lhsCompositeType.typeDefinition.toString()}`);
       }
       this.lhsType = lhsCompositeType.typeDefinition;
-      const fieldType = this.lhsType.fields.get(field);
-      if (this.lhsType instanceof VariantTypeDefinition && field == VARIANT_BACKING_FIELD_NAME) {
-        this.outputType = IRType.convertFromSymbol(this.lhsType.backingTagType);
+    }
+    static create(module2, astNode, lhsCompositeType, lhsExpression, field, lhsTempStore) {
+      const lhsType = lhsCompositeType.typeDefinition;
+      const fieldType = lhsType.components()?.get(field);
+      let outputType;
+      if (lhsType instanceof VariantTypeDefinition && field == VARIANT_BACKING_FIELD_NAME) {
+        outputType = module2.types.internTypeDefinition(module2, lhsType.backingTagType);
       } else if (fieldType != void 0) {
-        this.outputType = IRType.convertFromSymbol(fieldType);
+        outputType = module2.types.internTypeDefinition(module2, fieldType);
       } else {
-        throw new Error(`Failed to resolve type of field: ${field} for type: ${this.lhsType.toString()}`);
+        throw new Error(`Failed to resolve type of field: ${field} for type: ${lhsType.toString()}`);
       }
+      return new _IRFieldGetExpression(astNode, lhsCompositeType, lhsExpression, field, lhsTempStore, outputType);
     }
     toJson(options2) {
       return ["get_field", this.lhsExpression.toJson(options2), ".", this.field];
@@ -335980,13 +337278,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     lhsCompositeType;
     lhsExpression;
     backingTagTempStore;
-    constructor(astNode, lhsCompositeType, lhsExpression, backingTagTempStore) {
-      super(astNode, lhsCompositeType, lhsExpression, VARIANT_BACKING_FIELD_NAME, backingTagTempStore);
+    backingTagType;
+    constructor(astNode, lhsCompositeType, lhsExpression, backingTagTempStore, backingTagType) {
+      super(astNode, lhsCompositeType, lhsExpression, VARIANT_BACKING_FIELD_NAME, backingTagTempStore, backingTagType);
       this.astNode = astNode;
       this.lhsCompositeType = lhsCompositeType;
       this.lhsExpression = lhsExpression;
       this.backingTagTempStore = backingTagTempStore;
-      if (!(lhsCompositeType.typeDefinition instanceof VariantTypeDefinition)) {
+      this.backingTagType = backingTagType;
+      const fields = lhsCompositeType.typeDefinition.cases();
+      if (fields == void 0) {
         throw new Error(`Getting the backing tag value is only defined for variant types. Instead received: ${lhsCompositeType.typeDefinition.toString()}`);
       }
     }
@@ -335994,80 +337295,92 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return ["get_tag", this.lhsExpression.toJson(options2)];
     }
   };
-  var IRLoadExpression = class extends IRExpression {
+  var IRLoadExpression = class _IRLoadExpression extends IRExpression {
     static {
       __name(this, "IRLoadExpression");
     }
     astNode;
     lhsPointerType;
     lhsExpression;
-    type;
     outputType;
-    constructor(astNode, lhsPointerType, lhsExpression) {
+    type;
+    constructor(astNode, lhsPointerType, lhsExpression, outputType) {
       super(astNode);
       this.astNode = astNode;
       this.lhsPointerType = lhsPointerType;
       this.lhsExpression = lhsExpression;
+      this.outputType = outputType;
       if (!(lhsPointerType.typeDefinition instanceof PointerTypeDefinition)) {
         throw new Error(`IR Load Operation needs to have a pointer type passed as its type argument`);
       }
       this.type = lhsPointerType.typeDefinition;
-      this.outputType = IRType.convertFromSymbol(this.type.dereferencedType());
+    }
+    static create(module2, astNode, lhsPointerType, lhsExpression) {
+      if (!(lhsPointerType instanceof PointerTypeDefinition)) {
+        throw new Error(`IR Load Operation needs to have a pointer type passed as its type argument`);
+      }
+      const irPointerType = module2.types.internTypeDefinition(module2, lhsPointerType);
+      const outputType = module2.types.internTypeDefinition(module2, lhsPointerType.dereferencedType());
+      return new _IRLoadExpression(astNode, irPointerType, lhsExpression, outputType);
     }
     toJson(options2) {
       return ["load", this.lhsExpression.toJson(options2)];
     }
   };
-  var IRZeroValue = class extends IRExpression {
+  var IRZeroValue = class _IRZeroValue extends IRExpression {
     static {
       __name(this, "IRZeroValue");
     }
     astNode;
-    type;
     outputType;
-    constructor(astNode, type) {
+    type;
+    constructor(astNode, outputType, type) {
       super(astNode);
       this.astNode = astNode;
+      this.outputType = outputType;
       this.type = type;
-      this.outputType = IRType.convertFromSymbol(type);
+    }
+    static createFromTypeDef(module2, node, typeDef) {
+      const irType = module2.types.internTypeDefinition(module2, typeDef);
+      return new _IRZeroValue(node, irType, typeDef);
     }
     toJson(options2) {
       return ["zero_value", `:${this.type.expression.toString()}`];
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/IRConsts.js
-  var IRLiteral = class extends IRExpression {
+  // ../compiler/dist/src/compiler/ir/instructions/IRConsts.js
+  var IRConst = class extends IRExpression {
     static {
-      __name(this, "IRLiteral");
+      __name(this, "IRConst");
     }
     astNode;
     outputType;
-    value;
+    _values;
     comment = "";
-    constructor(astNode, outputType, value) {
+    constructor(astNode, outputType, _values) {
       super(astNode);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
     }
     toJson(options2) {
-      return ["const", this.outputType.typeDefinition.expression.toString(), JSON.stringify(this.value)];
+      return ["const", this.outputType.typeDefinition.expression.toString(), JSON.stringify(this._values)];
     }
   };
-  var IRConstScalar = class extends IRLiteral {
+  var IRConstScalar = class extends IRConst {
     static {
       __name(this, "IRConstScalar");
     }
     astNode;
     outputType;
-    value;
+    _values;
     type;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
       if (!(outputType.typeDefinition instanceof ScalarTypeDefinition)) {
         const errorMessage = `Expecting a scalar type but instead received type: ${outputType.typeDefinition.toString()}. `;
         const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
@@ -336082,12 +337395,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
     }
   };
   var IRConstFloat = class extends IRConstScalar {
@@ -336096,12 +337409,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
     }
   };
   var IRConstBool = class extends IRConstScalar {
@@ -336110,42 +337423,43 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
     }
   };
-  var IRConstPointer = class extends IRLiteral {
+  var IRConstPointer = class extends IRConst {
     static {
       __name(this, "IRConstPointer");
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
     }
   };
-  var IRCompositeLiteral = class extends IRLiteral {
+  var IRConstComposite = class extends IRConst {
     static {
-      __name(this, "IRCompositeLiteral");
+      __name(this, "IRConstComposite");
     }
     astNode;
     outputType;
-    value;
+    _values;
     type;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
-      if (!(outputType.typeDefinition instanceof CompositeTypeDefinition)) {
+      this._values = _values;
+      const components = outputType.typeDefinition.components();
+      if (components == void 0) {
         const errorMessage = `Expecting a composite type but instead received type: ${outputType.typeDefinition.toString()}. `;
         const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
         throw new Error(errorMessage + location);
@@ -336153,7 +337467,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.type = outputType.typeDefinition;
     }
     toJson(options2) {
-      const objectJsonValue = [...this.value.entries()].reduce((prev, current) => {
+      const objectJsonValue = [...this._values.entries()].reduce((prev, current) => {
         prev[current[0]] = current[1].toJson({});
         return prev;
       }, {});
@@ -336167,35 +337481,39 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      * field populated
      */
     typeDeclarationOrderedValues() {
-      const orderedFields = [...this.type.fields.keys()];
+      const components = this.type.components();
+      if (components == void 0) {
+        throw new Error(`Failed in IRConst for type: ${this.type.toString()}`);
+      }
+      const orderedFields = [...components.keys()];
       const out = /* @__PURE__ */ new Map();
       for (const f of orderedFields) {
-        let exp = this.value.get(f);
+        let exp = this._values.get(f);
         if (exp == void 0) {
-          const fieldType = this.type.fields.get(f);
+          const fieldType = components.get(f);
           if (fieldType == void 0) {
             throw new Error(`Type for field with name: ${f} for type: ${this.type} is undefined`);
           }
-          exp = new IRZeroValue(this.astNode, fieldType);
+          exp = new IRZeroValue(this.astNode, void 0, fieldType);
         }
         out.set(f, exp);
       }
       return out;
     }
   };
-  var IRStructLiteral = class extends IRCompositeLiteral {
+  var IRConstStruct = class extends IRConstComposite {
     static {
-      __name(this, "IRStructLiteral");
+      __name(this, "IRConstStruct");
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
-      if (!(outputType.typeDefinition instanceof StructTypeDefinition)) {
+      this._values = _values;
+      if (outputType.typeDefinition.fields() == void 0) {
         const errorMessage = `Expecting a struct type but instead received type: ${outputType.typeDefinition.toString()}. `;
         const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
         throw new Error(errorMessage + location);
@@ -336203,9 +337521,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.type = outputType.typeDefinition;
     }
   };
-  var IRTupleLiteral = class extends IRCompositeLiteral {
+  var IRConstTuple = class extends IRConstComposite {
     static {
-      __name(this, "IRTupleLiteral");
+      __name(this, "IRConstTuple");
     }
     astNode;
     outputType;
@@ -336225,18 +337543,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.type = outputType.typeDefinition;
     }
   };
-  var IRUnionLiteral = class extends IRCompositeLiteral {
+  var IRConstUnion = class extends IRConstComposite {
     static {
-      __name(this, "IRUnionLiteral");
+      __name(this, "IRConstUnion");
     }
     astNode;
     outputType;
-    value;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    _values;
+    constructor(astNode, outputType, _values) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
+      this._values = _values;
       if (!(outputType.typeDefinition instanceof UnionTypeDefinition)) {
         const errorMessage = `Expecting a union type but instead received type: ${outputType.typeDefinition.toString()}. `;
         const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
@@ -336245,26 +337563,26 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.type = outputType.typeDefinition;
     }
   };
-  var IRVariantLiteral = class extends IRCompositeLiteral {
+  var IRConstVariant = class extends IRConstComposite {
     static {
-      __name(this, "IRVariantLiteral");
+      __name(this, "IRConstVariant");
     }
     astNode;
     outputType;
-    value;
+    _values;
     backingTagType;
-    constructor(astNode, outputType, value) {
-      super(astNode, outputType, value);
+    constructor(astNode, outputType, _values, backingTagType) {
+      super(astNode, outputType, _values);
       this.astNode = astNode;
       this.outputType = outputType;
-      this.value = value;
-      if (!(outputType.typeDefinition instanceof VariantTypeDefinition)) {
+      this._values = _values;
+      this.backingTagType = backingTagType;
+      if (outputType.typeDefinition.cases() == void 0) {
         const errorMessage = `Expecting a variant type but instead received type: ${outputType.typeDefinition.toString()}. `;
         const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
         throw new Error(errorMessage + location);
       }
       this.type = outputType.typeDefinition;
-      this.backingTagType = this.type.backingTagType;
     }
     /**
      * For the variant literal - will return the index for the selected backing field.
@@ -336272,10 +337590,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      * and the literal is Example { f2 }, then the backingFieldIndex would be 1 (starting from 0)
      */
     backingFieldIndex() {
-      const orderedFields = [...this.type.fields.keys()];
-      const keys = [...this.value.keys()];
+      const components = this.type.components();
+      const orderedFields = [...components.keys()];
+      const keys = [...this._values.keys()];
       if (keys.length != 1) {
-        throw new Error(`Either too many or not enough fields set for variant. Type: ${this.type.name}, fields set: ${keys}`);
+        throw new Error(`Either too many or not enough fields set for variant. Type: ${this.type.toShortString()}, fields set: ${keys}`);
       }
       const key = keys[0];
       const out = orderedFields.indexOf(key);
@@ -336286,7 +337605,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/IRControl.js
+  // ../compiler/dist/src/compiler/ir/instructions/IRControl.js
   var IRControlStatement = class {
     static {
       __name(this, "IRControlStatement");
@@ -336403,6 +337722,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else {
         return ["if", this.condition.toJson(options2), ["then", this.thenInstructions.map((i) => i.toJson(options2))]];
       }
+    }
+  };
+  var IRUnreachable = class extends IRControlStatement {
+    static {
+      __name(this, "IRUnreachable");
+    }
+    astNode;
+    constructor(astNode) {
+      super(astNode);
+      this.astNode = astNode;
+    }
+    toJson(options2) {
+      return ["unreachable"];
     }
   };
 
@@ -336711,7 +338043,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/IROperations.js
+  // ../compiler/dist/src/compiler/ir/instructions/IROperations.js
   var IROperation = class extends IRExpression {
     static {
       __name(this, "IROperation");
@@ -336766,15 +338098,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     convertFunctionDefinition(irFunction) {
       try {
-        const label = this.nameMapper.mapIrFunctionName(irFunction.identifier);
-        const params = [...irFunction.parameters.values()].map((p) => {
-          const mappedName = this.nameMapper.mapIrVarName(p.identifier);
+        const label = this.nameMapper.mapIrFunctionName(irFunction);
+        const params = [...irFunction.parameterVariables.values()].map((p) => {
+          const mappedName = this.nameMapper.mapIrVarName(p);
           const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
           return mappedTypes.map((t) => new WasmFuncParam(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
         }).flat();
-        const returnType = this.typeMapper.flattenType(irFunction.returnType.typeDefinition).map((t) => new WasmFuncReturn(void 0, t));
-        const locals = [...irFunction.locals.values()].map((p) => {
-          const mappedName = this.nameMapper.mapIrVarName(p.identifier);
+        const returnType = this.typeMapper.flattenType(irFunction.functionType.returnType).map((t) => new WasmFuncReturn(void 0, t));
+        const locals = [...irFunction.localVariables.values()].map((p) => {
+          const mappedName = this.nameMapper.mapIrVarName(p);
           const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
           return mappedTypes.map((t) => new WasmFuncLocal(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
         }).flat();
@@ -336785,7 +338117,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (def instanceof AstWatFunctionDefinition || def instanceof AstWatOperatorDefinition) {
           let watBody = def.watBody;
           for (const param of def.params) {
-            watBody = watBody.replaceAll(`{${param.variable.name}}`, `${this.nameMapper.hackyMapWasmFunctionVarName(param.variable.name, def.definitionScope)}`);
+            watBody = watBody.replaceAll(`{${param.variable.name}}`, `${this.nameMapper.hackyMapWasmFunctionVarName(param.variable.name, def.bodyScope)}`);
           }
           body = [new WasmStringInstruction(def, watBody)];
         } else {
@@ -336793,7 +338125,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         return new WasmFunction(void 0, label, params, returnType, locals, body);
       } catch (ex) {
-        console.log(`Failed to convert function with key: ${IRFunctions.idenToKey(irFunction.identifier)}`);
+        console.log(`Failed to convert function with key: ${irFunction.identifier.toShortString()}`);
         throw ex;
       }
     }
@@ -336816,24 +338148,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return arr.join(".");
     }
     mapIrTypeName(irType) {
-      const scopeString = irType.scope.isGlobal ? "" : `${irType.scope.id}.`;
-      const typeNameString = _WatNameMapper.sanitizeName(`${irType.kind}.${irType.name}`);
-      return `${scopeString}${typeNameString}`;
+      const typeNameString = _WatNameMapper.sanitizeName(`${irType.identifier.hashKey()}`);
+      return `${typeNameString}`;
     }
-    mapIrFunctionName(irFunc) {
-      if (irFunc.name == "main" && irFunc.typeArguments == void 0 && irFunc.funcParamTypes.length == 0) {
+    mapIrFunctionName(irFunction) {
+      const irFuncIdentifier = irFunction.identifier;
+      if (irFuncIdentifier.name == "main" && irFuncIdentifier.typeArguments == void 0 && irFunction.irParameterTypes.length == 0) {
         return "$main";
       }
-      const scope = irFunc.scope.id;
-      const name = irFunc.name;
-      const typeArgs = irFunc.typeArguments?.map((t) => this.mapIrTypeName(t.identifier)).join(".");
-      const paramTypes = irFunc.funcParamTypes.map((p) => this.mapIrTypeName(p.identifier)).join(".");
+      const scope = irFuncIdentifier.declaringScope.id;
+      const name = irFuncIdentifier.name;
+      const typeArgs = irFuncIdentifier.typeArguments?.map((t) => this.mapIrTypeName(t)).join(".");
+      const paramTypes = irFunction.irParameterTypes.map((p) => this.mapIrTypeName(p)).join(".");
       const unsanitizedName = `${name}.s:${scope}.t:${typeArgs}.p:${paramTypes}`;
       const sanitizedName = _WatNameMapper.sanitizeName(unsanitizedName);
       return "$" + sanitizedName;
     }
     mapIrVarName(irVar) {
-      return this.hackyMapWasmFunctionVarName(irVar.name, irVar.scope);
+      return this.hackyMapWasmFunctionVarName(irVar.name, irVar.declaringScope);
     }
     hackyMapWasmFunctionVarName(name, scope) {
       const sanitizedName = _WatNameMapper.sanitizeName(name);
@@ -336862,41 +338194,49 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     mapNameAndType(name, type) {
       if (type instanceof UnitTypeDefinition) {
         return [];
+      } else if (type instanceof NeverTypeDefinition) {
+        return [];
       } else if (type instanceof ScalarTypeDefinition) {
         const wasmType = this.mapScalarType(type);
         return [{ name, wasmType }];
       } else if (type instanceof StructTypeDefinition || type instanceof TupleTypeDefinition) {
         const out = [];
-        for (const field of type.fields) {
+        const components = type.components();
+        if (components == void 0) {
+          throw new Error(`Error in WasmEmitter - I haven't properly mapped a type so its going into the component path for a type without components. ${type.toString()}`);
+        }
+        for (const field of components) {
           const newName = name.slice();
           newName.push(field[0]);
           try {
             const type2 = this.mapNameAndType(newName, field[1]);
             out.push(type2);
           } catch (ex) {
-            console.log(`Failed to map type: ${type.toString()}`);
+            console.log(`Failed to ${newName} with type: ${type.toString()}`);
             throw ex;
           }
         }
         return out.flat();
       } else if (type instanceof VariantTypeDefinition) {
         const temp = [];
-        for (const field of type.fields) {
+        for (const field of type._components) {
           const newName = name.slice();
           newName.push(field[0]);
           try {
             const type2 = this.mapNameAndType(newName, field[1]);
             temp.push(type2);
           } catch (ex) {
-            console.log(`Failed to map type: ${type.toString()}`);
+            console.log(`Failed to ${newName} with type: ${type.toString()}`);
             throw ex;
           }
         }
         const out = temp.flat();
         const backingField = this.mapNameAndType([...name, VARIANT_BACKING_FIELD_NAME], type.backingTagType);
         return [...backingField, ...out];
+      } else if (type instanceof InstantiatedTypeConstructor) {
+        return this.mapNameAndType(name, type.typeWithInstantiatedArgs);
       }
-      throw new Error(`Type mapping is not yet defined for type: ${type.name} of type: ${type.constructor.name}`);
+      throw new Error(`Type mapping is not yet defined for type: ${type.toShortString()} of type: ${type.constructor.name}. Variable name: ${name}`);
     }
   };
   var WatInstructionEmitterV2 = class {
@@ -336914,7 +338254,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return out;
     }
     convertInstruction(irInstruction) {
-      if (irInstruction instanceof IRLiteral) {
+      if (irInstruction instanceof IRConst) {
         return this.convertConstInstruction(irInstruction);
       } else if (irInstruction instanceof IRExpression) {
         return this.convertExpression(irInstruction);
@@ -336923,16 +338263,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else if (irInstruction instanceof IRVariableSet || irInstruction instanceof IRVariableFieldSet) {
         return this.convertSetInstruction(irInstruction);
       }
-      throw new Error("Implementation has basically not started");
+      throw new Error(`Unable to convert instruction ${irInstruction.toJson({})}`);
     }
     convertExpression(irExpression) {
       if (irExpression instanceof IRExpressionGroup) {
         return irExpression.expressions.map((e) => this.convertExpression(e)).flat();
-      } else if (irExpression instanceof IRLiteral) {
+      } else if (irExpression instanceof IRConst) {
         return this.convertConstInstruction(irExpression);
       } else if (irExpression instanceof IRCallExpression) {
         const mappedArgs = this.convertExpression(irExpression.args);
-        const functionLabel = this.nameMapper.mapIrFunctionName(irExpression.irFunction.identifier);
+        const functionLabel = this.nameMapper.mapIrFunctionName(irExpression.irFunction);
         const call = new WasmFunctionCall(irExpression.astNode, functionLabel);
         return [...mappedArgs, call];
       } else if (irExpression instanceof IRInlinedWatOperator) {
@@ -336940,12 +338280,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return [...args, new WasmStringInstruction(irExpression.astNode, irExpression.content)];
       } else if (irExpression instanceof IRVariableGet) {
         const variable = irExpression.irVariable;
-        const mappedName = this.nameMapper.mapIrVarName(variable.identifier);
+        const mappedName = this.nameMapper.mapIrVarName(variable);
         const mappedTypes = this.typeMapper.mapNameAndType([mappedName], variable.type);
         return mappedTypes.map((t) => new WatVariableInstruction(void 0, "local.get", WatNameMapper.joinMappedName(t.name)));
       } else if (irExpression instanceof IRFieldGetExpression) {
         const lhsExpression = this.convertExpression(irExpression.lhsExpression);
-        const mappedName = this.nameMapper.mapIrVarName(irExpression.lhsTempStore.identifier);
+        const mappedName = this.nameMapper.mapIrVarName(irExpression.lhsTempStore);
         const mappedTypes = this.typeMapper.mapNameAndType([mappedName], irExpression.lhsTempStore.type);
         const storeInstructions = mappedTypes.slice().reverse().map((t) => new WatVariableInstruction(void 0, "local.set", WatNameMapper.joinMappedName(t.name)));
         const filteredGetInstructions = mappedTypes.filter((type) => {
@@ -336980,31 +338320,31 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         let value;
         if (irConst instanceof IRConstBool) {
-          value = irConst.value ? 1 : 0;
+          value = irConst._values ? 1 : 0;
         } else if (irConst instanceof IRConstInt) {
-          value = irConst.value;
+          value = irConst._values;
         } else if (irConst instanceof IRConstFloat) {
           if (irConst.astNode?.isNan) {
             value = "nan";
           } else if (irConst.astNode?.isInfinite) {
-            value = irConst.value > 0 ? "inf" : "-inf";
+            value = irConst._values > 0 ? "inf" : "-inf";
           } else {
-            value = irConst.value;
+            value = irConst._values;
           }
         } else {
           throw new Error("I haven't mapped this const type to wasm type conversion");
         }
         return [new WasmConst(irConst.astNode, wasmType[0], value, { comment: irConst.comment })];
-      } else if (irConst instanceof IRCompositeLiteral) {
+      } else if (irConst instanceof IRConstComposite) {
         const expressions = irConst.typeDeclarationOrderedValues();
         const values = [...expressions.values()].map((exp) => this.convertExpression(exp)).flat();
-        if (irConst instanceof IRStructLiteral || irConst instanceof IRTupleLiteral) {
+        if (irConst instanceof IRConstStruct || irConst instanceof IRConstTuple) {
           return values;
-        } else if (irConst instanceof IRVariantLiteral) {
+        } else if (irConst instanceof IRConstVariant) {
           const value = irConst.backingFieldIndex();
-          const wasmType = WasmScriptTypeToWasmNumberType[irConst.type.backingTagType.name];
+          const wasmType = WasmScriptTypeToWasmNumberType[irConst.backingTagType.name];
           if (wasmType == void 0) {
-            throw new Error(`Failed to convert backing tag type of ${irConst.type.backingTagType.name} to a wasm type`);
+            throw new Error(`Failed to convert backing tag type of ${irConst.backingTagType.name} to a wasm type`);
           }
           const backingField = new WasmConst(irConst.astNode, wasmType, value, {
             comment: "backing field. " + irConst.comment
@@ -337017,9 +338357,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     convertSetInstruction(irInstruction) {
       const variable = irInstruction.irVariable;
-      const mappedName = this.nameMapper.mapIrVarName(variable.identifier);
+      const mappedName = this.nameMapper.mapIrVarName(variable);
       const mappedTypes = this.typeMapper.mapNameAndType([mappedName], variable.type);
-      if (variable.identifier.scope.isGlobal) {
+      if (variable.identifier.declaringScope.isGlobal) {
         throw new Error("Assignment not implemented for global variables");
       }
       let filteredMappedTypes;
@@ -337081,219 +338421,798 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         const inst = new WatControlInstruction(irInstruction.astNode, "br_if", this.nameMapper.mapBlockName(irInstruction.block.blockId));
         return [...cond, inst];
+      } else if (irInstruction instanceof IRUnreachable) {
+        return [new WatControlInstruction(irInstruction.astNode, "unreachable", void 0)];
       }
       throw new Error(`Handling the control instruction with name: ${irInstruction.constructor.name} is not yet implemented`);
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/IRModule.js
+  // ../compiler/dist/src/compiler/Util.js
+  var ValueMap = class {
+    static {
+      __name(this, "ValueMap");
+    }
+    _backingMap = /* @__PURE__ */ new Map();
+    constructor(entries2 = []) {
+      for (const entry of entries2) {
+        this.set(entry[0], entry[1]);
+      }
+    }
+    // basic map methods
+    clear() {
+      this._backingMap.clear();
+    }
+    set(k, v) {
+      const key = k.hashKey();
+      this._backingMap.set(key, [k, v]);
+    }
+    delete(k) {
+      const key = k.hashKey();
+      this._backingMap.delete(key);
+    }
+    get(k) {
+      const key = k.hashKey();
+      return this._backingMap.get(key)?.[1];
+    }
+    getEntry(k) {
+      const key = k.hashKey();
+      return this._backingMap.get(key);
+    }
+    has(k) {
+      return this._backingMap.has(k.hashKey());
+    }
+    get size() {
+      return this._backingMap.size;
+    }
+    // "Iterator" methods that I don't think actually need a full iterator
+    entries() {
+      return [...this._backingMap.values()];
+    }
+    keys() {
+      return [...this._backingMap.values()].map((e) => e[0]);
+    }
+    values() {
+      return [...this._backingMap.values()].map((e) => e[1]);
+    }
+    keyStrings() {
+      return [...this._backingMap.keys()];
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/definitions/IRType.js
+  var IRTypeIdentifier = class {
+    static {
+      __name(this, "IRTypeIdentifier");
+    }
+    typeDefinition;
+    constructor(typeDefinition) {
+      this.typeDefinition = typeDefinition;
+    }
+    hashKey() {
+      const canonicalized = this.typeDefinition.canonicalize().toString();
+      return `type:${canonicalized}`;
+    }
+  };
+  var IRType = class {
+    static {
+      __name(this, "IRType");
+    }
+    identifier;
+    typeDefinition;
+    symbolDefinition;
+    comment = "";
+    constructor(identifier3, typeDefinition, symbolDefinition) {
+      this.identifier = identifier3;
+      this.typeDefinition = typeDefinition;
+      this.symbolDefinition = symbolDefinition;
+    }
+    isTypeConstructor() {
+      return this.typeDefinition instanceof AlgebraicDataTypeDefinition && this.typeDefinition.isGeneric();
+    }
+    isGeneric() {
+      return this.typeDefinition.isGeneric();
+    }
+    isCompilerDefined() {
+      return this.symbolDefinition?.isBuiltIn ?? false;
+    }
+    isUserDeclared() {
+      return !(this.symbolDefinition?.isBuiltIn ?? true);
+    }
+    isStructural() {
+      return this.typeDefinition instanceof StructuralTypeDefinition;
+    }
+    isInstantiatedType() {
+      return this.typeDefinition instanceof InstantiatedTypeConstructor;
+    }
+    monomorphize(module2, typeArguments) {
+      const type = this.typeDefinition.replaceTypeParametersViaMap(this.typeDefinition.declaringScope, typeArguments);
+      if (type.success == false) {
+        throw new Error(`Failed to instantiate type: ${this.typeDefinition.toString()}`);
+      }
+      const out = module2.types.internTypeDefinition(module2, type.type);
+      return out;
+    }
+    toJson(options2) {
+      return {
+        type: this.typeDefinition.constructor.name,
+        typeDefinition: this.typeDefinition.toString()
+      };
+    }
+  };
+  function createIrTypeFromDefinition(typeDefinition) {
+    const key = new IRTypeIdentifier(typeDefinition);
+    const symbol = typeDefinition.symbolInformation;
+    const irType = new IRType(key, typeDefinition, symbol);
+    return irType;
+  }
+  __name(createIrTypeFromDefinition, "createIrTypeFromDefinition");
+  var IRTypeDefinitions = class {
+    static {
+      __name(this, "IRTypeDefinitions");
+    }
+    _backingMap = new ValueMap();
+    // Either creates the IRType and registers it into the internal map,
+    // or returns an already registered version in the internal map.
+    // Either way, it "interns" the IRType so that only one is referencable (baring bugs)
+    internTypeDefinition(module2, typeDefinition) {
+      const key = new IRTypeIdentifier(typeDefinition);
+      const current = this.getOrInit(key, () => createIrTypeFromDefinition(typeDefinition));
+      return current;
+    }
+    // IRDefinitionMap methods
+    has(identifier3) {
+      return this._backingMap.has(identifier3);
+    }
+    get(key) {
+      if (!this._backingMap.has(key)) {
+        return void 0;
+      }
+      return this._backingMap.get(key);
+    }
+    getOrThrow(key) {
+      const out = this.get(key);
+      if (out == void 0) {
+        throw new Error(`Failed to lookup ir type with name: ${key.typeDefinition.toShortString()} and key: ${key.hashKey()}`);
+      }
+      return out;
+    }
+    getOrInit(identifier3, factory) {
+      let current = this.get(identifier3);
+      if (current == void 0) {
+        current = factory();
+        this.putValue(current);
+      }
+      return current;
+    }
+    putValue(value) {
+      this._backingMap.set(value.identifier, value);
+    }
+    size() {
+      return this._backingMap.size;
+    }
+    keys() {
+      return this._backingMap.keys();
+    }
+    keyStrings() {
+      return this._backingMap.keyStrings();
+    }
+    values() {
+      return this._backingMap.values();
+    }
+    categorizeValues() {
+      const builtInTypes = [...this.values()].filter((t) => t.symbolDefinition?.isBuiltIn);
+      const typeConstructors = [...this.values()].filter((t) => t.isTypeConstructor());
+      const userDefinedTypes = [...this.values()].filter((t) => t.symbolDefinition?.isBuiltIn == false && !(t.typeDefinition instanceof TypeParameterDefinition));
+      const typeParams = [...this.values()].filter((t) => t.symbolDefinition?.isBuiltIn == false && t.typeDefinition instanceof TypeParameterDefinition || t.typeDefinition instanceof InstantiatedTypeConstructor && t.isGeneric());
+      const concreteInstantiations = [...this.values()].filter((t) => t.typeDefinition instanceof InstantiatedTypeConstructor && !t.isGeneric());
+      const structuralTypeInstantations = {
+        tupleTypeInstantiations: this.values().filter((v) => v.typeDefinition instanceof TupleTypeDefinition && !v.typeDefinition.isGeneric()),
+        functionTypeInstantiations: this.values().filter((v) => v.typeDefinition instanceof FunctionTypeExpression && !v.typeDefinition.isGeneric())
+      };
+      const genericStructuralTypeInstantiations = {
+        tupleTypeInstantiations: this.values().filter((v) => v.typeDefinition instanceof TupleTypeDefinition && v.typeDefinition.isGeneric()),
+        functionTypeInstantiations: this.values().filter((v) => v.typeDefinition instanceof FunctionTypeExpression && v.typeDefinition.isGeneric())
+      };
+      return {
+        builtIns: builtInTypes,
+        userDefinedConcreteTypes: userDefinedTypes,
+        typeConstructors,
+        concreteInstantiatedConstructors: concreteInstantiations,
+        // concrete instantiations of types - e.g. Struct<i32>
+        typeParams,
+        // Right now I route both the type params (e.g. <T>) and the parameterized generic types (e.g. Struct<T>) here. I might want to split it
+        structuralTypeInstantations,
+        genericStructuralTypeInstantiations
+      };
+    }
+    toJson(options2) {
+      const opt = options2?.definitionsSerializationOptions;
+      const res = this.categorizeValues();
+      return {
+        builtIns: options2?.includeBuiltTypes ? res.builtIns.map((t) => t.toJson(opt)) : [],
+        concreteTypes: res.userDefinedConcreteTypes.map((t) => t.toJson(opt)),
+        typeConstructors: res.typeConstructors.map((t) => t.toJson(opt)),
+        concreteInstantiations: res.concreteInstantiatedConstructors.map((t) => t.toJson(opt)),
+        typeParams: res.typeParams.map((t) => t.toJson(opt)),
+        structalTypeInstantiations: {
+          tupleTypeDefinitions: res.structuralTypeInstantations.tupleTypeInstantiations.map((t) => t.toJson(opt)),
+          functionTypeDefinitions: res.structuralTypeInstantations.functionTypeInstantiations.map((t) => t.toJson(opt))
+        },
+        genericStructuralTypeInstantiations: {
+          tupleTypeDefinitions: res.genericStructuralTypeInstantiations.tupleTypeInstantiations.map((t) => t.toJson(opt)),
+          functionTypeDefinitions: res.genericStructuralTypeInstantiations.functionTypeInstantiations.map((t) => t.toJson(opt))
+        }
+      };
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/definitions/IRVariable.js
+  var IRVariableIdentifier = class {
+    static {
+      __name(this, "IRVariableIdentifier");
+    }
+    declaringScope;
+    name;
+    constructor(declaringScope, name) {
+      this.declaringScope = declaringScope;
+      this.name = name;
+    }
+    hashKey() {
+      return `variable:${this.declaringScope.id}.${this.name}`;
+    }
+  };
+  var IRVariable = class _IRVariable {
+    static {
+      __name(this, "IRVariable");
+    }
+    identifier;
+    irType;
+    symbol;
+    comment = "";
+    constructor(identifier3, irType, symbol) {
+      this.identifier = identifier3;
+      this.irType = irType;
+      this.symbol = symbol;
+    }
+    get name() {
+      return this.identifier.name;
+    }
+    get scopeType() {
+      if (this.symbol == void 0) {
+        return "Local";
+      }
+      return this.symbol.symbolDefinition.scopeType;
+    }
+    get declaringScope() {
+      return this.identifier.declaringScope;
+    }
+    get type() {
+      return this.irType.typeDefinition;
+    }
+    get symbolInfo() {
+      return this.symbolInfo;
+    }
+    monomorphize(module2, typeArguments) {
+      const type = this.irType.monomorphize(module2, typeArguments);
+      return new _IRVariable(this.identifier, type, this.symbol);
+    }
+    toJson(options2) {
+      return {
+        name: this.name,
+        type: this.irType.toJson(options2),
+        scope: `${this.declaringScope.scopeName}.${this.declaringScope.id}`
+      };
+    }
+  };
+  function createFromSymbol(module2, symbol) {
+    if (symbol.symbolDefinition == void 0) {
+      throw new Error(`Failed to resolve symbol for variable with name: ${symbol.symbolName}`);
+    }
+    const resolvedType = symbol.symbolDefinition.resolvedType;
+    if (resolvedType == void 0) {
+      throw new Error(`Failed to resolve type for variable with name: ${symbol.symbolName}`);
+    }
+    const variableIdentifier = new IRVariableIdentifier(symbol.declaringScope, symbol.symbolName);
+    const irType = module2.types.internTypeDefinition(module2, resolvedType);
+    const irVariable = new IRVariable(variableIdentifier, irType, symbol);
+    return irVariable;
+  }
+  __name(createFromSymbol, "createFromSymbol");
+  var IRVariableDefinitions = class {
+    static {
+      __name(this, "IRVariableDefinitions");
+    }
+    _backingMap;
+    constructor() {
+      this._backingMap = new ValueMap();
+    }
+    // Either creates the IRType and registers it into the internal map,
+    // or returns an already registered version in the internal map.
+    // Either way, it "interns" the IRType so that only one is referencable (baring bugs)
+    internVariableSymbol(module2, symbol) {
+      const key = new IRVariableIdentifier(symbol.declaringScope, symbol.symbolName);
+      const current = this.getOrInit(key, () => createFromSymbol(module2, symbol));
+      return current;
+    }
+    has(identifier3) {
+      return this._backingMap.has(identifier3);
+    }
+    get(identifier3) {
+      if (!this.has(identifier3)) {
+        return void 0;
+      }
+      return this._backingMap.get(identifier3);
+    }
+    getOrThrow(identifier3) {
+      const out = this._backingMap.get(identifier3);
+      if (out == void 0) {
+        throw new Error(`Failed to lookup variable with identifier: ${identifier3.hashKey()}`);
+      }
+      return out;
+    }
+    getOrInit(identifier3, factory) {
+      let current = this.get(identifier3);
+      if (current == void 0) {
+        current = factory();
+        this.putValue(current);
+      }
+      return current;
+    }
+    putValue(value) {
+      this._backingMap.set(value.identifier, value);
+    }
+    size() {
+      return this._backingMap.size;
+    }
+    keys() {
+      return this._backingMap.keys();
+    }
+    keyStrings() {
+      return this._backingMap.keyStrings();
+    }
+    values() {
+      return [...this._backingMap.values()];
+    }
+    // variables are actually already somewhat categorized during IR emission - they go into params, locals, etc.
+    toJson(options2) {
+      return this.values().map((v) => v.toJson(options2?.definitionsSerializationOptions ?? {}));
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/instructions/IRInstructions.js
+  var IRPlaceholderInstruction = class {
+    static {
+      __name(this, "IRPlaceholderInstruction");
+    }
+    comment = "";
+    toJson(options2) {
+      return ["PLACEHOLDER INSTRUCTION"];
+    }
+  };
+  var IRTypeBoundCreatedFunctionInstruction = class {
+    static {
+      __name(this, "IRTypeBoundCreatedFunctionInstruction");
+    }
+    comment = "";
+    toJson(options2) {
+      return ["type bound created - do nothing"];
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/definitions/IRFunction.js
+  var IRFunctionIdentifier = class _IRFunctionIdentifier {
+    static {
+      __name(this, "IRFunctionIdentifier");
+    }
+    declaringScope;
+    name;
+    typeParameters;
+    irFunctionType;
+    typeArguments;
+    constructor(declaringScope, name, typeParameters, irFunctionType, typeArguments) {
+      this.declaringScope = declaringScope;
+      this.name = name;
+      this.typeParameters = typeParameters;
+      this.irFunctionType = irFunctionType;
+      this.typeArguments = typeArguments;
+    }
+    static fromTypeDefinitions(module2, declaringScope, name, typeParameters, functionTypeTypeDef, typeArguments) {
+      const irTypeParams = typeParameters?.map((t) => module2.types.internTypeDefinition(module2, t));
+      const irFuncType = module2.types.internTypeDefinition(module2, functionTypeTypeDef);
+      const irTypeArgs = typeArguments?.map((t) => module2.types.internTypeDefinition(module2, t));
+      return new _IRFunctionIdentifier(declaringScope, name, irTypeParams, irFuncType, irTypeArgs);
+    }
+    hashKey() {
+      const scopeId = `${this.declaringScope.id}`;
+      const name = `${this.name}`;
+      const typeParameters = this.typeParameters == void 0 ? "" : `${this.typeParameters.map((g) => g.identifier.hashKey()).join(",")}`;
+      const funcType = `${this.irFunctionType.identifier.hashKey()}`;
+      const typeArguments = this.typeArguments == void 0 ? "" : `${this.typeArguments.map((g) => g.identifier.hashKey()).join(",")}`;
+      return `function:${scopeId}.${name}.(typeParameters:${typeParameters}).(baseType:${funcType}).(typeArguments:${typeArguments})`;
+    }
+    monomorphize(module2, typeArgs) {
+      return new _IRFunctionIdentifier(this.declaringScope, this.name, this.typeParameters, this.irFunctionType.monomorphize(module2, typeArgs), this.typeArguments?.map((t) => t.monomorphize(module2, typeArgs)));
+    }
+    toShortString() {
+      const typeArgStr = this.typeArguments == void 0 ? "" : `<${this.typeArguments?.map((t) => t.typeDefinition.toShortString())}>`;
+      return `${this.name} ${typeArgStr} [${this.irFunctionType.typeDefinition.toShortString()}]`;
+    }
+  };
+  var IRFunction = class _IRFunction {
+    static {
+      __name(this, "IRFunction");
+    }
+    module;
+    identifier;
+    symbol;
+    callableOverload;
+    functionType;
+    parameterVariables;
+    localVariables;
+    genericTemplateIrFunction;
+    comment = "";
+    tempStoreCounter = 0;
+    _instructions;
+    constructor(module2, identifier3, symbol, callableOverload, functionType, parameterVariables, localVariables, genericTemplateIrFunction) {
+      this.module = module2;
+      this.identifier = identifier3;
+      this.symbol = symbol;
+      this.callableOverload = callableOverload;
+      this.functionType = functionType;
+      this.parameterVariables = parameterVariables;
+      this.localVariables = localVariables;
+      this.genericTemplateIrFunction = genericTemplateIrFunction;
+    }
+    get irParameterTypes() {
+      return this.functionType.paramTypes.map((t) => this.module.types.internTypeDefinition(this.module, t));
+    }
+    get irReturnType() {
+      return this.module.types.internTypeDefinition(this.module, this.functionType.returnType);
+    }
+    get isGenericTemplate() {
+      const hasTypeParamsAndNoArgs = this.callableOverload.typeParameterDefinitions != void 0 && this.identifier.typeArguments == void 0;
+      const genericTypeArgs = this.identifier.typeArguments != void 0 && this.identifier.typeArguments?.some((s) => s.isGeneric());
+      const isFuncTypeGeneric = this.functionType.isGeneric();
+      return hasTypeParamsAndNoArgs || genericTypeArgs || isFuncTypeGeneric;
+    }
+    areInstructionsPopulated() {
+      return this._instructions != void 0;
+    }
+    isCompilerDefined() {
+      return this.symbol.isBuiltIn;
+    }
+    isUserDefined() {
+      return !this.symbol.isBuiltIn;
+    }
+    setInstructions(i) {
+      if (this._instructions != void 0) {
+        throw new Error(`Rebinding instructions to function ${this.identifier.name}`);
+      }
+      this._instructions = i.slice();
+    }
+    instructions() {
+      if (this._instructions == void 0) {
+        return [new IRPlaceholderInstruction()];
+      }
+      return this._instructions.slice();
+    }
+    getVariable(key) {
+      if (this.parameterVariables.has(key) && this.localVariables.has(key)) {
+        throw new Error(`The variable key: ${key.hashKey()} is present in both the parameters of the function and the locals for the function
+      for the function with name: ${this.identifier.name}`);
+      }
+      if (this.parameterVariables.has(key)) {
+        return this.parameterVariables.getOrThrow(key);
+      } else if (this.localVariables.has(key)) {
+        return this.localVariables.getOrThrow(key);
+      }
+      console.log(this.parameterVariables.keyStrings(), this.localVariables.keyStrings());
+      throw new Error(`Lookup for variable with identifier: ${key.hashKey()} failed.`);
+    }
+    /**
+     * Creates a temporary variable to store a variable.
+     */
+    createTemporaryVariable(module2, scope, label, type, typeArguments) {
+      if (typeArguments != void 0) {
+        const resp = type.replaceTypeParametersViaMap(scope, typeArguments);
+        if (resp.success) {
+          type = resp.type;
+        } else {
+          const errMsg = `Error in creating temp variable: ${scope.scopeName}: ${resp}`;
+          throw new Error(errMsg);
+        }
+      }
+      const symbolName = `${label}.${this.tempStoreCounter++}`;
+      const identifier3 = new IRVariableIdentifier(scope, symbolName);
+      const irType = module2.types.internTypeDefinition(module2, type);
+      const symbolDefinition = {
+        symbolType: "Variable",
+        definitionNode: void 0,
+        // This is pretty hacky, but I shouldn't be referencing the definition nodes here, so we're probably good
+        declaredType: type.expression,
+        resolvedType: type,
+        scopeType: "Local",
+        isConst: false
+      };
+      const symbolInfo = {
+        symbolName: "",
+        declaringScope: scope,
+        symbolDefinition,
+        shadow: void 0,
+        isBuiltIn: false,
+        isShadowable: false
+      };
+      const variable = new IRVariable(identifier3, irType, symbolInfo);
+      if (this.localVariables.has(variable.identifier)) {
+        throw new Error(`Duplicate variable with identifier: ${variable.identifier.hashKey()} created`);
+      }
+      this.localVariables.putValue(variable);
+      return variable;
+    }
+    bindTypeArguments(typeArguments) {
+      const typeParameters = this.callableOverload.typeParameterDefinitions;
+      if (typeParameters?.length != typeArguments.length) {
+        throw new Error(`Failed to bind type arguments. Expecting: ${typeParameters?.map((t) => t.toShortString())} Received: ${typeArguments.map((t) => t.toShortString())}`);
+      }
+      const out = [];
+      for (let i = 0; i < typeParameters.length; i++) {
+        out.push({ genericParam: typeParameters[i], typeArg: typeArguments[i] });
+      }
+      return out;
+    }
+    monomorphize(module2, typeArguments) {
+      let key;
+      if (this.identifier.typeArguments == void 0) {
+        const mapping = this.callableOverload.typeParameterDefinitions?.map((tp) => {
+          const out2 = typeArguments.find((x) => tp.equals(x.genericParam));
+          if (out2 == void 0) {
+            throw new Error(`Unable to lookup positional mapping for ${tp.toShortString()}`);
+          }
+          return out2.typeArg;
+        });
+        key = new IRFunctionIdentifier(this.identifier.declaringScope, this.identifier.name, this.identifier.typeParameters, this.identifier.irFunctionType, mapping?.map((type) => module2.types.internTypeDefinition(module2, type)));
+        key = key.monomorphize(module2, typeArguments);
+      } else {
+        key = this.identifier.monomorphize(module2, typeArguments);
+      }
+      const out = this.module.functions.get(key);
+      if (out != void 0) {
+        return out;
+      }
+      const monomorphizedType = this.functionType.replaceTypeParametersViaMap(this.symbol.declaringScope, typeArguments);
+      if (monomorphizedType.success == false) {
+        throw new Error(`Failed to monomorphize function: ${this.functionType.toString()} with args: ${typeArguments.map((t) => t.typeArg.toShortString())}`);
+      }
+      const monomorphizedParams = new IRVariableDefinitions();
+      this.parameterVariables.values().map((v) => v.monomorphize(module2, typeArguments)).forEach((p) => monomorphizedParams.putValue(p));
+      const monomophizedLocals = new IRVariableDefinitions();
+      this.localVariables.values().map((v) => v.monomorphize(module2, typeArguments)).forEach((l) => monomophizedLocals.putValue(l));
+      const monomorphizedFunction = new _IRFunction(module2, key, this.symbol, this.callableOverload, monomorphizedType.type, monomorphizedParams, monomophizedLocals, this);
+      this.module.functions.putValue(monomorphizedFunction);
+      return monomorphizedFunction;
+    }
+    toJson(options2) {
+      return {
+        name: this.identifier.name,
+        shortString: this.identifier.toShortString(),
+        // more readable than the hashkey
+        type: this.functionType.toString(),
+        typeArgs: this.identifier.typeArguments?.map((t) => t.toJson(options2)),
+        hashKey: this.identifier.hashKey(),
+        typeDef: this.functionType.toString(),
+        params: this.parameterVariables.values().map((v) => v.toJson(options2)),
+        locals: this.localVariables.values().map((v) => v.toJson(options2)),
+        instructions: this.instructions().map((i) => i.toJson(options2 ?? {})),
+        parent: this.genericTemplateIrFunction?.identifier.toShortString()
+      };
+    }
+  };
+  function createFromSymbol2(module2, parentSymbol, callableOverload) {
+    const name = parentSymbol.symbolName + callableOverload.typeDefinition?.toShortString();
+    const definitionScope = callableOverload.definitionNode.definitionScope;
+    if (definitionScope == void 0) {
+      throw new Error(`Failed to bind definition scope for function: ${name}. Checked in IRFunction conversion, but this probably happened much earlier`);
+    }
+    const bodyScope = callableOverload.definitionNode.bodyScope;
+    if (bodyScope == void 0) {
+      throw new Error(`Failed to bind body scope for function: ${name}. Checked in IRFunction conversion, but this probably happened much earlier`);
+    }
+    const functionTypeDefinition = callableOverload.typeDefinition;
+    if (functionTypeDefinition == void 0) {
+      throw new Error(`Type def for function ${parentSymbol.symbolName} not correctly set to ResolvedCallableTypeDefinition`);
+    }
+    const irFunctionType = module2.types.internTypeDefinition(module2, functionTypeDefinition);
+    const typeParameters = callableOverload.typeParameterDefinitions?.map((t) => module2.types.internTypeDefinition(module2, t));
+    const key = new IRFunctionIdentifier(parentSymbol.declaringScope, parentSymbol.symbolName, typeParameters, irFunctionType, void 0);
+    const paramVariables = new IRVariableDefinitions();
+    if (!callableOverload.typeBoundSource) {
+      callableOverload.definitionNode.params.map((p) => bodyScope.findSymbolInThisScope(p.symbolName)).filter(
+        (p) => p.symbolDefinition.scopeType == "Param"
+        /* ScopeType.Param */
+      ).map((p) => paramVariables.internVariableSymbol(module2, p));
+    } else {
+      throw new Error(`Unfinished`);
+    }
+    const localVariables = new IRVariableDefinitions();
+    if (callableOverload.typeBoundSource == void 0) {
+      bodyScope.findAllSymbolsByType(
+        "Variable"
+        /* SymbolType.Variable */
+      ).map((v) => v).filter(
+        (v) => v.symbolDefinition.scopeType == "Local"
+        /* ScopeType.Local */
+      ).map((v) => localVariables.internVariableSymbol(module2, v));
+    } else {
+      throw new Error("Not yet implemented");
+    }
+    const irFunction = new IRFunction(module2, key, parentSymbol, callableOverload, functionTypeDefinition, paramVariables, localVariables, void 0);
+    return irFunction;
+  }
+  __name(createFromSymbol2, "createFromSymbol");
+  var IRFunctionDefinitions = class {
+    static {
+      __name(this, "IRFunctionDefinitions");
+    }
+    _backingMap = new ValueMap();
+    internFunctionDefinitionSymbol(module2, parentSymbol, callableOverload) {
+      const key = IRFunctionIdentifier.fromTypeDefinitions(module2, parentSymbol.declaringScope, parentSymbol.symbolName, callableOverload.typeParameterDefinitions, callableOverload.typeDefinition, void 0);
+      const out = this.getOrInit(key, () => createFromSymbol2(module2, parentSymbol, callableOverload));
+      return out;
+    }
+    has(irFunctionKey) {
+      return this._backingMap.has(irFunctionKey);
+    }
+    get(irFunctionKey) {
+      if (!this._backingMap.has(irFunctionKey)) {
+        return void 0;
+      }
+      return this._backingMap.get(irFunctionKey);
+    }
+    getOrThrow(identifier3) {
+      const current = this.get(identifier3);
+      if (current == void 0) {
+        throw new Error(`Failed to lookup function with identifier: ${identifier3.hashKey()}`);
+      }
+      return current;
+    }
+    getOrInit(identifier3, factory) {
+      let current = this.get(identifier3);
+      if (current == void 0) {
+        current = factory();
+        this.putValue(current);
+      }
+      return current;
+    }
+    putValue(irFunction) {
+      this._backingMap.set(irFunction.identifier, irFunction);
+    }
+    size() {
+      return this._backingMap.size;
+    }
+    keys() {
+      return [...this._backingMap.keys()];
+    }
+    keyStrings() {
+      return this.keys().map((k) => k.hashKey());
+    }
+    values() {
+      return [...this._backingMap.values()];
+    }
+    categorizeValues() {
+      const builtIns = [...this._backingMap.values()].filter((v) => v.symbol.isBuiltIn);
+      const concreteUserFunctions = [...this._backingMap.values()].filter((v) => !v.isGenericTemplate && !v.symbol.isBuiltIn && v.genericTemplateIrFunction == void 0);
+      const userDefinedOperators = [...this._backingMap.values()].filter((v) => v.symbol.symbolDefinition.symbolType == "Operator" && v.callableOverload.typeDefinition?.paramTypes.some((p) => !p.symbolInformation?.isBuiltIn));
+      const instantiatedFunctions = [...this._backingMap.values()].filter((v) => !v.isGenericTemplate && !v.symbol.isBuiltIn && v.genericTemplateIrFunction != void 0);
+      const genericFunctionConstructors = [...this._backingMap.values()].filter((v) => v.isGenericTemplate && !v.symbol.isBuiltIn && v.identifier.typeArguments == void 0);
+      return {
+        builtIns,
+        concreteUserDefinedFunctions: concreteUserFunctions,
+        genericFunctionConstructors,
+        instantiatedFunctions,
+        userDefinedOperators
+      };
+    }
+    toJson(options2) {
+      const res = this.categorizeValues();
+      return {
+        builtIns: options2?.includeBuiltInFunctions ? res.builtIns.map((v) => v.toJson(options2.definitionsSerializationOptions)) : [],
+        concreteUserFunctions: res.concreteUserDefinedFunctions.map((v) => v.toJson(options2?.definitionsSerializationOptions)),
+        genericFunctions: res.genericFunctionConstructors.map((v) => v.toJson(options2?.definitionsSerializationOptions)),
+        instantiatedFunctions: res.instantiatedFunctions.map((v) => v.toJson(options2?.definitionsSerializationOptions))
+      };
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/definitions/IRModule.js
   var IRModule = class {
     static {
       __name(this, "IRModule");
     }
-    types = new IRModuleTypes();
-    functions = new IRModuleFunctions();
-    globals = /* @__PURE__ */ new Map();
+    types = new IRTypeDefinitions();
+    functions = new IRFunctionDefinitions();
+    globals = new IRModuleGlobals();
     constructor() {
     }
-    addAllCallables(f) {
-      for (const overload of f.symbolDefinition.overloads) {
-        const irFunction = IRFunction.convertFromSymbol(f, overload, void 0);
-        this.functions.putValue(irFunction);
-        for (const specialization of overload.specializations) {
-          const irFunction2 = IRFunction.convertFromSymbol(f, overload, specialization);
-          this.functions.putValue(irFunction2);
-        }
+    addAllCallables(symbol) {
+      for (const overload of symbol.symbolDefinition.overloads) {
+        this.functions.internFunctionDefinitionSymbol(this, symbol, overload);
       }
     }
-    addInstantiatedFunction(baseFunction, typeArguments) {
-      const specializationInformation = {
-        typeArguments,
-        instantiatedType: baseFunction.callableOverload.typeDefinition
-      };
-      const irFunction = IRFunction.convertFromSymbol(baseFunction.symbol, baseFunction.callableOverload, specializationInformation);
-      this.functions.putValue(irFunction);
-      return irFunction;
-    }
-    addGlobalVariable(irVariable) {
-      this.globals.set(irVariable.identifier.name, irVariable);
+    addGlobalVariable(irVariable, value) {
+      this.globals.set(irVariable.identifier.name, irVariable, value);
     }
     /**
      * Returns just the concrete functions, used in the wasm emitter
      * since wasm doesnt have the concept of generic functions
      */
     getConcreteFunctions() {
-      return [...this.functions.concreteFunctions.values()];
+      return [...this.functions.values()].filter((v) => !v.isGenericTemplate);
     }
     toJson(options2) {
-      const globalVariables = [...this.globals.values()].map((v) => {
-        const globalVarJson = {
-          name: v.identifier.name,
-          type: v.type.toString()
-        };
-        return globalVarJson;
-      });
+      const globalVariables = [...this.globals.values()].map((v) => [
+        v[0].toJson(options2?.definitionsSerializationOptions),
+        v[1].toJson(options2?.instructionSerializationOptions ?? {})
+      ]);
       const irTypeJson = this.types.toJson(options2);
       const irFunctionJson = this.functions.toJson(options2);
       const out = {
-        concreteTypes: irTypeJson.types,
-        typeConstructors: irTypeJson.typeConstructors,
-        genericFunctions: irFunctionJson.genericFunctions,
-        functions: irFunctionJson.functions,
-        globalVariables
+        types: irTypeJson,
+        globalVariables,
+        functions: irFunctionJson
       };
       return out;
     }
   };
-  var IRModuleFunctions = class {
+  var IRModuleGlobals = class {
     static {
-      __name(this, "IRModuleFunctions");
+      __name(this, "IRModuleGlobals");
     }
-    concreteFunctions = new IRFunctions();
-    genericFunctions = new IRFunctions();
-    functionMap = new MergedModuleMap([this.concreteFunctions, this.genericFunctions]);
-    putValue(irFunction) {
-      if (irFunction.isGenericTemplate) {
-        this.genericFunctions.putValue(irFunction);
-      } else {
-        this.concreteFunctions.putValue(irFunction);
+    _backingMap = /* @__PURE__ */ new Map();
+    values() {
+      return [...this._backingMap.values()];
+    }
+    getByName(name) {
+      return this._backingMap.get(name);
+    }
+    set(name, variable, value) {
+      if (!(value instanceof IRConst) && !(value instanceof IRZeroValue)) {
+        throw new Error(`Only constants are supported for global variables`);
       }
-    }
-    putValueIfMissing(value) {
-      return this.getOrPutIfMissing(value.identifier, value);
-    }
-    getOrPutIfMissing(key, value) {
-      if (!this.functionMap.has(key)) {
-        this.putValue(value);
-      } else {
-        const currentValue = this.functionMap.get(key);
-        if (currentValue != value) {
-          throw new Error(`Multiple values put in for a function that should already be in the map`);
-        }
-      }
-      return value;
-    }
-    has(irFunctionKey) {
-      return this.functionMap.has(irFunctionKey);
-    }
-    get(irFunctionKey) {
-      return this.functionMap.get(irFunctionKey);
-    }
-    size() {
-      return this.concreteFunctions.size() + this.genericFunctions.size();
+      this._backingMap.set(name, [variable, value]);
     }
     toJson(options2) {
-      const formatFunctions = /* @__PURE__ */ __name((functions2) => {
-        return [...functions2.values()].filter((f) => !(f.callableOverload.definitionNode instanceof AstWatOperatorDefinition) || options2?.includeBuiltInFunctions).map((f) => {
-          const functionJson = {
-            keyString: IRFunctions.idenToKey(f.identifier),
-            name: f.identifier.name,
-            type: f.functionTypeDefinition.toString(),
-            typeParameters: "< " + f.typeParameters?.map((t) => t.toString()).join(", ") + " >",
-            specialization: f.specialization?.map((t) => t.toString()),
-            params: [...f.parameters.values()].map((v) => {
-              return { name: v.identifier.name, type: v.type.toString() };
-            }),
-            locals: [...f.locals.values()].map((v) => {
-              return { name: v.identifier.name, type: v.type.toString() };
-            }),
-            returns: f.returnType.typeDefinition.toString(),
-            instructions: f.instructions().map((i) => i.toJson({}))
-          };
-          return functionJson;
-        });
-      }, "formatFunctions");
-      const functions = formatFunctions(this.concreteFunctions);
-      const genericFunctions = formatFunctions(this.genericFunctions);
-      return {
-        functions,
-        genericFunctions
-      };
-    }
-  };
-  var IRModuleTypes = class {
-    static {
-      __name(this, "IRModuleTypes");
-    }
-    concreteTypes = new IRTypes();
-    typeConstructors = new IRTypes();
-    typeMap = new MergedModuleMap([this.concreteTypes, this.typeConstructors]);
-    lookupIrType(key) {
-      if (!this.typeMap.has(key)) {
-        return void 0;
-      }
-      return this.typeMap.get(key);
-    }
-    lookupIrTypeOrThrow(key) {
-      const out = this.lookupIrType(key);
-      if (out == void 0) {
-        throw new Error(`Failed to lookup ir type with name: ${key.name} and key: ${IRTypes.idenToKey(key)}`);
-      }
-      return out;
-    }
-    putValue(value) {
-      if (value.typeDefinition.isGeneric()) {
-        this.typeConstructors.putValue(value);
-      } else {
-        this.concreteTypes.putValue(value);
-      }
-    }
-    putValueIfMissing(value) {
-      return this.getOrPutIfMissing(value.identifier, value);
-    }
-    getOrPutIfMissing(key, value) {
-      if (!this.typeMap.has(key)) {
-        this.putValue(value);
-      } else {
-        const currentValue = this.typeMap.get(key);
-        if (!currentValue.typeDefinition.equals(value.typeDefinition)) {
-          throw new Error(`There are two specializations of type ${value.typeDefinition.toString()} which are not equal`);
-        }
-      }
-      return value;
-    }
-    size() {
-      return this.typeConstructors.size() + this.concreteTypes.size();
-    }
-    toJson(options2) {
-      const formatTypes = /* @__PURE__ */ __name((types2) => {
-        const out = [...types2.values()].filter((t) => !t.typeDefinition.symbolInformation?.isBuiltIn || options2?.includeBuiltTypes).map((t) => {
-          const typeJson = {
-            keyString: IRTypes.idenToKey(t.identifier),
-            scope: t.identifier.scope.scopeName,
-            expression: t.typeDefinition.expression.toString(),
-            typeParameters: t.identifier.typeParameters?.map((t2) => t2.typeDefinition.toString()),
-            toString: t.typeDefinition.toString()
-          };
-          return typeJson;
-        });
-        return out;
-      }, "formatTypes");
-      const types = formatTypes(this.concreteTypes);
-      const typeConstructors = formatTypes(this.typeConstructors);
-      return {
-        types,
-        typeConstructors
-      };
+      const values = [...this._backingMap.values()].map((entry) => {
+        const variableDef = entry[0];
+        const literalValue = entry[1];
+        const variableDefJson = variableDef.toJson(options2?.definitionsSerializationOptions ?? {});
+        const literalJson = literalValue.toJson(options2?.instructionSerializationOptions ?? {});
+        return {
+          variable: variableDefJson,
+          literal: literalJson
+        };
+      });
+      return values;
     }
   };
 
   // ../compiler/dist/src/compiler/IRConverter.js
-  var FunctionProcessStack = class {
+  var FunctionMonomorphizationStack = class {
     static {
-      __name(this, "FunctionProcessStack");
+      __name(this, "FunctionMonomorphizationStack");
     }
     backingList = [];
     dedupeSet = /* @__PURE__ */ new Set();
     push(context) {
-      const key = IRFunctions.idenToKey(context.func.definition.identifier);
+      const key = context.func.definition.identifier.hashKey();
       if (!this.dedupeSet.has(key)) {
         this.dedupeSet.add(key);
         this.backingList.push(context);
       }
     }
     pop() {
-      return this.backingList.pop();
+      const out = this.backingList.pop();
+      return out;
     }
     isEmpty() {
       return this.backingList.length == 0;
@@ -337306,12 +339225,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     toIRModule(root, context) {
       const globalScope = context.table.getGlobalScope();
       const module2 = new IRModule();
-      const instructionConverter = new IRInstructionConverter();
-      const typeSymbols = globalScope.findAllSymbolsByType(
-        "Type"
-        /* SymbolType.Type */
-      );
-      this.bindTypeDefinitions(module2, typeSymbols);
+      this.bindTypeDefinitions(module2, globalScope);
       const globalVariables = globalScope.findAllSymbolsByType(
         "Variable"
         /* SymbolType.Variable */
@@ -337319,7 +339233,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         (v) => v.symbolDefinition.scopeType == "Global"
         /* ScopeType.Global */
       );
-      this.bindGlobalVariable(module2, globalVariables);
+      this.bindGlobalVariables(module2, globalVariables);
       const callables = [
         ...globalScope.findAllSymbolsByType(
           "Function"
@@ -337331,20 +339245,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         )
       ].map((s) => s);
       this.bindCallableDefinitions(module2, callables);
-      const functionsToInstantiate = new FunctionProcessStack();
-      [...module2.functions.concreteFunctions.values(), ...module2.functions.genericFunctions.values()].forEach((functionDefinition) => {
-        const functionTypeParameters = functionDefinition.typeParameters;
-        const typeArguments = functionDefinition.specialization;
-        if (!functionDefinition.isGenericTemplate && functionTypeParameters?.length != typeArguments?.length) {
-          throw new Error(`I don't think I set up the specialization up properly for ${functionDefinition.callableOverload.definitionNode.symbolName}
-        as the number of functionDefTypeArgs != specializationArgs ${functionTypeParameters?.length}, ${typeArguments?.length}`);
-        }
+      const functionsToInstantiate = new FunctionMonomorphizationStack();
+      [...module2.functions.values()].forEach((functionDefinition) => {
+        const functionTypeParameters = functionDefinition.identifier.typeParameters;
+        const typeArguments = functionDefinition.identifier.typeArguments;
         let mapArgs = void 0;
         if (functionTypeParameters != void 0 && typeArguments != void 0) {
           mapArgs = [];
           for (let i = 0; i < functionTypeParameters.length; i++) {
-            mapArgs.push({ genericParam: functionTypeParameters[i], typeArg: typeArguments[i] });
+            const typeParam = functionTypeParameters[i].typeDefinition;
+            if (!(typeParam instanceof TypeParameterDefinition)) {
+              throw new Error(`The type parameters for a function should all be type parameters, but instead received: ${typeParam.toString()}`);
+            }
+            mapArgs.push({ genericParam: typeParam, typeArg: typeArguments[i].typeDefinition });
           }
+        }
+        if (functionDefinition.callableOverload.typeBoundSource) {
+          functionDefinition.setInstructions([new IRTypeBoundCreatedFunctionInstruction()]);
+          return;
         }
         const context2 = {
           module: module2,
@@ -337357,6 +339275,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         functionsToInstantiate.push(context2);
       });
+      const instructionConverter = new IRInstructionConverter();
       while (!functionsToInstantiate.isEmpty()) {
         const context2 = functionsToInstantiate.pop();
         const functionDefinition = context2.func.definition;
@@ -337371,23 +339290,52 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return module2;
     }
-    bindTypeDefinitions(module2, typeSymbols) {
+    bindTypeDefinitions(module2, globalScope) {
+      const typesToInstantiateStack = [];
+      const typeSymbols = globalScope.findAllSymbolsByType(
+        "Type"
+        /* SymbolType.Type */
+      );
       for (const type of typeSymbols) {
         if (type.symbolDefinition.symbolType != "Type") {
           throw new Error(`Error in type mapping for symbol with name '${type.symbolName}'. It has symbol type ${type.symbolDefinition.symbolType}`);
         }
         let typeDefinition;
         if (type.symbolDefinition.typeDefinition == void 0) {
-          typeDefinition = type.declaringScope.resolveTypeDefinition(type.symbolDefinition.typeExpression);
+          throw new Error("The type definition should have already been bound to the symbol");
         } else {
           typeDefinition = type.symbolDefinition.typeDefinition;
         }
-        const irType = IRType.convertFromSymbol(typeDefinition);
-        module2.types.getOrPutIfMissing(irType.identifier, irType);
-        if (typeDefinition.typeInstantiations != void 0) {
-          for (const specializedTypeDef of typeDefinition.typeInstantiations) {
-            const specializedIrType = IRType.convertFromSymbol(specializedTypeDef);
-            module2.types.getOrPutIfMissing(specializedIrType.identifier, specializedIrType);
+        typesToInstantiateStack.push(typeDefinition);
+      }
+      const callableSymbols = [
+        ...globalScope.findAllSymbolsByType(
+          "Function"
+          /* SymbolType.Function */
+        ),
+        ...globalScope.findAllSymbolsByType(
+          "Operator"
+          /* SymbolType.Operator */
+        )
+      ];
+      for (const symbol of callableSymbols) {
+        for (const overload of symbol.symbolDefinition.overloads) {
+          if (overload.typeDefinition == void 0) {
+            throw new Error("Type definition should be bound to callable definition");
+          }
+          typesToInstantiateStack.push(overload.typeDefinition);
+        }
+      }
+      while (typesToInstantiateStack.length > 0) {
+        const typeDefinition = typesToInstantiateStack.pop();
+        if (typeDefinition == void 0) {
+          throw new Error("Popping undefined from non-empty stack");
+        }
+        module2.types.internTypeDefinition(module2, typeDefinition);
+        for (const referenceType of typeDefinition.getReferencedTypes()) {
+          const identifier3 = new IRTypeIdentifier(referenceType);
+          if (!module2.types.has(identifier3)) {
+            typesToInstantiateStack.push(referenceType);
           }
         }
       }
@@ -337397,10 +339345,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         module2.addAllCallables(callable);
       }
     }
-    bindGlobalVariable(module2, variableSymbols) {
+    bindGlobalVariables(module2, variableSymbols) {
       for (const variableSymbol of variableSymbols) {
-        const irVariable = IRVariable.convertFromSymbol(variableSymbol);
-        module2.addGlobalVariable(irVariable);
+        const irType = module2.types.internTypeDefinition(module2, variableSymbol.symbolDefinition.resolvedType);
+        const irIdentifier = new IRVariableIdentifier(variableSymbol.declaringScope, variableSymbol.symbolName);
+        const irVariable = new IRVariable(irIdentifier, irType, variableSymbol);
+        if (module2.globals.getByName(irIdentifier.name)) {
+          throw new Error(`Duplicate variable with name: ${irIdentifier.name}`);
+        }
+        module2.addGlobalVariable(irVariable, IRZeroValue.createFromTypeDef(module2, void 0, irVariable.type));
       }
     }
   };
@@ -337415,20 +339368,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (lookup == void 0 || lookup.info.symbolDefinition.symbolType != "Variable") {
         throw new Error(`Failed to lookup variable with name: ${name}`);
       }
-      const key = {
-        scope: lookup.scope,
-        name
-      };
+      const key = new IRVariableIdentifier(lookup.scope, name);
       let irVariable;
       if (lookup.scope.isGlobal) {
-        irVariable = context.module.globals.get(name);
+        irVariable = context.module.globals.getByName(name)[0];
       } else {
         irVariable = context.func.definition.getVariable(key);
       }
       return irVariable;
     }
-    lookupIrFunction(symbolName, typeArguments, functionType, nodeScope, context) {
-      const lookup = nodeScope.findSymbolAndScope(symbolName);
+    lookupIrFunction(context, functionCallingScope, resolvedCallableInfo) {
+      const symbolName = resolvedCallableInfo.symbol.symbolName;
+      const lookup = functionCallingScope.findSymbolAndScope(symbolName);
       if (lookup == void 0 || ![
         "Function",
         "Operator"
@@ -337436,97 +339387,66 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       ].includes(lookup.info.symbolDefinition.symbolType)) {
         throw new Error(`Failed to lookup callable with name: ${symbolName}. Found ${lookup}`);
       }
-      const resolvedTypeArguments = typeArguments?.map((p) => {
-        return this.lookupIrType(p, context);
-      });
-      const functionParamKeys = functionType.paramTypes.map((p) => {
-        return this.getIrTypeByTypeDef(p, context);
-      });
-      const key = {
-        scope: lookup.scope,
-        name: symbolName,
-        typeArguments: resolvedTypeArguments,
-        funcParamTypes: functionParamKeys
-      };
+      let typeArguments = resolvedCallableInfo.typeArguments;
+      const key = IRFunctionIdentifier.fromTypeDefinitions(context.module, lookup.scope, symbolName, resolvedCallableInfo.overload.typeParameterDefinitions, resolvedCallableInfo.resolvedFunctionType, resolvedCallableInfo.typeArguments);
       if (context.module.functions.has(key)) {
-        return context.module.functions.get(key);
+        return context.module.functions.getOrThrow(key);
       } else {
-        const unresolvedTypeArguments = typeArguments?.map((t) => IRType.convertFromSymbol(t));
-        const nonInstantiatedKey = {
-          scope: lookup.scope,
-          name: symbolName,
-          typeArguments: unresolvedTypeArguments,
-          funcParamTypes: functionParamKeys
-        };
-        const genericFunction = context.module.functions.get(nonInstantiatedKey);
-        if (resolvedTypeArguments == void 0) {
-          throw new Error("FIXME!");
+        if (typeArguments == void 0) {
+          throw new Error(`Generic code path taken for undefined type arguments`);
         }
-        const newIrFunctionToProcess = context.module.addInstantiatedFunction(genericFunction, resolvedTypeArguments?.map((t) => t.typeDefinition));
-        const typeParamsToArgs = [];
-        if (unresolvedTypeArguments?.length != resolvedTypeArguments.length) {
-          throw new Error("FIXME!");
+        if (context.func.genericsToTypeArgs != void 0) {
+          const originalTypeArguments = typeArguments.slice();
+          typeArguments = typeArguments.map((t) => t.replaceTypeParametersViaMap(context.scope, context.func.genericsToTypeArgs)).map((t) => {
+            if (t.success) {
+              return t.type;
+            } else {
+              throw new Error(`Failed to bind type`);
+            }
+          });
         }
-        for (let i = 0; i < unresolvedTypeArguments.length; i++) {
-          const genericParam = unresolvedTypeArguments[i].typeDefinition;
-          if (!(genericParam instanceof GenericParameterTypeDefinition)) {
-            throw new Error("FIXME");
-          }
-          typeParamsToArgs.push({ genericParam, typeArg: resolvedTypeArguments[i].typeDefinition });
+        const keyForNonInstantiatedFunction = IRFunctionIdentifier.fromTypeDefinitions(
+          context.module,
+          lookup.scope,
+          symbolName,
+          resolvedCallableInfo.overload.typeParameterDefinitions,
+          resolvedCallableInfo.overload.typeDefinition,
+          // use the non-instantiated type definition for the lookup
+          void 0
+        );
+        const nonInstantiatedFunction = context.module.functions.get(keyForNonInstantiatedFunction);
+        if (nonInstantiatedFunction == void 0) {
+          throw new Error(`Failed to lookup generic function for key ${keyForNonInstantiatedFunction.hashKey()}`);
         }
-        const processContext = {
+        const typeArgMap = nonInstantiatedFunction.bindTypeArguments(typeArguments);
+        const monomorphizedFunction = nonInstantiatedFunction.monomorphize(context.module, typeArgMap);
+        const newContext = {
           module: context.module,
           lateInstantiatedFunctionsToProcess: context.lateInstantiatedFunctionsToProcess,
           func: {
-            definition: newIrFunctionToProcess,
-            genericsToTypeArgs: typeParamsToArgs
+            definition: monomorphizedFunction,
+            genericsToTypeArgs: typeArgMap
           },
-          scope: newIrFunctionToProcess.callableOverload.definitionNode.bodyScope
+          scope: resolvedCallableInfo.overload.definitionNode.bodyScope
+          // I'm not sure about this scope
         };
-        context.lateInstantiatedFunctionsToProcess.push(processContext);
-        return newIrFunctionToProcess;
-      }
-    }
-    getIrTypeByTypeDef(type, context) {
-      const irType = IRType.convertFromSymbol(type);
-      try {
-        return context.module.types.putValueIfMissing(irType);
-      } catch (exception) {
-        console.log(context.module.toJson({}));
-        throw exception;
+        context.lateInstantiatedFunctionsToProcess.push(newContext);
+        return monomorphizedFunction;
       }
     }
     lookupIrType(type, context) {
-      let resolvedType = type?.resolveType();
+      const resolvedType = type?.resolveType();
       if (resolvedType == void 0) {
         throw new Error(`Type not set for augmented AST`);
       }
-      if (resolvedType.name == void 0) {
-        const irType2 = IRType.convertFromSymbol(resolvedType);
-        return context.module.types.putValueIfMissing(irType2);
+      let outType;
+      const initialType = context.module.types.internTypeDefinition(context.module, resolvedType);
+      if (context.func.genericsToTypeArgs == void 0) {
+        outType = initialType;
+      } else {
+        outType = initialType.monomorphize(context.module, context.func.genericsToTypeArgs);
       }
-      if (context.func.definition.specialization != void 0 && resolvedType instanceof GenericParameterTypeDefinition && context.func.genericsToTypeArgs) {
-        let specializedGenericType = resolvedType;
-        for (const arg of context.func.genericsToTypeArgs) {
-          if (resolvedType.equals(arg.genericParam)) {
-            specializedGenericType = arg.typeArg;
-            break;
-          }
-        }
-        resolvedType = specializedGenericType;
-        const typeParams = context.func.definition.typeParameters ?? [];
-        const len = typeParams?.length ?? 0;
-        for (let i = 0; i < len; i++) {
-          if (typeParams[i].name == specializedGenericType.name) {
-            resolvedType = context.func.definition.specialization[i];
-          }
-        }
-      }
-      if (context.func.genericsToTypeArgs != void 0) {
-        resolvedType = resolvedType.instantiateViaMap(context.func.genericsToTypeArgs);
-      }
-      const irType = IRType.convertFromSymbol(resolvedType);
-      return context.module.types.putValueIfMissing(irType);
+      return outType;
     }
     initContext() {
       throw new Error("Context must be explicitly created for IR Instruction Converter");
@@ -337564,7 +339484,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const irType = this.lookupIrType(type, context);
       const values = node.values.map((value) => new IRExpressionGroup(value, this.traverse(value, context)));
-      const out = new IRTupleLiteral(node, irType, values);
+      const out = new IRConstTuple(node, irType, values);
       return [out];
     }
     traverseArrayLiteral(node, context) {
@@ -337580,12 +339500,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       });
       const valuesMap = new Map(values);
       let out;
+      if (type instanceof InstantiatedTypeConstructor) {
+        const constructorType = type.typeConstructor;
+        if (constructorType instanceof StructTypeDefinition) {
+          out = new IRConstStruct(node, irType, valuesMap);
+        } else if (constructorType instanceof VariantTypeDefinition) {
+          out = new IRConstVariant(node, irType, valuesMap, constructorType.backingTagType);
+        } else {
+          throw new Error(`Mapping to IRConstComposite not defined for type: ${type.toString()}`);
+        }
+        return [out];
+      }
       if (type instanceof StructTypeDefinition) {
-        out = new IRStructLiteral(node, irType, valuesMap);
+        out = new IRConstStruct(node, irType, valuesMap);
       } else if (type instanceof UnionTypeDefinition) {
-        out = new IRUnionLiteral(node, irType, valuesMap);
+        out = new IRConstUnion(node, irType, valuesMap);
       } else if (type instanceof VariantTypeDefinition) {
-        out = new IRVariantLiteral(node, irType, valuesMap);
+        out = new IRConstVariant(node, irType, valuesMap, type.backingTagType);
       } else {
         throw new Error(`Mapping to IRConstComposite not defined for type: ${type.toString()}`);
       }
@@ -337600,7 +339531,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const expression = this.traverse(node.operand, context);
         const exp = new IRExpressionGroup(node.operand, expression);
         const irType = this.lookupIrType(node.operand.augmentedProperties.typeDefinition, context);
-        const deref = new IRLoadExpression(node, irType, exp);
+        const deref = IRLoadExpression.create(context.module, node, irType.typeDefinition, exp);
         return [deref];
       }
       return this.handleOperatorExpression(node, context);
@@ -337620,27 +339551,36 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else {
         throw new Error(`Handling operator not yet defined`);
       }
-      const funcCallTypes = node.resolvedCallableInfo?.functionType;
+      const funcCallTypes = node.resolvedCallableInfo?.resolvedFunctionType;
       const operatorDef = node.resolvedCallableInfo?.functionDefinitionNode;
       if (operatorDef instanceof AstWatOperatorDefinition) {
-        const opInstruction = new IRInlinedWatOperator(node, node.operator, IRType.convertFromSymbol(funcCallTypes.returnType), new IRExpressionGroup(node, args), operatorDef.watBody);
+        const opInstruction = new IRInlinedWatOperator(node, node.operator, context.module.types.internTypeDefinition(context.module, funcCallTypes.returnType), new IRExpressionGroup(node, args), operatorDef.watBody);
         return [opInstruction];
       }
-      const irFunction = this.lookupIrFunction(operatorDef.symbolName, void 0, funcCallTypes, node.augmentedProperties.scope, context);
+      if (node.resolvedCallableInfo == void 0) {
+        throw new Error(`Failed to bind callable information to node: ${node.toJson({})}`);
+      }
+      const irFunction = this.lookupIrFunction(context, node.augmentedProperties.scope, node.resolvedCallableInfo);
       return [new IRCallExpression(node, irFunction, new IRExpressionGroup(void 0, args))];
     }
     traverseCallExpression(node, context) {
-      const resolvedFunction = node.resolvedCallableInfo?.functionDefinitionNode;
-      const resolvedType = node.resolvedCallableInfo?.functionType;
-      const typeArgs = node.resolvedCallableInfo?.typeArguments;
+      const resolvedType = node.resolvedCallableInfo?.resolvedFunctionType;
       if (resolvedType == void 0) {
         throw new Error(`Resolved function type is not set for the callable`);
       }
       const argInstructions = node.args.astNodes.map((arg) => this.traverse(arg, context));
-      const f = this.lookupIrFunction(resolvedFunction.symbolName, typeArgs, resolvedType, node.augmentedProperties.scope, context);
+      if (node.resolvedCallableInfo == void 0) {
+        throw new Error(`Failed to bind callable information to node: ${node.toJson({})}`);
+      }
+      const f = this.lookupIrFunction(context, node.augmentedProperties.scope, node.resolvedCallableInfo);
       const group = new IRExpressionGroup(void 0, argInstructions.flat());
       const functionCall = new IRCallExpression(node, f, group);
-      return [functionCall];
+      const out = [functionCall];
+      if (f.functionType.returnType instanceof NeverTypeDefinition) {
+        const unreachableInstr = new IRUnreachable(node);
+        out.push(unreachableInstr);
+      }
+      return out;
     }
     traverseBuiltInFunction(node, context) {
       throw new Error("Method not implemented.");
@@ -337653,11 +339593,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const temp = context.func.definition.createTemporaryVariable(context.module, context.scope, `.temp_store.field.get_${irType.typeDefinition.expression.toString()}`, irType.typeDefinition, context.func.genericsToTypeArgs);
       const expression = this.traverse(node.expression, context);
       const exp = new IRExpressionGroup(node.expression, expression);
-      const inst = new IRFieldGetExpression(node, irType, exp, node.field.name, temp);
+      const inst = IRFieldGetExpression.create(context.module, node, irType, exp, node.field.name, temp);
       return [inst];
     }
     // type expressions aren't needed after the checker is run, so they just return nothing
     traverseUnitTypeExpression(node, context) {
+      throw new Error("Type expressions should be stripped during the IR Conversion step");
+    }
+    traverseNeverTypeExpression(node, context) {
       throw new Error("Type expressions should be stripped during the IR Conversion step");
     }
     traverseBaseTypeExpression(node, context) {
@@ -337700,7 +339643,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     handleFieldAssignment(exp, node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
       return [
-        new IRVariableFieldSet(node, irVariable, node.fields.map((f) => f.name), exp)
+        new IRVariableFieldSet(node, irVariable, node.fieldNames.map((f) => f.name), exp)
       ];
     }
     traverseAstSimpleVariableAccess(node, context) {
@@ -337779,12 +339722,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const expression = this.traverse(node.expression, context);
       const exp = new IRExpressionGroup(node.expression, expression);
       const expType = this.lookupIrType(node.expression.augmentedProperties.typeDefinition, context);
-      if (!(expType.typeDefinition instanceof VariantTypeDefinition)) {
-        throw new Error(`Switching on a non-variant type. Type was: ${expType.typeDefinition.toString()}`);
+      let variantType;
+      if (expType.typeDefinition instanceof VariantTypeDefinition) {
+        variantType = expType.typeDefinition;
+      } else if (expType.typeDefinition instanceof InstantiatedTypeConstructor) {
+        variantType = expType.typeDefinition.typeWithInstantiatedArgs;
       }
-      const variantType = expType.typeDefinition;
+      if (!(variantType instanceof VariantTypeDefinition)) {
+        throw new Error(`Switching on a non-variant type. Type was: ${variantType?.toString()}`);
+      }
       const variantExpressionTempStore = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, "variant_expression_temp", expType.typeDefinition, context.func.genericsToTypeArgs);
-      const backingTagValue = new IRVariantTagGetExpression(node.expression, expType, exp, variantExpressionTempStore);
+      const backingTagValue = new IRVariantTagGetExpression(node.expression, expType, exp, variantExpressionTempStore, variantExpressionTempStore.irType);
       const backingTagTempVariable = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, ".backing_field_temp_store", variantType.backingTagType, context.func.genericsToTypeArgs);
       switchInstructions.push(new IRVariableSet(node.expression, backingTagTempVariable, backingTagValue));
       for (const c of node.caseStatements) {
@@ -337794,7 +339742,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         const internalInstructions = this.traverse(c.body, newContext);
         const caseVariable = this.lookupIrVariable(c.condition.symbolName, c.augmentedProperties.scope, context);
-        const fieldGet = new IRFieldGetExpression(void 0, expType, exp, c.condition.symbolName, variantExpressionTempStore);
+        const fieldGet = IRFieldGetExpression.create(context.module, void 0, expType, exp, c.condition.symbolName, variantExpressionTempStore);
         const setInstruction = new IRVariableSet(c.condition, caseVariable, fieldGet);
         const brOutOfSwitch = new IRBranchUnconditional(c, switchBlock);
         const instructions = [setInstruction, ...internalInstructions, brOutOfSwitch];
@@ -337841,6 +339789,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseCompositeDefinition(node, context) {
       throw new Error("Type definitions should be stripped during the IR Conversion step");
+    }
+    traverseTypeBoundDefinition(node, context) {
+      throw new Error("Type bounds should have been stripped during the IR Conversion step (or possibly in the checker)");
+    }
+    traverseDefinitionTypeParameter(node, context) {
+      throw new Error("Type parameters should be stripped out during the IR Conversion step (or possibly in the checker)");
     }
     traverseBlockNode(node, context) {
       const out = [];
