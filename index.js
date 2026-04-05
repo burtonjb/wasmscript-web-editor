@@ -15740,9 +15740,9 @@
       __name(prepend, "prepend");
       __name(reset, "reset");
       SELECTOR_REGEX = /([\w\-]+)?(#([\w\-]+))?((\.([\w\-]+))*)/;
-      (function(Namespace2) {
-        Namespace2["HTML"] = "http://www.w3.org/1999/xhtml";
-        Namespace2["SVG"] = "http://www.w3.org/2000/svg";
+      (function(Namespace3) {
+        Namespace3["HTML"] = "http://www.w3.org/1999/xhtml";
+        Namespace3["SVG"] = "http://www.w3.org/2000/svg";
       })(Namespace || (Namespace = {}));
       __name(_$, "_$");
       __name($, "$");
@@ -327199,7 +327199,7 @@ ${tagToString(tag)}`;
       out["identifier"] = this.name;
       if (this._symbolBinding != void 0) {
         out["binding_type"] = this._symbolBinding.symbolType;
-        out["binding_symbol_name"] = this._symbolBinding.symbol.symbolName;
+        out["binding_symbol_name"] = this._symbolBinding.symbolDefinition.name;
         if (this._symbolBinding.symbolType == "Function") {
           out["binding_function_type"] = this._symbolBinding.overload.typeDefinition?.toShortString();
         }
@@ -327237,7 +327237,7 @@ ${tagToString(tag)}`;
       out["type_args"] = this.typeArguments.map((t) => t.toJson(options2));
       if (this._symbolBinding != void 0) {
         out["binding_type"] = this._symbolBinding.symbolType;
-        out["binding_symbol_name"] = this._symbolBinding.symbol.symbolName;
+        out["binding_symbol_name"] = this._symbolBinding.symbolDefinition.name;
         if (this._symbolBinding.symbolType == "Function") {
           out["binding_function_type"] = this._symbolBinding.overload.typeDefinition?.toShortString();
         }
@@ -327499,6 +327499,322 @@ ${tagToString(tag)}`;
       return out;
     }
   };
+  var AstPathComponent = class extends AstNode {
+    static {
+      __name(this, "AstPathComponent");
+    }
+  };
+  var AstPathComponentIdentifier = class extends AstPathComponent {
+    static {
+      __name(this, "AstPathComponentIdentifier");
+    }
+    identifier;
+    constructor(node, identifier3) {
+      super(node);
+      this.identifier = identifier3;
+    }
+    toString() {
+      return this.identifier.name;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["identifier"] = this.identifier.toJson(options2);
+      return out;
+    }
+  };
+  var AstPathComponentDotDot = class extends AstPathComponent {
+    static {
+      __name(this, "AstPathComponentDotDot");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return "..";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      return out;
+    }
+  };
+  var AstPathComponentDot = class extends AstPathComponent {
+    static {
+      __name(this, "AstPathComponentDot");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return ".";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      return out;
+    }
+  };
+  var AstPathExpression = class extends AstNode {
+    static {
+      __name(this, "AstPathExpression");
+    }
+    pathComponents;
+    constructor(node, pathComponents) {
+      super(node);
+      this.pathComponents = pathComponents;
+    }
+    toString() {
+      return this.pathComponents.map((c) => c.toString()).join("::");
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["path"] = this.pathComponents.map((t) => t.toJson(options2));
+      return out;
+    }
+  };
+  var AstImportStatement = class extends AstStatementNode {
+    static {
+      __name(this, "AstImportStatement");
+    }
+    path;
+    constructor(node, path) {
+      super(node);
+      this.path = path;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["path_expression"] = this.path.toJson(options2);
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/PathUtils.js
+  var PathComponent = class {
+    static {
+      __name(this, "PathComponent");
+    }
+    astNode;
+    constructor(astNode) {
+      this.astNode = astNode;
+    }
+  };
+  var SelfPathComponent = class _SelfPathComponent extends PathComponent {
+    static {
+      __name(this, "SelfPathComponent");
+    }
+    astNode;
+    constructor(astNode) {
+      super(astNode);
+      this.astNode = astNode;
+    }
+    isAnchored() {
+      return false;
+    }
+    equals(other) {
+      return other instanceof _SelfPathComponent;
+    }
+    toString() {
+      return ".";
+    }
+  };
+  var ParentPathComponent = class _ParentPathComponent extends PathComponent {
+    static {
+      __name(this, "ParentPathComponent");
+    }
+    constructor(astNode) {
+      super(astNode);
+    }
+    isAnchored() {
+      return false;
+    }
+    equals(other) {
+      return other instanceof _ParentPathComponent;
+    }
+    toString() {
+      return "..";
+    }
+  };
+  var NamedPathComponent = class _NamedPathComponent extends PathComponent {
+    static {
+      __name(this, "NamedPathComponent");
+    }
+    name;
+    constructor(astNode, name) {
+      super(astNode);
+      this.name = name;
+    }
+    isAnchored() {
+      return true;
+    }
+    equals(other) {
+      return other instanceof _NamedPathComponent && other.name == this.name;
+    }
+    toString() {
+      return this.name;
+    }
+  };
+  function normalizeComponents(comps) {
+    const stack = [];
+    for (const comp of comps) {
+      if (comp instanceof NamedPathComponent) {
+        stack.push(comp);
+      } else if (comp instanceof ParentPathComponent) {
+        if (stack.length > 0 && stack.at(-1) instanceof NamedPathComponent) {
+          stack.pop();
+        } else if (stack.length > 0 && stack.at(-1) instanceof SelfPathComponent) {
+          stack.pop();
+          stack.push(comp);
+        } else {
+          stack.push(comp);
+        }
+      } else if (comp instanceof SelfPathComponent) {
+        if (stack.length == 0) {
+          stack.push(comp);
+        }
+      } else {
+        throw new Error(`Normalizing not handled for component ${comp.constructor.name}`);
+      }
+    }
+    if (stack.length == 0 && comps.length > 0) {
+      stack.push(new SelfPathComponent(void 0));
+    }
+    return stack;
+  }
+  __name(normalizeComponents, "normalizeComponents");
+  function areComponentsEqual(a, b) {
+    if (a.length != b.length) {
+      return false;
+    }
+    for (let i = 0; i < a.length; i++) {
+      const eq = a[i].equals(b[i]);
+      if (!eq) {
+        return false;
+      }
+    }
+    return true;
+  }
+  __name(areComponentsEqual, "areComponentsEqual");
+  function calculateCommonPrefix(a, b) {
+    const stack = [];
+    const minLength = Math.min(a.length, b.length);
+    for (let i = 0; i < minLength; i++) {
+      const x = a[i];
+      const y = b[i];
+      if (x.equals(y)) {
+        stack.push(x);
+      } else {
+        return stack;
+      }
+    }
+    return stack;
+  }
+  __name(calculateCommonPrefix, "calculateCommonPrefix");
+  var PathExpression = class _PathExpression {
+    static {
+      __name(this, "PathExpression");
+    }
+    astNode;
+    components;
+    isNormalized;
+    constructor(astNode, components) {
+      this.astNode = astNode;
+      this.components = components;
+      this.isNormalized = areComponentsEqual(this.components, normalizeComponents(this.components));
+    }
+    static globalScopePathExpression() {
+      return new _PathExpression(void 0, []);
+    }
+    // Returns if the path is a "fixed path" or not - basically if the (potentially normalized) path starts with an identifier or not
+    isAnchored() {
+      if (this.components.length == 0) {
+        return true;
+      }
+      if (this.isNormalized) {
+        return this.components[0].isAnchored();
+      } else {
+        return this.normalize().isAnchored();
+      }
+    }
+    // Checks if any component is relative. Namespaces and fully qualified names can't have a relative component in them
+    hasRelativeComponent() {
+      return !this.components.every((c) => c.isAnchored());
+    }
+    // Returns a path expression resolving any kind of "internal relativity". Basically it should be the shortest way to
+    // represent a path.
+    normalize() {
+      const normalized = normalizeComponents(this.components);
+      return new _PathExpression(void 0, normalized);
+    }
+    // Naively concatenates all the components of this and the other path together without any kind of
+    // normalization
+    naiveConcat(other) {
+      return new _PathExpression(void 0, [...this.components, ...other.components]);
+    }
+    // Returns a path expression assuming that you want this to be relative to a root
+    relativeToRoot(root) {
+      const normalizedRoot = root.isNormalized ? root : root.normalize();
+      const normalizedThis = this.isNormalized ? this : this.normalize();
+      const common = calculateCommonPrefix(normalizedRoot.components, normalizedThis.components);
+      let result;
+      if (normalizedRoot.components.length == 0) {
+        result = [];
+      } else {
+        result = [new SelfPathComponent(void 0)];
+      }
+      for (let i = common.length; i < normalizedRoot.components.length; i++) {
+        result.push(new ParentPathComponent(void 0));
+      }
+      for (let i = common.length; i < normalizedThis.components.length; i++) {
+        result.push(normalizedThis.components[i]);
+      }
+      return new _PathExpression(void 0, normalizeComponents(result));
+    }
+    // This is a naive equals. If you want a more "semantic" equals, used the normalizedEquals, which will handle normalization too.
+    // or you can use normalized paths, which I recommend unless you're debugging.
+    equals(other) {
+      return areComponentsEqual(this.components, other.components);
+    }
+    normalizedEquals(other) {
+      const a = this.isNormalized ? this : this.normalize();
+      const b = other.isNormalized ? other : other.normalize();
+      return a.equals(b);
+    }
+    splitToQualifierIdentifier() {
+      const len = this.components.length;
+      const qualifier = new _PathExpression(void 0, this.components.slice(0, len - 1));
+      const identifier3 = new _PathExpression(void 0, this.components.slice(len - 1, len));
+      if (len == 0) {
+        return {
+          qualifier: _PathExpression.globalScopePathExpression(),
+          identifier: _PathExpression.globalScopePathExpression()
+        };
+      }
+      return {
+        qualifier,
+        identifier: identifier3
+      };
+    }
+    toString() {
+      if (this.components.length == 0) {
+        return `(global)`;
+      }
+      return this.components.map((c) => c.toString()).join("::");
+    }
+  };
+  function astPathComponentToPathComponenet(node) {
+    if (node instanceof AstPathComponentDotDot) {
+      return new ParentPathComponent(node);
+    } else if (node instanceof AstPathComponentIdentifier) {
+      return new NamedPathComponent(node, node.identifier.name);
+    } else if (node instanceof AstPathComponentDot) {
+      return new SelfPathComponent(node);
+    } else {
+      throw new Error(`Undefined path componenet mapping for ${node.constructor.name}`);
+    }
+  }
+  __name(astPathComponentToPathComponenet, "astPathComponentToPathComponenet");
+  function astPathToPathExpression(node) {
+    return new PathExpression(node, node.pathComponents.map((c) => astPathComponentToPathComponenet(c)));
+  }
+  __name(astPathToPathExpression, "astPathToPathExpression");
 
   // ../compiler/dist/src/compiler/ast/AstTypes.js
   var AstTypeExpression = class extends AstNode {
@@ -327556,9 +327872,9 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var BaseTypeExpression = class _BaseTypeExpression extends AstTypeExpression {
+  var NamedTypeExpression = class _NamedTypeExpression extends AstTypeExpression {
     static {
-      __name(this, "BaseTypeExpression");
+      __name(this, "NamedTypeExpression");
     }
     _identifier;
     constructor(node, _identifier) {
@@ -327572,7 +327888,7 @@ ${tagToString(tag)}`;
       return `${this.identifier.name}`;
     }
     equals(other) {
-      if (!(other instanceof _BaseTypeExpression)) {
+      if (!(other instanceof _NamedTypeExpression)) {
         return false;
       }
       return other.identifier.name == this.identifier.name;
@@ -327586,6 +327902,52 @@ ${tagToString(tag)}`;
     toJson(options2) {
       const out = super.toJson(options2);
       out["type"] = this.identifier.toJson(options2);
+      return out;
+    }
+  };
+  var TypeInstantiatingTypeExpression = class _TypeInstantiatingTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "TypeInstantiatingTypeExpression");
+    }
+    typeConstructor;
+    typeArgs;
+    constructor(typeConstructor, typeArgs) {
+      super(typeConstructor.parseTreeNode);
+      this.typeConstructor = typeConstructor;
+      this.typeArgs = typeArgs;
+    }
+    get identifier() {
+      return this.typeConstructor.identifier;
+    }
+    toString() {
+      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      }
+      if (!(other instanceof _TypeInstantiatingTypeExpression)) {
+        return false;
+      }
+      if (!other.typeConstructor.equals(this.typeConstructor)) {
+        return false;
+      }
+      if (this.typeArgs.length != other.typeArgs.length) {
+        return false;
+      }
+      for (let i = 0; i < this.typeArgs.length; i++) {
+        const a = this.typeArgs[i];
+        const b = other.typeArgs[i];
+        if (!a.equals(b)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type_constructor"] = this.typeConstructor.toJson(options2);
+      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
       return out;
     }
   };
@@ -327605,7 +327967,7 @@ ${tagToString(tag)}`;
       if (!(other instanceof _PointerTypeExpression)) {
         return false;
       }
-      if (this.internal instanceof BaseTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
+      if (this.internal instanceof NamedTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
         return true;
       }
       return this.internal.equals(other.internal);
@@ -327687,52 +328049,6 @@ ${tagToString(tag)}`;
     toJson(options2) {
       const out = super.toJson(options2);
       out["types"] = this.types.map((t) => t.toJson(options2));
-      return out;
-    }
-  };
-  var TypeInstantiatingTypeExpression = class _TypeInstantiatingTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "TypeInstantiatingTypeExpression");
-    }
-    typeConstructor;
-    typeArgs;
-    constructor(typeConstructor, typeArgs) {
-      super(typeConstructor.parseTreeNode);
-      this.typeConstructor = typeConstructor;
-      this.typeArgs = typeArgs;
-    }
-    get identifier() {
-      return this.typeConstructor.identifier;
-    }
-    toString() {
-      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
-    }
-    equals(other) {
-      if (this === other) {
-        return true;
-      }
-      if (!(other instanceof _TypeInstantiatingTypeExpression)) {
-        return false;
-      }
-      if (!other.typeConstructor.equals(this.typeConstructor)) {
-        return false;
-      }
-      if (this.typeArgs.length != other.typeArgs.length) {
-        return false;
-      }
-      for (let i = 0; i < this.typeArgs.length; i++) {
-        const a = this.typeArgs[i];
-        const b = other.typeArgs[i];
-        if (!a.equals(b)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_constructor"] = this.typeConstructor.toJson(options2);
-      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
       return out;
     }
   };
@@ -327902,9 +328218,9 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstTypeDefinitionStatement = class extends AstDefinitionNode {
+  var AstTypeAliasingStatement = class extends AstDefinitionNode {
     static {
-      __name(this, "AstTypeDefinitionStatement");
+      __name(this, "AstTypeAliasingStatement");
     }
     variable;
     typeExpression;
@@ -328287,14 +328603,105 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-
-  // ../compiler/dist/src/compiler/ast/AstExpressions.js
-  var AstAbstractExpressionNode = class extends AstNode {
+  var AstNamespaceDefinition = class extends AstNode {
     static {
-      __name(this, "AstAbstractExpressionNode");
+      __name(this, "AstNamespaceDefinition");
+    }
+    pathExpression;
+    body;
+    _definitionScope = void 0;
+    constructor(node, pathExpression, body) {
+      super(node);
+      this.pathExpression = pathExpression;
+      this.body = body;
+    }
+    get symbolName() {
+      const pathExpression = astPathToPathExpression(this.pathExpression);
+      if (pathExpression.isAnchored() && pathExpression.components.length > 0) {
+        return pathExpression.components[0].toString();
+      }
+      return void 0;
+    }
+    get symbolKind() {
+      return "Namespace";
+    }
+    get definitionScope() {
+      return this._definitionScope;
+    }
+    set definitionScope(scope) {
+      if (this._definitionScope == void 0) {
+        this._definitionScope = scope;
+      } else {
+        if (this._definitionScope.id != scope.id)
+          throw new Error(`Double binding scope to namespace definition`);
+      }
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["path"] = this.pathExpression.toJson(options2);
+      out["body"] = this.body.toJson(options2);
+      return out;
     }
   };
-  var AstAbstractCallExpression = class extends AstAbstractExpressionNode {
+  var AstDeclareFunctionStatement = class extends AstAbstractCallableDefinition {
+    static {
+      __name(this, "AstDeclareFunctionStatement");
+    }
+    identifier;
+    typeParameters;
+    params;
+    returnTypeExpression;
+    constructor(node, identifier3, typeParameters, params, returnTypeExpression) {
+      super(node, identifier3, typeParameters, params, returnTypeExpression);
+      this.identifier = identifier3;
+      this.typeParameters = typeParameters;
+      this.params = params;
+      this.returnTypeExpression = returnTypeExpression;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["identifier"] = this.identifier.toJson(options2);
+      out["type_params"] = this.typeParameters?.map((t) => t.toJson(options2));
+      out["function_params"] = this.params.map((p) => p.toJson(options2));
+      out["return_type"] = this.returnTypeExpression.toJson(options2);
+      out["ast_node_type"] = this.constructor.name;
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstExpressions.js
+  var AstValueExpressionNode = class extends AstNode {
+    static {
+      __name(this, "AstValueExpressionNode");
+    }
+  };
+  var AstValueExpressionIdentifier = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstValueExpressionIdentifier");
+    }
+    identifier;
+    constructor(node, identifier3) {
+      super(node);
+      this.identifier = identifier3;
+    }
+    get symbolName() {
+      return this.identifier.symbolName;
+    }
+  };
+  var AstValueExpressionIdentifierWithTypeArguments = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstValueExpressionIdentifierWithTypeArguments");
+    }
+    identifierWithTypeArguments;
+    constructor(node, identifierWithTypeArguments) {
+      super(node);
+      this.identifierWithTypeArguments = identifierWithTypeArguments;
+    }
+    get symbolName() {
+      return this.identifierWithTypeArguments.symbolName;
+    }
+  };
+  var AstAbstractCallExpression = class extends AstValueExpressionNode {
     static {
       __name(this, "AstAbstractCallExpression");
     }
@@ -328315,7 +328722,6 @@ ${tagToString(tag)}`;
           out["resolveCallInfo"] = {
             dispatchType: resolvedCallInfo.functionCallType,
             typeArguments: resolvedCallInfo.typeArguments?.map((t) => t.toString()),
-            symbol: resolvedCallInfo.symbol.symbolName,
             overload: resolvedCallInfo.overload.typeExpression.toString(),
             functionDefinitionNode_Loc: resolvedCallInfo.overload.definitionNode.firstToken.createTokenSourceString(),
             functionTypeAfterSubstitution: resolvedCallInfo.functionTypeAfterTypeSubstitution.toString()
@@ -328389,7 +328795,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstBuiltInFunctionCallExpression = class extends AstAbstractExpressionNode {
+  var AstBuiltInFunctionCallExpression = class extends AstValueExpressionNode {
     static {
       __name(this, "AstBuiltInFunctionCallExpression");
     }
@@ -328430,7 +328836,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstTypeCastingExpression = class extends AstAbstractExpressionNode {
+  var AstTypeCastingExpression = class extends AstValueExpressionNode {
     static {
       __name(this, "AstTypeCastingExpression");
     }
@@ -328448,7 +328854,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstFieldAccessExpression = class extends AstAbstractExpressionNode {
+  var AstFieldAccessExpression = class extends AstValueExpressionNode {
     static {
       __name(this, "AstFieldAccessExpression");
     }
@@ -328466,17 +328872,9 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstAtomNode = class extends AstAbstractExpressionNode {
-    static {
-      __name(this, "AstAtomNode");
-    }
-    constructor(node) {
-      super(node);
-    }
-  };
 
   // ../compiler/dist/src/compiler/ast/AstLiterals.js
-  var AstAbstractLiteralAtom = class extends AstAbstractExpressionNode {
+  var AstAbstractLiteralAtom = class extends AstValueExpressionNode {
     static {
       __name(this, "AstAbstractLiteralAtom");
     }
@@ -328647,7 +329045,7 @@ ${tagToString(tag)}`;
   };
 
   // ../compiler/dist/src/compiler/ast/AstVariableAccess.js
-  var AbstractVariableNode = class extends AstAtomNode {
+  var AbstractVariableNode = class extends AstValueExpressionNode {
     static {
       __name(this, "AbstractVariableNode");
     }
@@ -328763,8 +329161,8 @@ ${tagToString(tag)}`;
         return this.traverseBlockNode(node, context);
       } else if (node instanceof GroupAstNode) {
         return this.traverseGroupNode(node, context);
-      } else if (node instanceof AstTypeDefinitionStatement) {
-        return this.traverseTypeDefinition(node, context);
+      } else if (node instanceof AstTypeAliasingStatement) {
+        return this.traverseTypeAliasingStatement(node, context);
       } else if (node instanceof AstFunctionDefinition) {
         return this.traverseFunctionDefinition(node, context);
       } else if (node instanceof AstWatFunctionDefinition) {
@@ -328779,6 +329177,8 @@ ${tagToString(tag)}`;
         return this.traverseTypeBoundDefinition(node, context);
       } else if (node instanceof AstTypeParameter) {
         return this.traverseDefinitionTypeParameter(node, context);
+      } else if (node instanceof AstNamespaceDefinition) {
+        return this.traverseNamespaceDefinition(node, context);
       } else if (node instanceof AstNumberLiteral) {
         return this.traverseNumberLiteral(node, context);
       } else if (node instanceof AstBooleanLiteral) {
@@ -328791,10 +329191,10 @@ ${tagToString(tag)}`;
         return this.traverseCompositeLiteral(node, context);
       } else if (node instanceof AstNullPtrLiteral) {
         return this.traverseNullLiteral(node, context);
-      } else if (node instanceof AstIdentifierNode) {
-        return this.traverseIdentifierExpression(node, context);
-      } else if (node instanceof AstIdentiferWithTypeArgumentsNode) {
-        return this.traverseIdentifierExpressionWithTypeArguments(node, context);
+      } else if (node instanceof AstValueExpressionIdentifier) {
+        return this.traverseValueExprIdentifier(node, context);
+      } else if (node instanceof AstValueExpressionIdentifierWithTypeArguments) {
+        return this.traverseValueExprIdentifierWithTypeArgs(node, context);
       } else if (node instanceof AstUnaryOperation) {
         return this.traverseUnaryOperation(node, context);
       } else if (node instanceof AstBinaryOperation) {
@@ -328811,7 +329211,7 @@ ${tagToString(tag)}`;
         return this.traverseUnitTypeExpression(node, context);
       } else if (node instanceof AstNeverTypeExpression) {
         return this.traverseNeverTypeExpression(node, context);
-      } else if (node instanceof BaseTypeExpression) {
+      } else if (node instanceof NamedTypeExpression) {
         return this.traverseBaseTypeExpression(node, context);
       } else if (node instanceof PointerTypeExpression) {
         return this.traversePointerTypeExpression(node, context);
@@ -328837,6 +329237,10 @@ ${tagToString(tag)}`;
         return this.traverseBreakStatement(node, context);
       } else if (node instanceof AstContinueStatement) {
         return this.traverseContinueStatement(node, context);
+      } else if (node instanceof AstDeclareFunctionStatement) {
+        return this.traverseDeclareFunctionStatement(node, context);
+      } else if (node instanceof AstImportStatement) {
+        return this.traverseImportStatement(node, context);
       } else if (node instanceof AstIfStatement) {
         return this.traverseIfStatement(node, context);
       } else if (node instanceof AstWhileStatement) {
@@ -328849,6 +329253,313 @@ ${tagToString(tag)}`;
         return this.traverseVariableDeclaration(node, context);
       } else
         throw new Error(`AstNodeTraverser traversal is not implemented for node type: ${node.constructor.name}`);
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ErrorMessages.js
+  function formatErrorMessage(message) {
+    const parts = message.split("\n").map((p) => p.replaceAll("	", "").replaceAll(/\s+/g, " "));
+    return parts.join("\n");
+  }
+  __name(formatErrorMessage, "formatErrorMessage");
+  var BINDER_ERROR_MESSAGES = {
+    symbolNotFound: /* @__PURE__ */ __name((node, symbolName) => {
+      return {
+        firstToken: node.firstToken,
+        type: "SymbolNotDefined",
+        message: formatErrorMessage(`Symbolname '${symbolName}' is referenced before being defined. 
+        Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "symbolNotFound"),
+    symbolNotFoundInNamespace: /* @__PURE__ */ __name((node, symbolName, namespacePath) => {
+      return {
+        firstToken: node.firstToken,
+        type: "SymbolNotDefined",
+        message: formatErrorMessage(`Symbolname '${symbolName}' is not found in namespace: ${namespacePath.toString()}. 
+        Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "symbolNotFoundInNamespace"),
+    symbolErased: /* @__PURE__ */ __name((node, symbolName) => {
+      return {
+        firstToken: node.firstToken,
+        type: "SymbolNotCaptured",
+        message: formatErrorMessage(`Identifier '${symbolName}' is not captured in the nested scope.
+            If you want to reference this identifier, you need to capture the variable.
+            Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "symbolErased"),
+    symbolHasWrongSymbolType: /* @__PURE__ */ __name((node, symbolName, symbolDefinition, expectedType) => {
+      return {
+        firstToken: node.firstToken,
+        type: "SymbolTypeMismatch",
+        message: formatErrorMessage(`Attempting to reference symbol with name:'${symbolName}' but the identifier ${symbolDefinition.symbolType}
+        and we were expecting this to be a ${expectedType} symbol.
+        Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "symbolHasWrongSymbolType"),
+    expressionNotInFunction: /* @__PURE__ */ __name((node) => {
+      return {
+        firstToken: node.firstToken,
+        type: "ExpressionNotInFunction",
+        message: formatErrorMessage(`Expression found outside a function body. 
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "expressionNotInFunction"),
+    controlStatementNotInBlock: /* @__PURE__ */ __name((node, str) => {
+      return {
+        firstToken: node.firstToken,
+        type: "ControlFlowStatementNotInControlBlock",
+        message: formatErrorMessage(`${str} from a non-control flow statement. 
+      Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "controlStatementNotInBlock"),
+    duplicateFieldInCompositeTypeDefinition: /* @__PURE__ */ __name((node, fieldName) => {
+      return {
+        firstToken: node.firstToken,
+        type: "CompositeFieldDuplicateName",
+        message: formatErrorMessage(`The ${node.compositeType} '${node.identifier.name}' has fields with duplicate names. 
+          The duplicated name is '${fieldName}'. 
+          Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "duplicateFieldInCompositeTypeDefinition"),
+    namespaceNotFound: /* @__PURE__ */ __name((node, path) => {
+      return {
+        firstToken: node.firstToken,
+        type: "NamespaceNotFound",
+        // TODO: I can get the X closest namespaces based on some kind of edit distance when I implement "error fix suggestions"
+        message: formatErrorMessage(`Path: ${path.toString()} is unable to be resolved to a namespace.
+      Referenced ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "namespaceNotFound"),
+    namespaceDefinitionIsRelative: /* @__PURE__ */ __name((namespaceDefinitionNode, pathExpression) => {
+      return {
+        firstToken: namespaceDefinitionNode.pathExpression.firstToken,
+        type: "NamespaceDefinedWithRelativePath",
+        message: formatErrorMessage(`The namespace with path expression: ${pathExpression.toString()} is defined with 
+        a non-absolute path and namespaces are not allowed to be defined with non-absolute paths.
+        Referenced on: ${namespaceDefinitionNode.firstToken.createTokenSourceString()}`)
+      };
+    }, "namespaceDefinitionIsRelative")
+  };
+
+  // ../compiler/dist/src/compiler/NamespaceUtils.js
+  var NamespaceRegistry = class {
+    static {
+      __name(this, "NamespaceRegistry");
+    }
+    // Adds a namespace to the registry. If there are multiple definitions for the namespace, then the
+    // entries in each namespace are merged.
+    _backingMap = new NestedMap();
+    addNamespace(namespace) {
+      const path = namespace.path;
+      if (path.hasRelativeComponent()) {
+        throw new Error("My backing map only supports absolute paths.");
+      }
+      const pathStr = path.components.map((c) => c.toString());
+      const current = this._backingMap.get(pathStr);
+      if (current == void 0) {
+        this._backingMap.set(pathStr, namespace);
+      } else {
+        if (current instanceof Namespace2) {
+          const conflicts = this.findConflicts(namespace, current);
+          if (conflicts.length > 0) {
+            return { success: false, conflicts };
+          }
+          const merged = new MergedNamespace(path, [current, namespace]);
+          this._backingMap.set(pathStr, merged);
+        } else if (current instanceof MergedNamespace) {
+          const conflicts = this.findConflicts(namespace, current);
+          if (conflicts.length > 0) {
+            return { success: false, conflicts };
+          }
+          current.components.push(namespace);
+        } else {
+          throw new Error(`Unsure what to do for class: ${current.constructor.name}`);
+        }
+      }
+      return { success: true };
+    }
+    findConflicts(a, b) {
+      const aSymbols = a.symbolNames();
+      const bSymbols = b.symbolNames();
+      const aSet = new Set(aSymbols);
+      const bSet = new Set(bSymbols);
+      const findMissingEntries = /* @__PURE__ */ __name((arr, s) => {
+        if (arr.length == s.size) {
+          return [];
+        }
+        const clone2 = new Set(s.values());
+        for (const value of arr) {
+          clone2.delete(value);
+        }
+        return [...clone2.values()];
+      }, "findMissingEntries");
+      const aMissing = findMissingEntries(aSymbols, aSet);
+      const bMissing = findMissingEntries(bSymbols, bSet);
+      if (aMissing.length > 0 || bMissing.length > 0) {
+        return [...aMissing, ...bMissing];
+      }
+      const overlap = [...aSet.intersection(bSet)];
+      return overlap;
+    }
+    findNamespace(namespaceQualifier) {
+      if (namespaceQualifier.hasRelativeComponent()) {
+        throw new Error("My backing map only supports absolute paths.");
+      }
+      const pathStr = namespaceQualifier.components.map((c) => c.toString());
+      const out = this._backingMap.get(pathStr);
+      return out;
+    }
+    toMarkdownString() {
+      let out = ``;
+      for (const entry of this._backingMap.entries()) {
+        const path = entry.key.join("::") + "		";
+        const symbols = entry.value.symbolNames().join(", ");
+        out += path + symbols + "\n";
+      }
+      return out;
+    }
+    registeredNamespacePaths() {
+      return this._backingMap.keys().map((k) => k.join("::"));
+    }
+  };
+  var Namespace2 = class {
+    static {
+      __name(this, "Namespace");
+    }
+    path;
+    astNode;
+    symbolTable;
+    symbolInformation;
+    constructor(path, astNode, symbolTable, symbolInformation) {
+      this.path = path;
+      this.astNode = astNode;
+      this.symbolTable = symbolTable;
+      this.symbolInformation = symbolInformation;
+    }
+    findSymbol(symbolName) {
+      return this.symbolTable.findSymbol(symbolName);
+    }
+    symbolNames() {
+      return this.symbolTable.symbolNamesInThis();
+    }
+  };
+  var MergedNamespace = class {
+    static {
+      __name(this, "MergedNamespace");
+    }
+    path;
+    components;
+    constructor(path, components) {
+      this.path = path;
+      this.components = components;
+    }
+    findSymbol(symbolName) {
+      for (const ns of this.components) {
+        const c = ns.findSymbol(symbolName);
+        if (c != void 0) {
+          return c;
+        }
+      }
+      return void 0;
+    }
+    symbolNames() {
+      const out = [];
+      for (const ns of this.components) {
+        out.push(...ns.symbolNames());
+      }
+      return out;
+    }
+  };
+  var NestedMap = class _NestedMap {
+    static {
+      __name(this, "NestedMap");
+    }
+    _backingMap = /* @__PURE__ */ new Map();
+    get(key) {
+      if (key.length == 0) {
+        return void 0;
+      }
+      const [current, ...rest] = key;
+      const entry = this._backingMap.get(current);
+      if (entry == void 0) {
+        return void 0;
+      }
+      if (rest.length == 0) {
+        return entry.value;
+      }
+      return entry.nested?.get(rest);
+    }
+    set(key, value) {
+      if (key.length == 0) {
+        return this;
+      }
+      const [current, ...rest] = key;
+      if (rest.length == 0) {
+        const currentValue = this._backingMap.get(current);
+        this._backingMap.set(current, { value, nested: currentValue?.nested });
+        return this;
+      } else {
+        let entry = this._backingMap.get(current);
+        if (entry == void 0 || entry.nested == void 0) {
+          entry = { value: entry?.value, nested: entry?.nested ?? new _NestedMap() };
+          this._backingMap.set(current, entry);
+        }
+        entry.nested?.set(rest, value);
+      }
+      return this;
+    }
+    has(key) {
+      return this.get(key) != void 0;
+    }
+    delete(key) {
+      if (key.length == 0) {
+        return false;
+      }
+      const [current, ...rest] = key;
+      const entry = this._backingMap.get(current);
+      if (rest.length == 0) {
+        return this._backingMap.delete(current);
+      }
+      if (entry?.nested != void 0) {
+        const isDeleted = entry.nested.delete(rest);
+        if (entry.value == void 0 && (entry.nested == void 0 || entry.nested.size == 0)) {
+          this._backingMap.delete(current);
+        }
+        return isDeleted;
+      }
+      return false;
+    }
+    clear() {
+      this._backingMap.clear();
+    }
+    entries() {
+      const out = [];
+      const entries2 = [...this._backingMap.entries()];
+      for (const entry of entries2) {
+        const entryKey = entry[0];
+        const entryValue = entry[1];
+        if (entryValue.value != void 0) {
+          out.push({ key: [entryKey], value: entryValue.value });
+        }
+        if (entryValue.nested != void 0) {
+          const internal = [...entryValue.nested.entries()];
+          const mapped = internal.map((pair) => {
+            return { key: [entryKey, ...pair.key], value: pair.value };
+          });
+          out.push(...mapped);
+        }
+      }
+      return out;
+    }
+    keys() {
+      return this.entries().map((e) => e.key);
+    }
+    values() {
+      return this.entries().map((v) => v.value);
+    }
+    get size() {
+      return this.entries().length;
     }
   };
 
@@ -328907,6 +329618,9 @@ ${tagToString(tag)}`;
     }
     get tokens() {
       return this.tokenStream.tokens.slice(this.start, this.end);
+    }
+    get tokensAsString() {
+      return this.tokenStream.tokens.slice(this.start, this.end).map((t) => t.lexeme).join(" ");
     }
   };
   var TerminalSymbol = class {
@@ -329467,6 +330181,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
 
   // ../compiler/dist/src/compiler/Token.js
   var Keywords = /* @__PURE__ */ new Map([
+    // literals
+    [
+      "true",
+      "true"
+      /* TokenType.True */
+    ],
+    [
+      "false",
+      "false"
+      /* TokenType.False */
+    ],
+    [
+      "null",
+      "null"
+      /* TokenType.Null */
+    ],
+    // variable declaration
     [
       "const",
       "const"
@@ -329478,45 +330209,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Var */
     ],
     [
-      "typealias",
-      "typealias"
-      /* TokenType.TypeAlias */
+      "let",
+      "let"
+      /* TokenType.Let */
     ],
-    [
-      "struct",
-      "struct"
-      /* TokenType.Struct */
-    ],
-    [
-      "union",
-      "union"
-      /* TokenType.Union */
-    ],
-    [
-      "variant",
-      "variant"
-      /* TokenType.Variant */
-    ],
-    [
-      "size_of",
-      "size_of"
-      /* TokenType.Sizeof */
-    ],
-    [
-      "as",
-      "as"
-      /* TokenType.As */
-    ],
-    [
-      "unit",
-      "unit"
-      /* TokenType.Unit */
-    ],
-    [
-      "never",
-      "never"
-      /* TokenType.Never */
-    ],
+    // control
     [
       "for",
       "for"
@@ -329562,21 +330259,59 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "return"
       /* TokenType.Return */
     ],
+    // type (definitions and keywords)
     [
-      "true",
-      "true"
-      /* TokenType.True */
+      "unit",
+      "unit"
+      /* TokenType.Unit */
     ],
     [
-      "false",
-      "false"
-      /* TokenType.False */
+      "never",
+      "never"
+      /* TokenType.Never */
     ],
     [
-      "null",
-      "null"
-      /* TokenType.Null */
+      "typealias",
+      "typealias"
+      /* TokenType.TypeAlias */
     ],
+    [
+      "struct",
+      "struct"
+      /* TokenType.Struct */
+    ],
+    [
+      "union",
+      "union"
+      /* TokenType.Union */
+    ],
+    [
+      "variant",
+      "variant"
+      /* TokenType.Variant */
+    ],
+    [
+      "size_of",
+      "size_of"
+      /* TokenType.Sizeof */
+    ],
+    // names and symbols
+    [
+      "namespace",
+      "namespace"
+      /* TokenType.Namespace */
+    ],
+    [
+      "import",
+      "import"
+      /* TokenType.Import */
+    ],
+    [
+      "as",
+      "as"
+      /* TokenType.As */
+    ],
+    // definitions
     [
       "function",
       "function"
@@ -329601,6 +330336,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "type_bound",
       "type_bound"
       /* TokenType.TypeBound */
+    ],
+    // external declarations
+    [
+      "declare",
+      "declare"
+      /* TokenType.Declare */
     ]
   ]);
   var Token4 = class {
@@ -329684,17 +330425,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     pipePipe: "PIPE_PIPE",
     equals: "EQUALS",
     semiColon: "SEMICOLON",
+    dotDot: "DOT_DOT",
+    colonColon: "COLON_COLON",
     sizeOfKeyword: "SIZEOF",
     asKeyword: "AS",
     returnKeyword: "RETURN",
     constKeyword: "CONST",
     varKeyword: "VAR",
+    letKeyword: "LET",
     ifKeyword: "IF",
     elseKeyword: "ELSE",
     switchKeyword: "SWITCH",
     caseKeyword: "CASE",
     forKeyword: "FOR",
     whileKeyword: "WHILE",
+    declareKeyword: "declareKeyword",
     functionKeyword: "function",
     watFunctionKeyword: "watFunction",
     operatorKeyword: "operator",
@@ -329708,7 +330453,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     neverKeyword: "never",
     breakKeyword: "break",
     continueKeyword: "continue",
-    extendsKeyword: "extends",
+    importKeyword: "import",
     numberMatcher: "NUMBER_LITERAL",
     identifier: "IDENTIFIER",
     watBlob: "WAT_BLOB",
@@ -329785,8 +330530,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     callExpressionTail: "callExpressionTail",
     indexingExpressionMultiMatch: "indexingExpressionMultiMatch",
     indexingExpressionTail: "indexingExpressionTail",
-    expression: "expression",
-    optionalExpression: "optionalExpression",
+    valueExpression: "valueExpression",
+    optionalValueExpression: "optionalValueExpression",
     expressionTerms: "expressionTerms",
     bracketedExpression: "(exp)",
     variableDeclarationOperators: "const/var",
@@ -329795,6 +330540,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     assignmentStatement: "assignmentStatement",
     structLiteralAssignments: "structLiteralAssignments",
     derefExpression: "derefExpression",
+    declareFunctionStatement: "declareFunctionStatement",
+    declarationStatements: "declarationStatements",
     statement: "statement",
     statements: "statement*",
     block: "block",
@@ -329821,11 +330568,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     compositeDefinition: "compositeDefinition",
     compositeFields: "compositeFields",
     typeboundRequirements: "typeboundConstraints",
+    pathComponent: "pathComponent",
+    pathTail: "pathTail",
+    pathSegment: "pathSegment",
+    pathExpression: "pathExpression",
+    importStatement: "importStatement",
+    namespaceKeyword: "namespace",
+    namespaceDefinition: "namespaceDefinition",
     typeAliasingStatement: "typeAliasingStatement",
     typeExpression: "typeExpression",
+    parenthizedTypeExpression: "parenthizedTypeExpression",
     pointerTypeExpression: "pointerTypeExpression",
     arraySizeMatcher: "arraySizeMatcher",
     arrayTypeExpression: "arrayTypeExpression",
+    unitTupleTypeExpression: "unitTupleTypeExpression",
+    itemTupleTypeExpression: "itemTupleTypeExpression",
     tupleTypeExpression: "tupleTypeExpression",
     oldStyleFunctionTypeExpression: "oldStyleFunctionTypeExpression",
     typescriptStyleFunctionTypeExpression: "typescriptStyleFunctionTypeExpression",
@@ -329879,12 +330636,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var ASSIGNMENT_OPERATORS = {};
   ASSIGNMENT_OPERATORS[PARSER_RULE_NAMES.equals] = "=";
 
-  // ../compiler/dist/src/compiler/SemanticError.js
-  function formatErrorMessage(message) {
-    return message.replaceAll("\n", " ").replaceAll("	", "").replaceAll(/\s+/g, " ");
-  }
-  __name(formatErrorMessage, "formatErrorMessage");
-
   // ../compiler/dist/src/compiler/wasm/WasmTypes.js
   var WasmScriptTypeToWasmNumberType = {
     bool: "i32",
@@ -329898,6 +330649,432 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     u64: "i64",
     f32: "f32",
     f64: "f64"
+  };
+
+  // ../compiler/dist/src/compiler/wasm/WasmUtils.js
+  function formatComment(str) {
+    if (str.trim().length == 0) {
+      return "";
+    }
+    str = str.replace(/;/g, "_");
+    return `(; ${str.trim()} ;)`;
+  }
+  __name(formatComment, "formatComment");
+
+  // ../compiler/dist/src/compiler/wasm/WasmDefinitions.js
+  var WasmFuncParam = class {
+    static {
+      __name(this, "WasmFuncParam");
+    }
+    node;
+    label;
+    type;
+    constructor(node, label, type) {
+      this.node = node;
+      this.label = label;
+      this.type = type;
+      if (label != void 0 && !label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+    }
+    toWatJson(options2) {
+      if (this.label == void 0) {
+        return ["param", this.type];
+      } else {
+        return ["param", this.label, this.type];
+      }
+    }
+  };
+  var WasmFuncReturn = class {
+    static {
+      __name(this, "WasmFuncReturn");
+    }
+    node;
+    type;
+    constructor(node, type) {
+      this.node = node;
+      this.type = type;
+    }
+    toWatJson(options2) {
+      return ["result", this.type];
+    }
+  };
+  var WasmFuncLocal = class {
+    static {
+      __name(this, "WasmFuncLocal");
+    }
+    node;
+    label;
+    type;
+    constructor(node, label, type) {
+      this.node = node;
+      this.label = label;
+      this.type = type;
+      if (label != void 0 && !label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+    }
+    toWatJson(options2) {
+      if (this.label == void 0) {
+        return ["local", this.type];
+      } else {
+        return ["local", this.label, this.type];
+      }
+    }
+  };
+  var WasmFunction = class {
+    static {
+      __name(this, "WasmFunction");
+    }
+    node;
+    label;
+    params;
+    returns;
+    locals;
+    body;
+    constructor(node, label, params, returns, locals, body) {
+      this.node = node;
+      this.label = label;
+      this.params = params;
+      this.returns = returns;
+      this.locals = locals;
+      this.body = body;
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+    }
+    toWatJson(options2) {
+      return [
+        `func ${this.label}`,
+        ...this.params.map((p) => p.toWatJson(options2)),
+        ...this.returns.map((r) => r.toWatJson(options2)),
+        ...this.locals.map((l) => l.toWatJson(options2)),
+        ...this.body.map((b) => b.toWatJson(options2))
+      ];
+    }
+  };
+  var WasmFunctionSignature = class {
+    static {
+      __name(this, "WasmFunctionSignature");
+    }
+    node;
+    label;
+    params;
+    returns;
+    // wasm function definitions just have the label, params and returns. They don't have a body (and no locals either)
+    constructor(node, label, params, returns) {
+      this.node = node;
+      this.label = label;
+      this.params = params;
+      this.returns = returns;
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+    }
+    toWatJson(options2) {
+      return [
+        `func ${this.label}`,
+        ...this.params.map((p) => p.toWatJson(options2)),
+        ...this.returns.map((r) => r.toWatJson(options2))
+      ];
+    }
+  };
+  var WasmImport = class {
+    static {
+      __name(this, "WasmImport");
+    }
+    node;
+    namespace;
+    name;
+    type;
+    constructor(node, namespace, name, type) {
+      this.node = node;
+      this.namespace = namespace;
+      this.name = name;
+      this.type = type;
+    }
+    toWatJson(options2) {
+      const internal = this.type.toWatJson(options2);
+      return ["import", `"${this.namespace}"`, `"${this.name}"`, internal];
+    }
+  };
+  var WasmTable = class {
+    static {
+      __name(this, "WasmTable");
+    }
+    node;
+    label;
+    initialSize;
+    tableType;
+    constructor(node, label, initialSize, tableType) {
+      this.node = node;
+      this.label = label;
+      this.initialSize = initialSize;
+      this.tableType = tableType;
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+    }
+    toWatJson(options2) {
+      return [`table `, this.label, `${this.initialSize}`, this.tableType];
+    }
+  };
+  var WasmElem = class {
+    static {
+      __name(this, "WasmElem");
+    }
+    node;
+    tableLabel;
+    initialIndex;
+    functionLabels;
+    constructor(node, tableLabel, initialIndex, functionLabels) {
+      this.node = node;
+      this.tableLabel = tableLabel;
+      this.initialIndex = initialIndex;
+      this.functionLabels = functionLabels;
+      if (tableLabel != void 0 && !tableLabel.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${tableLabel}`);
+      }
+      if (functionLabels.some((fLabel) => !fLabel.startsWith("$"))) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${functionLabels}`);
+      }
+    }
+    toWatJson(options2) {
+      if (this.initialIndex != void 0) {
+        return [`elem `, this.tableLabel, [this.initialIndex.toWatJson(options2)], ...this.functionLabels];
+      } else {
+        return [`elem `, this.tableLabel, ...this.functionLabels];
+      }
+    }
+  };
+  var WasmModule = class {
+    static {
+      __name(this, "WasmModule");
+    }
+    inputs;
+    constructor(inputs) {
+      this.inputs = inputs;
+    }
+    toWatJson(options2) {
+      return [
+        "module",
+        ...this.inputs.types ?? [],
+        ...(this.inputs.imports ?? []).map((e) => e.toWatJson(options2) ?? []),
+        // tags
+        ...this.inputs.globals?.map((g) => g.toWatJson(options2)) ?? [],
+        ...this.inputs.mems ?? [],
+        ...this.inputs.tables?.map((g) => g.toWatJson(options2)) ?? [],
+        ...this.inputs.funcs?.map((f) => f.toWatJson(options2)) ?? [],
+        ...this.inputs.datas?.map((f) => f.toWatJson(options2)) ?? [],
+        ...this.inputs.elems?.map((e) => e.toWatJson(options2)) ?? [],
+        ...this.inputs.exports ?? []
+      ];
+    }
+  };
+
+  // ../compiler/dist/src/compiler/wasm/WasmInstructions.js
+  var WasmInstruction = class {
+    static {
+      __name(this, "WasmInstruction");
+    }
+    node;
+    otherArgs;
+    constructor(node, otherArgs) {
+      this.node = node;
+      this.otherArgs = otherArgs;
+    }
+  };
+  var WasmConst = class extends WasmInstruction {
+    static {
+      __name(this, "WasmConst");
+    }
+    node;
+    type;
+    value;
+    otherArgs;
+    constructor(node, type, value, otherArgs) {
+      super(node, otherArgs);
+      this.node = node;
+      this.type = type;
+      this.value = value;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return `${this.type}.const ${this.value} ${formatComment(comment)}`;
+    }
+  };
+  var WasmTypedStackInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WasmTypedStackInstruction");
+    }
+    node;
+    type;
+    instruction;
+    otherArgs;
+    constructor(node, type, instruction, otherArgs) {
+      super(node, otherArgs);
+      this.node = node;
+      this.type = type;
+      this.instruction = instruction;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return `${this.type}.${this.instruction} ${formatComment(comment)}`;
+    }
+  };
+  var WatControlInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WatControlInstruction");
+    }
+    node;
+    instruction;
+    label;
+    constructor(node, instruction, label) {
+      if (label != void 0 && !label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+      super(node);
+      this.node = node;
+      this.instruction = instruction;
+      this.label = label;
+    }
+    toWatJson(options2) {
+      if (this.label == void 0) {
+        return `${this.instruction}`;
+      }
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return `${this.instruction} ${this.label} ${formatComment(comment)}`;
+    }
+  };
+  var WatVariableInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WatVariableInstruction");
+    }
+    node;
+    instruction;
+    label;
+    otherArgs;
+    constructor(node, instruction, label, otherArgs) {
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+      super(node);
+      this.node = node;
+      this.instruction = instruction;
+      this.label = label;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return `${this.instruction} ${this.label} ${formatComment(comment)}`;
+    }
+  };
+  var WasmIfInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WasmIfInstruction");
+    }
+    thenInstructions;
+    elseInstructions;
+    otherArgs;
+    constructor(node, thenInstructions, elseInstructions, otherArgs) {
+      super(node);
+      this.thenInstructions = thenInstructions;
+      this.elseInstructions = elseInstructions;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const thenBlock = this.thenInstructions.map((i) => i.toWatJson(options2));
+      if (this.elseInstructions == void 0) {
+        const res2 = ["if", ["then", ...thenBlock]];
+        return res2;
+      }
+      const elseBlock = this.elseInstructions.map((i) => i.toWatJson(options2));
+      const res = ["if", ["then", ...thenBlock], ["else", ...elseBlock]];
+      return res;
+    }
+  };
+  var WasmBlockInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WasmBlockInstruction");
+    }
+    type;
+    label;
+    instructions;
+    constructor(node, type, label, instructions) {
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+      super(node);
+      this.type = type;
+      this.label = label;
+      this.instructions = instructions;
+    }
+    toWatJson(options2) {
+      return [`${this.type} ${this.label}`, ...this.instructions.map((i) => i.toWatJson(options2))];
+    }
+  };
+  var WasmFunctionCall = class extends WasmInstruction {
+    static {
+      __name(this, "WasmFunctionCall");
+    }
+    node;
+    label;
+    otherArgs;
+    constructor(node, label, otherArgs) {
+      if (!label.startsWith("$")) {
+        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
+      }
+      super(node);
+      this.node = node;
+      this.label = label;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return `call ${this.label} ${formatComment(comment)}`;
+    }
+  };
+  var WasmStringInstruction = class extends WasmInstruction {
+    static {
+      __name(this, "WasmStringInstruction");
+    }
+    node;
+    content;
+    constructor(node, content2) {
+      super(node);
+      this.node = node;
+      this.content = content2;
+    }
+    toWatJson(options2) {
+      return this.content;
+    }
+  };
+  var WatIndirectFunctionCall = class extends WasmInstruction {
+    static {
+      __name(this, "WatIndirectFunctionCall");
+    }
+    node;
+    params;
+    results;
+    otherArgs;
+    constructor(node, params, results, otherArgs) {
+      super(node);
+      this.node = node;
+      this.params = params;
+      this.results = results;
+      this.otherArgs = otherArgs;
+    }
+    toWatJson(options2) {
+      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
+      return [
+        "call_indirect",
+        ...this.params.map((p) => p.toWatJson(options2)),
+        ...this.results.map((p) => p.toWatJson(options2)),
+        formatComment(comment)
+      ];
+    }
   };
 
   // ../compiler/dist/src/compiler/TypeBuiltIns.js
@@ -329928,22 +331105,30 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // There's no wasm instruction smaller than 1 byte even though a bool is technically 1 bit (1/8 byte)
       numberType: "Boolean",
       // 0 or 1
-      wrappingValue: "0x1",
-      // I don't think I actually need to wrap, but I'll include just in case
+      wrappingInstructions: [],
+      // no wrapping for booleans, there's no basic arithmatic
       astValues: createConfig("bool")
     },
     i8: {
       name: "i8",
       bytes: 1,
       numberType: "SignedInteger",
-      wrappingValue: "0xFF",
+      wrappingInstructions: [
+        new WasmTypedStackInstruction(void 0, "i32", "extend8_s", {
+          comment: "emulated i8"
+        })
+      ],
       astValues: createConfig("i8")
     },
     i16: {
       name: "i16",
       bytes: 2,
       numberType: "SignedInteger",
-      wrappingValue: "0xFFFF",
+      wrappingInstructions: [
+        new WasmTypedStackInstruction(void 0, "i32", "extend16_s", {
+          comment: "emulated i16"
+        })
+      ],
       astValues: createConfig("i16")
     },
     i32: {
@@ -329962,14 +331147,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       name: "u8",
       bytes: 1,
       numberType: "UnsignedInteger",
-      wrappingValue: "0xFF",
+      wrappingInstructions: [
+        new WasmConst(void 0, "i32", "0xFF"),
+        new WasmTypedStackInstruction(void 0, "i32", "and", {
+          comment: "emulated u8"
+        })
+      ],
       astValues: createConfig("u8")
     },
     u16: {
       name: "u16",
       bytes: 2,
       numberType: "UnsignedInteger",
-      wrappingValue: "0xFFFF",
+      wrappingInstructions: [
+        new WasmConst(void 0, "i32", "0xFFFF"),
+        new WasmTypedStackInstruction(void 0, "i32", "and", {
+          comment: "emulated u16"
+        })
+      ],
       astValues: createConfig("u16")
     },
     u32: {
@@ -330069,11 +331264,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     NullLiteralDefaultType: "unknown"
   };
   function createTypeExpression(typeString) {
-    return new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, typeString));
+    return new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, typeString));
   }
   __name(createTypeExpression, "createTypeExpression");
   function createAstTypeDefinition(t) {
-    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, t.identifier, t);
+    const def = new AstTypeAliasingStatement(FAKE_PARSE_TREE_NODE, t.identifier, t);
     return def;
   }
   __name(createAstTypeDefinition, "createAstTypeDefinition");
@@ -330089,7 +331284,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var BUILT_IN_POINTER_TYPE_NAMES = ["null", "unknown"];
   var BUILT_IN_POINTER_TYPE_EXPRESSIONS = BUILT_IN_POINTER_TYPE_NAMES.map((t) => {
     const iden = new AstIdentifierNode(FAKE_PARSE_TREE_NODE, t);
-    const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, iden);
+    const baseTypeExpression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, iden);
     const pointerTypeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
     return {
       baseTypeExpression,
@@ -330098,21 +331293,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   });
   var BUILD_IN_POINTER_TYPE_EXPRESSION_MAP = new Map(BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => [t.baseTypeExpression.symbolName, t.pointerTypeExpression]));
   var BUILT_IN_POINTER_TYPE_DEFINITIONS = BUILT_IN_POINTER_TYPE_EXPRESSIONS.map((t) => {
-    const def = new AstTypeDefinitionStatement(FAKE_PARSE_TREE_NODE, t.baseTypeExpression.identifier, t.pointerTypeExpression);
+    const def = new AstTypeAliasingStatement(FAKE_PARSE_TREE_NODE, t.baseTypeExpression.identifier, t.pointerTypeExpression);
     return def;
   });
   function createUnaryOperation(type, returnType, operator, watSourceCode) {
     const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
-    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+    ], new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
     return op;
   }
   __name(createUnaryOperation, "createUnaryOperation");
   function createBinaryOperation(type, returnType, operator, watSourceCode) {
     const op = new AstWatOperatorDefinition(FAKE_PARSE_TREE_NODE, operator, [
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
-      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b")), new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
-    ], new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "a")), new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type))),
+      new AstVariableWithRequiredType(FAKE_PARSE_TREE_NODE, true, new AstSimpleVariableAccess(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "b")), new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, type)))
+    ], new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, returnType)), watSourceCode);
     return op;
   }
   __name(createBinaryOperation, "createBinaryOperation");
@@ -330152,8 +331347,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     if (wasmType == void 0) {
       throw new Error(`Bug in the compiler, this should be defined`);
     }
-    const wrappingValue = BuiltInScalarConfig[type].wrappingValue;
-    const wrappingInstructionString = wrappingValue ? `    ${wasmType}.const ${wrappingValue}    ${wasmType}.and ` : "";
+    const wrappingInstructions = BuiltInScalarConfig[type].wrappingInstructions ?? [];
     let numberType;
     if (type.startsWith("u")) {
       numberType = "UnsignedInteger";
@@ -330176,7 +331370,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     for (const opName of SUPPORTED_BINARY_MATH_OPERATORS) {
       const inst = numberTypeToInstruction[numberType][opName];
-      const instructionString = `${wasmType}.${inst} ${wrappingInstructionString}`;
+      const wrappingInstructionString = wrappingInstructions.map((i) => i.toWatJson({})).join("   ");
+      const rawInstructionString = `${wasmType}.${inst}`;
+      const instructionString = wrappingInstructions.length > 0 ? `${rawInstructionString}  ${wrappingInstructionString}` : rawInstructionString;
       const op = createBinaryOperation(type, type, opName, instructionString);
       BUILT_IN_NUMERIC_OPERATIONS.push(op);
     }
@@ -330195,10 +331391,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const op = createBinaryOperation(type, type, opName, `${wasmType}.${inst}`);
         BUILT_IN_NUMERIC_OPERATIONS.push(op);
       }
+      const wrappingInstructionString = wrappingInstructions.map((i) => i.toWatJson({})).join("   ");
       const bitwiseNegateOp = createUnaryOperation(type, type, "~", `${wasmType}.const -1    ${wasmType}.xor    ${wrappingInstructionString}   (; unary bitwise negate ;)`);
       BUILT_IN_NUMERIC_OPERATIONS.push(bitwiseNegateOp);
     }
     if (numberType == "SignedInteger") {
+      const wrappingInstructionString = wrappingInstructions.map((i) => i.toWatJson({})).join("   ");
       const negateOp = createUnaryOperation(type, type, "-", `${wasmType}.const -1    ${wasmType}.mul    ${wrappingInstructionString}    (; unary negate ;)`);
       BUILT_IN_NUMERIC_OPERATIONS.push(negateOp);
     } else if (numberType == "Float") {
@@ -330206,6 +331404,29 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       BUILT_IN_NUMERIC_OPERATIONS.push(op);
     }
   }
+
+  // ../compiler/dist/src/compiler/type/CanonicalType.js
+  var CanonicalTypeDefinition = class {
+    static {
+      __name(this, "CanonicalTypeDefinition");
+    }
+    declaringScope;
+    typeType;
+    name;
+    canonicalTypeParameters;
+    sourceType;
+    constructor(declaringScope, typeType, name, canonicalTypeParameters, sourceType) {
+      this.declaringScope = declaringScope;
+      this.typeType = typeType;
+      this.name = name;
+      this.canonicalTypeParameters = canonicalTypeParameters;
+      this.sourceType = sourceType;
+    }
+    toString() {
+      const typeParams = this.canonicalTypeParameters.length > 0 ? `(${this.canonicalTypeParameters.map((t) => t.toString()).join(",")})` : "";
+      return `${this.typeType}_${this.name}.${this.declaringScope?.id}(${typeParams})`;
+    }
+  };
 
   // ../compiler/dist/src/compiler/type/TypeCommon.js
   var MAX_TYPE_DEF_RECURSION = 100;
@@ -330250,29 +331471,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     toString() {
       return this.expression.toString();
-    }
-  };
-
-  // ../compiler/dist/src/compiler/type/CanonicalType.js
-  var CanonicalTypeDefinition = class {
-    static {
-      __name(this, "CanonicalTypeDefinition");
-    }
-    declaringScope;
-    typeType;
-    name;
-    canonicalTypeParameters;
-    sourceType;
-    constructor(declaringScope, typeType, name, canonicalTypeParameters, sourceType) {
-      this.declaringScope = declaringScope;
-      this.typeType = typeType;
-      this.name = name;
-      this.canonicalTypeParameters = canonicalTypeParameters;
-      this.sourceType = sourceType;
-    }
-    toString() {
-      const typeParams = this.canonicalTypeParameters.length > 0 ? `(${this.canonicalTypeParameters.map((t) => t.toString()).join(",")})` : "";
-      return `${this.typeType}_${this.name}.${this.declaringScope?.id}(${typeParams})`;
     }
   };
 
@@ -330602,7 +331800,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     static {
       __name(this, "NeverTypeDefinition");
     }
-    expression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "Never"));
+    expression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, "Never"));
     constructor(declaringScope) {
       super(void 0);
       const globalScope = declaringScope.getGlobalScope();
@@ -331133,7 +332331,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return this;
     }
     definitionScope() {
-      return this.symbolInformation?.symbolDefinition.astCompositeDefinitionNode?.definitionScope;
+      return this.symbolInformation?.symbolDefinition.compositeDefinitionNode?.definitionScope;
     }
     formatToString(compositeType) {
       let typeParametersString = "";
@@ -331371,8 +332569,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       for (const requirement of this.requirements) {
         const name = requirement.name;
         const uninstantiatedFunctionSignatures = requirement.functionSignatures;
-        const lookup = useSiteScope.findCallableSymbol(name);
-        if (lookup.success == false) {
+        const lookup = useSiteScope.findSymbol(name);
+        if (lookup == void 0) {
+          failedLookups.push(name);
+          continue;
+        }
+        const resolvedDefintion = lookup.symbolDefinition.resolveSymbol();
+        if (!(resolvedDefintion instanceof CallableSymbolDefinition)) {
           failedLookups.push(name);
           continue;
         }
@@ -331383,9 +332586,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
           const requirementFunctionType = requirementFunctionTypeResp.type;
           let hasMatch = false;
-          let symbol = lookup.symbol;
+          let symbol = lookup;
           while (symbol != void 0) {
-            for (const overload of symbol.symbolDefinition.overloads) {
+            for (const overload of resolvedDefintion.overloads) {
               const instantiatedOverloadType = overload.typeDefinition;
               const functionParamTypesEqual = requirementFunctionType.areParamTypesEqual(instantiatedOverloadType);
               const returnTypeEqual = requirementFunctionType.returnType.equals(instantiatedOverloadType.returnType);
@@ -331597,7 +332800,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (this.resolvedType != void 0) {
         return this.resolvedType;
       }
-      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.IntLiteralDefaultType));
+      const typeExpression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.IntLiteralDefaultType));
       const res = this.declaringScope.resolveTypeDefinition(typeExpression);
       if (!res.success) {
         throw new Error("TODO");
@@ -331621,7 +332824,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (this.resolvedType != void 0) {
         return this.resolvedType;
       }
-      const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.FloatLiteralDefaultType));
+      const typeExpression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.FloatLiteralDefaultType));
       const res = this.declaringScope.resolveTypeDefinition(typeExpression);
       if (!res.success) {
         throw new Error("TODO");
@@ -331643,7 +332846,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.declaringScope = declaringScope;
     }
     resolveType() {
-      const baseTypeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.NullLiteralDefaultType));
+      const baseTypeExpression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, new AstIdentifierNode(FAKE_PARSE_TREE_NODE, CompilerDefaultTypes.NullLiteralDefaultType));
       const typeExpression = new PointerTypeExpression(FAKE_PARSE_TREE_NODE, baseTypeExpression);
       const res = this.declaringScope.resolveTypeDefinition(typeExpression);
       if (!res.success) {
@@ -331715,30 +332918,26 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return { success: true, type: new PointerTypeDefinition(typeExpression, scope) };
     }
     const symbolName = typeExpression.symbolName;
-    const symbol = scope.findSymbolWithType(
-      symbolName,
-      "Type"
-      /* SymbolType.Type */
-    );
+    const symbol = scope.findSymbol(symbolName);
     if (symbol == void 0) {
       throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName}`);
     }
-    if (symbol.symbolDefinition.symbolType != "Type") {
+    const resolvedSymbolDefinition = symbol.symbolDefinition.resolveSymbol();
+    if (!(resolvedSymbolDefinition instanceof TypeSymbolDefinition)) {
       throw new Error(`Lookup for symbol '${symbolName}' failed in scope: ${scope.scopeName} - symbol is not a type and is instead ${symbol.symbolDefinition.symbolType}`);
     }
     const symbolInformation = symbol;
-    const symbolDefinition = symbolInformation.symbolDefinition;
     if (BUILT_IN_SCALAR_TYPE_NAMES.includes(symbolName)) {
       return { success: true, type: new ScalarTypeDefinition(symbolInformation) };
-    } else if (symbolDefinition.genericTypeParamInfo != void 0) {
-      const genericParamInfo = symbolDefinition.genericTypeParamInfo;
+    } else if (resolvedSymbolDefinition.genericTypeParamInfo != void 0) {
+      const genericParamInfo = resolvedSymbolDefinition.genericTypeParamInfo;
       let typeBoundInfo = void 0;
       if (genericParamInfo.typeBoundInfo != void 0) {
         const typeParameterExpression = genericParamInfo.typeBoundInfo.typeParameterExpression;
         const typeBoundSymbol = genericParamInfo.typeBoundInfo.typeBoundSymbol;
-        const respTypeBound = scope.resolveTypeBound(typeBoundSymbol.symbolName);
+        const respTypeBound = scope.resolveTypeBoundDefinition(typeBoundSymbol.name);
         if (respTypeBound.success == false) {
-          throw new Error(`Failed to resolve type bound with name ${typeBoundSymbol.symbolName}.`);
+          throw new Error(`Failed to resolve type bound with name ${typeBoundSymbol.name}.`);
         }
         const typeBoundDef = respTypeBound.definition;
         const typeBoundArgsExpression = typeParameterExpression.typeBoundExpression.typeArguments;
@@ -331764,14 +332963,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           typeBoundTypeArguments: typeBoundArgsDefs
         };
       }
-      const out = new TypeParameterDefinition(symbolInformation, symbolDefinition.genericTypeParamInfo.position, typeBoundInfo);
+      const out = new TypeParameterDefinition(symbolInformation, resolvedSymbolDefinition.genericTypeParamInfo.position, typeBoundInfo);
       return { success: true, type: out };
-    } else if (symbolDefinition.astCompositeDefinitionNode instanceof AstCompositeDefinition) {
-      const typeDefAstNode = symbolDefinition.astCompositeDefinitionNode;
+    } else if (resolvedSymbolDefinition.compositeDefinitionNode != void 0) {
+      const typeDefAstNode = resolvedSymbolDefinition.compositeDefinitionNode;
       const astFields = typeDefAstNode.fieldMap;
       const definitionScope = typeDefAstNode.definitionScope;
+      if (definitionScope == void 0) {
+        throw new Error(`TypeDef: ${typeDefAstNode.identifier.name}. Definition scopes should be bound to type definitions`);
+      }
       const genericParameters = typeDefAstNode.typeParameters?.map((t) => {
-        const td = definitionScope.resolveTypeDefinition(new BaseTypeExpression(t.identifier.parseTreeNode, t.identifier), recursionDepth + 1);
+        const td = definitionScope.resolveTypeDefinition(new NamedTypeExpression(t.identifier.parseTreeNode, t.identifier), recursionDepth + 1);
         if (!td.success || !(td.type instanceof TypeParameterDefinition)) {
           throw new Error(`Unable to resolve type definition ${t.identifier.name} to generic type parameter`);
         }
@@ -331819,7 +333021,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return { success: true, type: out };
     }
-    throw new Error(`Not yet implemented for type: ${symbolDefinition.typeExpression.toString()}`);
+    throw new Error(`Not yet implemented for type: ${resolvedSymbolDefinition.typeExpression.toString()}`);
   }
   __name(mapExpressionToDefinition, "mapExpressionToDefinition");
 
@@ -331880,22 +333082,129 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return void 0;
     }
+    symbolNamesInThis() {
+      return [...this._backingMap.keys()];
+    }
   };
+
+  // ../compiler/dist/src/compiler/symbol/SymbolTableToMarkdownTable.js
+  function toMarkdownString4(table, includeBuiltIn = false, includeHeader = true, automaticPadToLength = true) {
+    const IDENTIFIER_PADDING = 20;
+    const KIND_PADDING = 15;
+    const PATH_EXPRESSION_PADDING = 5;
+    const TYPE_EXPRESSION_PADDING = 25;
+    const SCOPE_PADDING = 35;
+    const TYPE_DEF_PADDING = 35;
+    const SOURCE_LOCATION_PADDING = 10;
+    const paddingConfig = {
+      identifierPadding: IDENTIFIER_PADDING,
+      kindPadding: KIND_PADDING,
+      pathExpressionPadding: PATH_EXPRESSION_PADDING,
+      typeExpressionPadding: TYPE_EXPRESSION_PADDING,
+      scopePadding: SCOPE_PADDING,
+      typeDefPadding: TYPE_DEF_PADDING,
+      sourceLocationPadding: SOURCE_LOCATION_PADDING
+    };
+    let rows = [];
+    getRowsForMarkdownString(table, rows, includeBuiltIn);
+    rows = rows.filter((r) => r.definitionData.skip != true);
+    let content2 = "";
+    if (automaticPadToLength) {
+      const getNextMultiple = /* @__PURE__ */ __name((n, multiple) => {
+        return n + n % multiple;
+      }, "getNextMultiple");
+      const TEXT_BUFFER = 2;
+      for (const row of rows) {
+        paddingConfig.identifierPadding = Math.max(paddingConfig.identifierPadding, row.identifier.length + TEXT_BUFFER);
+        paddingConfig.kindPadding = Math.max(paddingConfig.kindPadding, row.symbolType.length + TEXT_BUFFER);
+        paddingConfig.pathExpressionPadding = Math.max(paddingConfig.pathExpressionPadding, row.pathExpression.length + TEXT_BUFFER);
+        paddingConfig.typeExpressionPadding = Math.max(paddingConfig.typeExpressionPadding, row.definitionData.binderResolvedInfo.length + TEXT_BUFFER);
+        paddingConfig.scopePadding = Math.max(paddingConfig.scopePadding, row.scope.length + TEXT_BUFFER);
+        paddingConfig.typeDefPadding = Math.max(paddingConfig.typeDefPadding, row.definitionData.checkerResolvedInfo.length + TEXT_BUFFER);
+        paddingConfig.sourceLocationPadding = Math.max(paddingConfig.sourceLocationPadding, row.definitionData.source.length + TEXT_BUFFER);
+      }
+      let key;
+      for (key in paddingConfig) {
+        paddingConfig[key] = getNextMultiple(paddingConfig[key], 4);
+      }
+    }
+    rows = rows.map((r) => {
+      const out = {
+        identifier: r.identifier.padEnd(paddingConfig.identifierPadding),
+        symbolType: r.symbolType.padEnd(paddingConfig.kindPadding),
+        pathExpression: r.pathExpression.padEnd(paddingConfig.pathExpressionPadding),
+        scope: r.scope.padEnd(paddingConfig.scopePadding),
+        definitionData: {
+          binderResolvedInfo: r.definitionData.binderResolvedInfo.padEnd(paddingConfig.typeExpressionPadding),
+          checkerResolvedInfo: r.definitionData.checkerResolvedInfo.padEnd(paddingConfig.typeDefPadding),
+          source: r.definitionData.source.padEnd(paddingConfig.sourceLocationPadding)
+        }
+      };
+      return out;
+    });
+    let header = "";
+    if (includeHeader) {
+      header = `|${"identifier".padEnd(paddingConfig.identifierPadding)} |${"kind".padEnd(paddingConfig.kindPadding)} |${"path".padEnd(paddingConfig.pathExpressionPadding)} |${"declaring scope".padEnd(paddingConfig.scopePadding)} |${"binder info".padEnd(paddingConfig.typeExpressionPadding)} |${"checker info".padEnd(paddingConfig.typeDefPadding)} |${"source".padEnd(paddingConfig.sourceLocationPadding)} |
+`;
+      header += `|${"-".repeat(paddingConfig.identifierPadding + 1)}|${"-".repeat(paddingConfig.kindPadding + 1)}|${"-".repeat(paddingConfig.pathExpressionPadding + 1)}|${"-".repeat(paddingConfig.scopePadding + 1)}|${"-".repeat(paddingConfig.typeExpressionPadding + 1)}|${"-".repeat(paddingConfig.typeDefPadding + 1)}|${"-".repeat(paddingConfig.sourceLocationPadding + 1)}|
+`;
+    }
+    content2 += header;
+    for (const row of rows) {
+      content2 += `|${row.identifier} |${row.symbolType} |${row.pathExpression} |${row.scope} |${row.definitionData.binderResolvedInfo} |${row.definitionData.checkerResolvedInfo} |${row.definitionData.source} |
+`;
+    }
+    return content2;
+  }
+  __name(toMarkdownString4, "toMarkdownString");
+  function formatTypeString(t) {
+    return t?.toString() ?? "inferred";
+  }
+  __name(formatTypeString, "formatTypeString");
+  function getRowsForMarkdownString(table, outParamRows, includeBuiltIn = false) {
+    for (const [key, symbol] of table._backingMap.entries()) {
+      const isBuiltIn = symbol.symbolDefinition instanceof CallableSymbolDefinition ? false : symbol.isBuiltIn;
+      if (isBuiltIn && !includeBuiltIn) {
+        continue;
+      }
+      const markdownInfo = symbol.markdownInfo();
+      outParamRows.push(markdownInfo);
+      if (markdownInfo.definitionData.childDefinitions != void 0) {
+        const copiedRows = markdownInfo.definitionData.childDefinitions.map((c) => {
+          const copy = { ...markdownInfo };
+          copy.definitionData = c;
+          return copy;
+        });
+        outParamRows.push(...copiedRows);
+      }
+    }
+    for (const child of table.childContexts) {
+      getRowsForMarkdownString(child, outParamRows, includeBuiltIn);
+    }
+  }
+  __name(getRowsForMarkdownString, "getRowsForMarkdownString");
 
   // ../compiler/dist/src/compiler/symbol/SymbolTable.js
   var symbolTableId = 0;
+  var symbolDefCounter = 0;
+  function getAndIncSymbolDefCounter() {
+    return symbolDefCounter++;
+  }
+  __name(getAndIncSymbolDefCounter, "getAndIncSymbolDefCounter");
   var SymbolTable = class _SymbolTable extends Scope {
     static {
       __name(this, "SymbolTable");
     }
     scopeName;
     parent;
+    sourceNode;
     id;
     _childrenContexts = [];
-    constructor(scopeName, parent) {
+    constructor(scopeName, parent, sourceNode) {
       super(scopeName, parent);
       this.scopeName = scopeName;
       this.parent = parent;
+      this.sourceNode = sourceNode;
       parent?._childrenContexts.push(this);
       this.id = symbolTableId++;
     }
@@ -331909,82 +333218,108 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return { info: out.info, scope: out.scope };
     }
+    // only checks this scope for symbols of the type. Mostly used in findAllSymbolsOfTypeIn(Children/Parents)
+    findAllSymbolsInThis(out = []) {
+      for (const entry of this._backingMap.entries()) {
+        const info = entry[1];
+        out.push(info);
+      }
+      return out;
+    }
+    findAllSymbolsInThisAndChildren(out = []) {
+      this.findAllSymbolsInThis(out);
+      for (const child of this._childrenContexts) {
+        child.findAllSymbolsInThisAndChildren(out);
+      }
+      return out;
+    }
+    findAllSymbolsInThisAndParents(out = []) {
+      let currentParent = this.parent;
+      this.findAllSymbolsInThis(out);
+      while (currentParent != void 0) {
+        currentParent.findAllSymbolsInThis(out);
+        currentParent = currentParent.parent;
+      }
+      return out;
+    }
     /**
-     * Finds a symbol by name and kind.
+     * This method can be used to find a function's scope - to be used for finding all the params/locals/return type
+     * since they need to be declared at the top of the function.
      */
-    findSymbolWithType(name, kind) {
-      const res = this._backingMap.get(name);
-      if (res != void 0 && res.symbolDefinition.symbolType == kind) {
-        return res;
-      } else if (res != void 0 && res.symbolDefinition.symbolType != kind) {
+    findScopeByName(scopeName) {
+      if (this.scopeName == scopeName) {
+        return this;
+      }
+      const matches = this._childrenContexts.map((c) => c.findScopeByName(scopeName)).filter((c) => c != void 0);
+      if (matches.length == 0) {
         return void 0;
-      } else if (this.parent != void 0) {
-        const out = this.parent.findSymbolWithType(name, kind);
-        return out;
+      } else if (matches.length > 1) {
+        throw new Error("Duplicate scope names found. They should be globally unique");
+      } else {
+        return matches[0];
       }
-      return void 0;
+    }
+    get size() {
+      return this._backingMap.size;
+    }
+    get childContexts() {
+      return this._childrenContexts;
+    }
+    get isGlobal() {
+      return this.parent == void 0;
     }
     /**
-     * Attempts to find a symbol in only the current context, also filtered by the input kind
+     * Returns the global (root) scope.
      */
-    findSymbolInThisScopeOfKind(name, kind) {
-      const out = this.findSymbolInThisScope(name);
-      if (out != void 0 && out.symbolDefinition.symbolType == kind) {
-        return out;
+    getGlobalScope() {
+      if (this.parent == void 0) {
+        return this;
       }
-      return void 0;
+      return this.parent.getGlobalScope();
     }
-    /*
-     * The findX methods will lookup the symbol by the symbol name.
-     * If the symbol is found, then the symbol will be returned.
-     * If the symbol is of the incorrect type or the symbol cannot be found, then a failure will be indicated
-     * and the incorrectly typed or missing symbol will be returned.
+    /**
+     * Checks for binding conflicts.
      *
-     * These findX methods are meant to be very simple, if I need a more complex resolution then I should use the resolveX
-     * methods, which handle more complicated lookups (e.g. resolving a typeDef from a typeExpression, finding or resolving and function overload, maybe finding a specialization,
-     * though I'm not certain about that)
+     * There's three main cases when there's a binding conflict:
+     * 1. If there's already a symbol with the same name (more complicated for functions as they overload) in the same scope
+     * 2. If the new symbol is shadowing a symbol that's unshadowable (generally a built-in is not shadowable)
+     *
+     * TODO:
+     * 3. If the new symbol is shadowing a symbol of a different type (e.g. variables can't shadow types or functions)
+     * As a collary of point 2 - shadowing the function name, type parameters or arguments in the function's body is
+     *  something I plan to disallow, but its not implemented yet.
      */
-    findVariableSymbol(symbolName) {
-      const s = this.findSymbol(symbolName);
-      if (s != void 0 && s.symbolDefinition.symbolType == "Variable") {
-        return { success: true, symbol: s };
+    checkForBindingConflicts(node, symbolName) {
+      const hasExisting = this.findSymbol(symbolName);
+      if (hasExisting?.declaringScope == this) {
+        const error = {
+          type: "SymbolNameAlreadyUsed",
+          message: formatErrorMessage(`Name '${symbolName}' is redeclared in scope: ${this.scopeName}. 
+        Current occurrence: ${node.firstToken.createTokenSourceString()}.
+        Referenced on: ${node.firstToken.createTokenSourceString()}.`),
+          firstToken: node.firstToken
+        };
+        return { success: false, error };
       }
-      return { success: false, symbol: s };
-    }
-    findTypeSymbol(symbolName) {
-      const s = this.findSymbol(symbolName);
-      if (s != void 0 && s.symbolDefinition.symbolType == "Type") {
-        return { success: true, symbol: s };
+      if (hasExisting?.isShadowable == false) {
+        const error = {
+          type: "ShadowingDisallowed",
+          message: formatErrorMessage(`Variable '${symbolName}' is shadowing a name that is not shadowable. 
+          Current occurrence: ${node.firstToken.createTokenSourceString()}
+          Referenced on: ${node.firstToken.createTokenSourceString()}.`),
+          firstToken: node.firstToken
+        };
+        return { success: false, error };
       }
-      return { success: false, symbol: s };
-    }
-    findTypeBoundSymbol(symbolName) {
-      const s = this.findSymbol(symbolName);
-      if (s != void 0 && s.symbolDefinition.symbolType == "TypeBound") {
-        return { success: true, symbol: s };
-      }
-      return { success: false, symbol: s };
-    }
-    findCallableSymbol(symbolName) {
-      const s = this.findSymbol(symbolName);
-      if (s != void 0 && (s.symbolDefinition.symbolType == "Function" || s.symbolDefinition.symbolType == "Operator")) {
-        return { success: true, symbol: s };
-      }
-      return { success: false, symbol: s };
+      return { success: true, shadow: hasExisting };
     }
     /**
      * Declares a symbol in the current scope.
      *
-     * Declarations do not do any checking! Checking will need to be done in the binder or the checker
-     *
-     * If the symbol exists in the current scope, an error is returned
-     * If the symbol exists in a parent scope and cannot be shadowed an error is returned
-     * Variables and Types can shadow different types (e.g. a variable can shadow a type name) but functions cannot
-     *  shadow different types as that would make overload resolution confusing (as you can do stuff like f(i32) -> x: i32 -> f(i32) and that would break function overload resolution)
-     * If its successful, then undefined will be returned. If there was an error, then the error will be returned.
+     * Declarations do some minor checking - just that there's no binding conflicts
      */
-    declareVariable(node, inputScopeType, isBuiltIn = false) {
-      const resp = this.checkForBindingConflicts(node);
+    declareVariable(node, bindingPath, inputScopeType, isBuiltIn = false) {
+      const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
       }
@@ -332003,98 +333338,83 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else {
         scopeType = inputScopeType;
       }
-      const t = {
-        symbolType: "Variable",
-        declaredType: variable.typeExpression,
-        resolvedType: void 0,
-        scopeType,
-        definitionNode: node,
-        isConst: variable.isConstant
-      };
-      const symbol = {
+      const variableSymbolDef = new VariableSymbolDefinition(node, node.symbolName, variable.typeExpression, scopeType, variable.isConstant);
+      const symbol = SymbolInformation4.create({
         symbolName: node.symbolName,
+        bindingPath,
         declaringScope: this,
-        symbolDefinition: t,
+        symbolDefinition: variableSymbolDef,
         shadow,
         isShadowable: true,
         // I guess variables should always be shadowable
-        isBuiltIn
-      };
+        isBuiltIn,
+        isExternallyDefined: false
+        // TODO: eventually support global declarations
+      });
       this.setSymbol(node.symbolName, symbol);
       node.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
-    declareType(node, isBuiltIn = false) {
-      const resp = this.checkForBindingConflicts(node);
+    declareType(node, bindingPath, isBuiltIn = false) {
+      const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
       }
       const shadow = resp.shadow;
-      let compositeDef = void 0;
-      if (node instanceof AstCompositeDefinition) {
-        compositeDef = node;
-      }
-      const typeExpression = new BaseTypeExpression(node.parseTreeNode, node.identifier);
-      const t = {
-        symbolType: "Type",
-        typeExpression,
-        definitionNode: node,
-        genericTypeParamInfo: void 0,
-        astCompositeDefinitionNode: compositeDef,
-        typeDefinition: void 0
-        // will be resolved in the checker
-      };
-      const symbol = {
+      const typeExpression = new NamedTypeExpression(node.parseTreeNode, node.identifier);
+      const symbolDef = new TypeSymbolDefinition(node, typeExpression);
+      const symbol = SymbolInformation4.create({
         symbolName: node.symbolName,
+        bindingPath,
         declaringScope: this,
-        symbolDefinition: t,
+        symbolDefinition: symbolDef,
         shadow,
         isShadowable: !isBuiltIn,
-        isBuiltIn
-      };
+        isBuiltIn,
+        isExternallyDefined: false
+        // I think types are never externally defined
+      });
       this.setSymbol(node.symbolName, symbol);
       node.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
-    declareTypeBound(node, isBuiltIn = false) {
-      const resp = this.checkForBindingConflicts(node);
+    declareTypeBound(node, bindingPath, isBuiltIn = false) {
+      const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
       }
       const shadow = resp.shadow;
-      const t = {
-        symbolType: "TypeBound",
-        definitionNode: node,
-        typeBoundDefinition: void 0
-        // set to undefined at the start, will be set when use
-      };
-      const symbol = {
+      const symbolDef = new TypeBoundSymbolDefinition(node);
+      const symbol = SymbolInformation4.create({
         symbolName: node.symbolName,
+        bindingPath,
         declaringScope: this,
-        symbolDefinition: t,
+        symbolDefinition: symbolDef,
         shadow,
         isShadowable: !isBuiltIn,
-        isBuiltIn
-      };
+        isBuiltIn,
+        isExternallyDefined: false
+        // TypeBounds need the full definition to be useful, so they can't be externally defined
+      });
       this.setSymbol(node.symbolName, symbol);
       node.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
-    declareCallable(node, isBuiltIn = false) {
+    declareCallable(node, bindingPath, isExternallyDefined, isBuiltIn = false) {
       let symbolType;
-      if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition) {
+      if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstDeclareFunctionStatement) {
         symbolType = "Function";
       } else if (node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition) {
         symbolType = "Operator";
       } else {
         throw new Error(`Symbol type mapping is not defined for the type: ${node.constructor.name}`);
       }
-      return this.bindCallableName({ type: symbolType, node }, isBuiltIn);
+      return this.bindCallableName({ type: symbolType, node }, bindingPath, isExternallyDefined, isBuiltIn);
     }
     // Imports the functions defined in the type bound into the symbol table.
     // This is intended to be called from the function's definitionScope so that the function signatures for
     // the type bound are defined in the function
-    declareTypeBoundFunctions(typeParameter, symbol) {
+    declareTypeBoundFunctions(typeParameter, bindingPath, symbol) {
       const typeBoundName = symbol.symbolName;
       const typeBoundDefinitionScope = symbol.symbolDefinition.definitionNode.definitionScope;
       if (typeBoundDefinitionScope == void 0) {
@@ -332132,11 +333452,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const fakeDefinitionNode = new AstTypeBoundRequirementFakeCallableNode(FAKE_PARSE_TREE_NODE, identifierName, void 0, fakeParameterNodes, returnTypeExpression);
         const typeBoundInformation = {
           typeParameterExpression: typeParameter,
-          typeBoundSymbol: symbol,
+          typeBoundSymbol: symbol.symbolDefinition,
           resolvedTypeBoundInfo: void 0
         };
         const overload = {
           definitionNode: fakeDefinitionNode,
+          bindingPath,
           declaringScope: this,
           typeParametersExpression: void 0,
           typeParameterDefinitions: void 0,
@@ -332144,16 +333465,67 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           typeDefinition: void 0,
           specializations: [],
           typeBoundSource: typeBoundInformation,
-          isBuiltIn: false
+          isBuiltIn: false,
+          isWatNative: false,
+          // the type bound "fake" nodes can't be wat-native
+          isExternallyDefined: false
+          // the type bound created functions are just stubs so any value is fine here
         };
-        const existingInThisScope = this.findSymbolInThisScopeOfKind(requirement.symbolName, symbolType);
+        const existingInThisScope = this.findSymbolInThisScope(requirement.symbolName);
         const shadow = this.findSymbolAndScope(requirement.symbolName);
-        const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(fakeDefinitionNode, shadow, existingInThisScope, overload, symbolType, false);
+        const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(fakeDefinitionNode, bindingPath, shadow, existingInThisScope, overload, symbolType, false);
         fakeDefinitionNode.definitionScope = typeBoundDefinitionScope;
-        const fakeBodyScope = new _SymbolTable(`${identifierName}:type_bound_function:body`, typeBoundDefinitionScope);
+        const fakeBodyScope = new _SymbolTable(`${identifierName}:type_bound_function:body`, typeBoundDefinitionScope, fakeDefinitionNode);
         fakeDefinitionNode.bodyScope = fakeBodyScope;
         fakeDefinitionNode.symbolInformation = { symbol: symbolInfo, overload };
       }
+      return void 0;
+    }
+    declareNamespace(astNamespaceNode, bindingPath, isBuiltIn = false) {
+      const symbolName = astNamespaceNode.symbolName;
+      if (symbolName == void 0) {
+        throw new Error("TODO: I haven't thought this through yet.");
+      }
+      const resp = this.checkForBindingConflicts(astNamespaceNode, astNamespaceNode.symbolName);
+      if (resp.success == false) {
+        return resp.error;
+      }
+      const shadow = resp.shadow;
+      const t = new NamespaceSymbolDefinition(astNamespaceNode);
+      const symbol = SymbolInformation4.create({
+        symbolName,
+        bindingPath,
+        declaringScope: this,
+        symbolDefinition: t,
+        shadow,
+        isShadowable: !isBuiltIn,
+        isBuiltIn,
+        isExternallyDefined: false
+      });
+      this.setSymbol(symbolName, symbol);
+      astNamespaceNode.augmentedProperties.symbolInfo = symbol;
+      return void 0;
+    }
+    // Creates a "symbol reference" to the originally defined symbol
+    // TODO: determine how I want to handle case(name as alias) as there should be no symbol entry for the original 'name' to reduce collisions
+    createSymbolAlias(newAliasName, bindingPath, originalSymbol, aliasingAstNode, isBuiltIn = false) {
+      const bindCheckResp = this.checkForBindingConflicts(aliasingAstNode, newAliasName);
+      if (bindCheckResp.success == false) {
+        return bindCheckResp.error;
+      }
+      const shadow = bindCheckResp.shadow;
+      const ref = new SymbolReferenceDefinition(aliasingAstNode, originalSymbol);
+      const aliasInfo = SymbolInformation4.create({
+        symbolName: newAliasName,
+        bindingPath,
+        declaringScope: this,
+        symbolDefinition: ref,
+        shadow,
+        isBuiltIn,
+        isShadowable: !isBuiltIn,
+        isExternallyDefined: isBuiltIn
+      });
+      this.setSymbol(newAliasName, aliasInfo);
       return void 0;
     }
     /**
@@ -332161,7 +333533,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
      * It doesn't do any kind of overload resolution so that will have to be deferred to the actual traversal
      * for the AST Definition node
      */
-    bindCallableName(input, isBuiltIn = false) {
+    bindCallableName(input, bindingPath, isExternallyDefined, isBuiltIn = false) {
       const node = input.node;
       const existingInThisScope = this.findSymbolInThisScope(input.node.symbolName);
       if (existingInThisScope != void 0) {
@@ -332205,8 +333577,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return error;
         }
       }
+      const isWatNative = node instanceof AstWatFunctionDefinition || node instanceof AstWatOperatorDefinition;
       const overload = {
         definitionNode: node,
+        bindingPath,
         declaringScope: this,
         typeParametersExpression: node.typeParameters,
         typeParameterDefinitions: void 0,
@@ -332214,9 +333588,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         typeDefinition: void 0,
         specializations: [],
         typeBoundSource: void 0,
-        isBuiltIn
+        isBuiltIn,
+        isWatNative,
+        isExternallyDefined
       };
-      const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(node, shadow, existingInThisScope, overload, input.type, isBuiltIn);
+      const symbolInfo = this.addOverloadToSymbolInfoOrCreateNewSymbol(node, bindingPath, shadow, existingInThisScope, overload, input.type, isBuiltIn);
       node.symbolInformation = {
         symbol: symbolInfo,
         overload
@@ -332224,109 +333600,125 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.augmentedProperties.symbolInfo = node.symbolInformation;
       return void 0;
     }
-    addOverloadToSymbolInfoOrCreateNewSymbol(node, shadow, existingSymbolInScope, overload, type, isBuiltIn) {
+    addOverloadToSymbolInfoOrCreateNewSymbol(node, bindingPath, shadow, existingSymbolInScope, overload, type, isBuiltIn) {
       if (existingSymbolInScope != void 0) {
         existingSymbolInScope.symbolDefinition.overloads.push(overload);
         return existingSymbolInScope;
       } else {
-        const functionDefinition = {
-          symbolType: type,
-          overloads: [overload]
-        };
-        const symbolInfo = {
+        const functionDefinition = new CallableSymbolDefinition(node.symbolName, type, [
+          overload
+        ]);
+        const symbolInfo = SymbolInformation4.create({
           symbolName: node.symbolName,
+          bindingPath,
           declaringScope: this,
           symbolDefinition: functionDefinition,
           shadow: shadow?.info,
           isShadowable: !isBuiltIn,
-          isBuiltIn
-        };
+          isBuiltIn,
+          isExternallyDefined: false
+          // I'm not sure what to do here, as overloads can be both externally defined and not. I guess by default I'll assume not externally defined
+        });
         this.setSymbol(node.symbolName, symbolInfo);
         return symbolInfo;
       }
     }
-    bindGenericType(node, isBuiltIn = false) {
-      const resp = this.checkForBindingConflicts(node);
+    bindGenericType(node, bindingPath, isBuiltIn = false) {
+      const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
       }
       const boundsOnAstNode = node.typeBoundExpression;
       let symbolBoundsInfo = void 0;
       if (boundsOnAstNode != void 0) {
-        const boundsSymbolResp = this.findTypeBoundSymbol(boundsOnAstNode.symbolName);
-        if (boundsSymbolResp.success == false) {
+        const boundsSymbolResp = this.findSymbol(boundsOnAstNode.symbolName);
+        if (boundsSymbolResp == void 0) {
           const err = {
             firstToken: node.firstToken,
             type: "SymbolTypeMismatch",
             message: formatErrorMessage(`
             Expecting the type bounds for generic parameter: ${node._identifier.name} to be a type bounds symbol, but instead 
-            it was a ${boundsSymbolResp.symbol?.symbolDefinition?.symbolType} symbol.
+            it was a undefined symbol.
             Referenced on: ${node.firstToken.createTokenSourceString()}
             `)
           };
           return err;
         }
-        const boundsSymbol = boundsSymbolResp.symbol;
+        const resolvedType = boundsSymbolResp.symbolDefinition.resolveSymbol();
+        if (!(resolvedType instanceof TypeBoundSymbolDefinition)) {
+          const err = {
+            firstToken: node.firstToken,
+            type: "SymbolTypeMismatch",
+            message: formatErrorMessage(`
+            Expecting the type bounds for generic parameter: ${node._identifier.name} to be a type bounds symbol, but instead 
+            it was a undefined symbol.
+            Referenced on: ${node.firstToken.createTokenSourceString()}
+            `)
+          };
+          return err;
+        }
         symbolBoundsInfo = {
           typeParameterExpression: node,
           // typeBoundExpression: boundsOnAstNode,
-          typeBoundSymbol: boundsSymbol,
+          typeBoundSymbol: resolvedType,
           resolvedTypeBoundInfo: void 0
         };
       }
-      const t = {
-        symbolType: "Type",
-        typeExpression: node,
-        genericTypeParamInfo: { position: node.typeParameterIndex, typeBoundInfo: symbolBoundsInfo },
-        definitionNode: node,
-        typeDefinition: void 0
-      };
-      const symbol = {
+      const t = new TypeSymbolDefinition(node, node);
+      t.genericTypeParamInfo = { position: node.typeParameterIndex, typeBoundInfo: symbolBoundsInfo };
+      const symbol = SymbolInformation4.create({
         symbolName: node.identifier.name,
+        bindingPath,
         declaringScope: this,
         symbolDefinition: t,
         shadow: resp.shadow,
         isShadowable: !isBuiltIn,
-        isBuiltIn
-      };
+        isBuiltIn,
+        isExternallyDefined: false
+      });
       this.setSymbol(symbol.symbolName, symbol);
       return void 0;
     }
     // This is to be called in the checker if the variable did not have a type bound in the binder.
     bindVariableType(name, type) {
-      const symbol = this.findSymbolWithType(
-        name,
-        "Variable"
-        /* SymbolType.Variable */
-      );
-      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Variable") {
+      const symbol = this.findSymbol(name);
+      const resolvedSymbolDefinition = symbol?.symbolDefinition?.resolveSymbol();
+      if (!(resolvedSymbolDefinition instanceof VariableSymbolDefinition)) {
         throw new Error(`Should not happen. Failed to lookup variable with name: ${name} when binding the type to the variable`);
       }
-      if (symbol.symbolDefinition.resolvedType != void 0 && !symbol.symbolDefinition.resolvedType.equals(type)) {
-        throw new Error(`Attempting to rebind type to variable ${name}. Existing type: ${symbol.symbolDefinition.resolvedType.toString()}, new type: ${type.toString()}`);
+      if (resolvedSymbolDefinition.resolvedType != void 0 && !resolvedSymbolDefinition.resolvedType.equals(type)) {
+        throw new Error(`Attempting to rebind type to variable ${name}. Existing type: ${resolvedSymbolDefinition.resolvedType.toString()}, new type: ${type.toString()}`);
       }
-      symbol.symbolDefinition.resolvedType = type;
+      resolvedSymbolDefinition.resolvedType = type;
     }
     /**
-     * Walks from the current scope into each child-scope and finds all entries with the input type.
-     * Currently used to construct the WAT module, since all functions and type definitions need to be at the root level - but needs to be called from the global scope
-     * Actually, it will also be used to find all variables that are used in a function body and create the appropriate param/local definitions for them
+     * This function takes a symbol that's defined in an outer scope and
+     * hides it in an inner scope. This is mostly used for functions defined in functions,
+     * as I don't automatically 'close' over variables (as wasm won't support this)
      */
-    findAllSymbolsByType(symbolType, out = []) {
-      this.findAllSymbolsByTypeInThis(symbolType, out);
-      for (const child of this._childrenContexts) {
-        child.findAllSymbolsByType(symbolType, out);
+    maskSymbolInOuterScope(symbolName, isShadowable) {
+      const symbolInThisScope = this.findSymbolInThisScope(symbolName);
+      if (symbolInThisScope != void 0) {
+        throw new Error(`Attempting to mask symbol in outer scope with name: ${symbolName}, but its defined in this scope with type: ${symbolInThisScope.symbolDefinition.symbolType}`);
       }
-      return out;
-    }
-    findAllSymbolsByTypeInThis(symbolType, out = []) {
-      for (const entry of this._backingMap.entries()) {
-        const info = entry[1];
-        if (info.symbolDefinition.symbolType == symbolType) {
-          out.push(info);
-        }
+      const shadow = this.findSymbol(symbolName);
+      if (shadow == void 0) {
+        throw new Error(`Attempting to mask a symbol with name: ${symbolName} but there is no existing definition for that symbol`);
       }
-      return out;
+      const erasedSymbolDef = new ErasedSymbolDefinition();
+      const erasedSymbol = SymbolInformation4.create({
+        symbolName,
+        bindingPath: void 0,
+        // I don't think that there's a path for masking uncaptured variables
+        declaringScope: this,
+        shadow,
+        isShadowable,
+        // generally I think erased symbols should be shadowable, but I had something in my backlog to support tombstoning symbol names, and this will allow it
+        isBuiltIn: false,
+        symbolDefinition: erasedSymbolDef,
+        isExternallyDefined: false
+      });
+      this.setSymbol(symbolName, erasedSymbol);
     }
     /**
      * This method is used to resolve the callable from a callable expression.
@@ -332344,25 +333736,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (iterations > MAX_STACK_SIZE) {
           throw new Error("Too many iterations when trying to resolve a function definition from a call expression");
         }
-        const functionSymbol = currentScope.findSymbolInThisScopeOfKind(
-          callableSymbolName,
-          "Function"
-          /* SymbolType.Function */
-        );
-        const operatorSymbol = currentScope.findSymbolInThisScopeOfKind(
-          callableSymbolName,
-          "Operator"
-          /* SymbolType.Operator */
-        );
-        const symbol = functionSymbol != void 0 ? functionSymbol : operatorSymbol;
-        if (symbol == void 0) {
+        const symbol = currentScope.findSymbolInThisScope(callableSymbolName);
+        const resolvedDef = symbol?.symbolDefinition?.resolveSymbol();
+        if (!(resolvedDef instanceof CallableSymbolDefinition)) {
           currentScope = currentScope.parent;
           continue;
         }
         if (currentScope == void 0) {
           break;
         }
-        const overloads = symbol.symbolDefinition.overloads;
+        const overloads = resolvedDef.overloads;
         const preFilteredAcceptableFunctionSignatures = overloads.filter((overload) => {
           if (typeArguments === void 0) {
             return overload.typeParametersExpression == void 0;
@@ -332450,7 +333833,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const out = flattened.map((x) => {
           const y = {
             functionCallType: "direct",
-            symbol,
+            symbolDef: resolvedDef,
             typeArguments,
             overload: x.overload,
             functionTypeAfterTypeSubstitution: x.instantiatedFunctionTypeDefinition
@@ -332584,37 +333967,41 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (typeSymbol == void 0) {
         return resolveTypeResponseFailSingleError("TypeLookupFailed", `Type lookup failed for type with name '${symbolName}' and ctor: ${typeExpression.constructor.name} as the type cannot be found in scope: ${this.scopeName}`);
       }
-      if (typeSymbol.symbolDefinition.symbolType != "Type") {
+      const resolvedSymbol = typeSymbol.symbolDefinition.resolveSymbol();
+      if (!(resolvedSymbol instanceof TypeSymbolDefinition)) {
         return resolveTypeResponseFailSingleError("TypeLookupFailed", `Type lookup for name ${symbolName} failed in scope: ${this.scopeName} as the symbol is of type: ${typeSymbol.symbolDefinition.symbolType}`);
       }
-      if (typeSymbol.symbolDefinition.typeDefinition != void 0) {
-        return { success: true, type: typeSymbol.symbolDefinition.typeDefinition };
+      if (resolvedSymbol.typeDefinition != void 0) {
+        return { success: true, type: resolvedSymbol.typeDefinition };
       } else {
         const response = mapExpressionToDefinition(this, typeExpression, recursionDepth);
         if (response.success == false) {
           return response;
         }
-        typeSymbol.symbolDefinition.typeDefinition = response.type;
-        return { success: true, type: typeSymbol.symbolDefinition.typeDefinition };
+        resolvedSymbol.typeDefinition = response.type;
+        return { success: true, type: resolvedSymbol.typeDefinition };
       }
     }
-    resolveTypeBound(symbolName) {
+    resolveTypeBoundDefinition(symbolName) {
       const symbol = this.findSymbol(symbolName);
       if (symbol == void 0) {
         return { success: false, existingSymbol: void 0 };
-      } else if (symbol.symbolDefinition.symbolType != "TypeBound") {
+      }
+      const resolvedSymbol = symbol.symbolDefinition.resolveSymbol();
+      if (resolvedSymbol.symbolType != "TypeBound") {
         return { success: false, existingSymbol: symbol };
-      } else {
-        if (symbol.symbolDefinition.typeBoundDefinition != void 0) {
-          return { success: true, definition: symbol.symbolDefinition.typeBoundDefinition };
+      }
+      if (resolvedSymbol instanceof TypeBoundSymbolDefinition) {
+        if (resolvedSymbol.typeBoundDefinition != void 0) {
+          return { success: true, definition: resolvedSymbol.typeBoundDefinition };
         }
-        const defNode = symbol.symbolDefinition.definitionNode;
+        const defNode = resolvedSymbol.definitionNode;
         const definitionScope = defNode.definitionScope;
         const typeParameterDefinitions = defNode.typeParameters?.map((g) => {
-          const typeExpression = new BaseTypeExpression(FAKE_PARSE_TREE_NODE, g.identifier);
+          const typeExpression = new NamedTypeExpression(FAKE_PARSE_TREE_NODE, g.identifier);
           return definitionScope.resolveGenericTypeDefinition(typeExpression);
         });
-        const mappedRequirements = symbol.symbolDefinition.definitionNode.requirements.map((r) => {
+        const mappedRequirements = resolvedSymbol.definitionNode.requirements.map((r) => {
           const resp = definitionScope.resolveTypeDefinition(r.typeExpression);
           if (resp.success == false) {
             throw new Error("TODO");
@@ -332633,331 +334020,379 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           arr.push(r.functionSignature);
           map.set(r.name, arr);
         }
-        const typeBoundDefinition = new TypeBoundDefinition(symbol.symbolDefinition.definitionNode.identifier.name, definitionScope, typeParameterDefinitions, [...map.entries()].map((r) => ({ name: r[0], functionSignatures: r[1] })));
-        symbol.symbolDefinition.typeBoundDefinition = typeBoundDefinition;
+        const typeBoundDefinition = new TypeBoundDefinition(resolvedSymbol.definitionNode.identifier.name, definitionScope, typeParameterDefinitions, [...map.entries()].map((r) => ({ name: r[0], functionSignatures: r[1] })));
+        resolvedSymbol.typeBoundDefinition = typeBoundDefinition;
         return { success: true, definition: typeBoundDefinition };
+      } else {
+        throw new Error("Somehow the symbol type was a TypeBound symbol, but the resolvedSymbol was not a TypeBoundSymbolDefinition");
       }
     }
     resolveVariableTypeDefinition(variableName) {
-      const variableSymbol = this.findSymbolWithType(
-        variableName,
-        "Variable"
-        /* SymbolType.Variable */
-      );
+      const variableSymbol = this.findSymbol(variableName);
       if (variableSymbol == void 0) {
         return void 0;
       }
-      const variableDef = variableSymbol.symbolDefinition;
-      const type = variableDef.resolvedType;
-      return type;
-    }
-    findDefinitionsByNameAndType(name, kind, out) {
-      const functionDefinition = this.findSymbolInThisScope(name);
-      if (functionDefinition != void 0 && functionDefinition.symbolDefinition.symbolType == kind) {
-        out.push(functionDefinition);
-      }
-      if (this.parent != void 0) {
-        this.parent.findDefinitionsByNameAndType(name, kind, out);
-      }
-      return out;
-    }
-    /**
-     * Checks for binding conflicts.
-     * They can happen when there's already a symbol with the same name in the same scope or
-     * if the symbol shadows something that's not shadowable
-     */
-    checkForBindingConflicts(node) {
-      const symbolName = node.symbolName;
-      const hasExisting = this.findSymbol(symbolName);
-      if (hasExisting?.declaringScope == this) {
-        const error = {
-          type: "SymbolNameAlreadyUsed",
-          message: formatErrorMessage(`Name '${node.symbolName}' is redeclared in scope: ${this.scopeName}. 
-        Current occurrence: ${node.firstToken.createTokenSourceString()}.
-        Referenced on: ${node.firstToken.createTokenSourceString()}.`),
-          firstToken: node.firstToken
-        };
-        return { success: false, error };
-      }
-      if (hasExisting?.isShadowable == false) {
-        const error = {
-          type: "ShadowingDisallowed",
-          message: formatErrorMessage(`Variable '${node.symbolName}' is shadowing a name that is not shadowable. 
-          Current occurrence: ${node.firstToken.createTokenSourceString()}
-          Referenced on: ${node.firstToken.createTokenSourceString()}.`),
-          firstToken: node.firstToken
-        };
-        return { success: false, error };
-      }
-      return { success: true, shadow: hasExisting };
-    }
-    /**
-     * This method can be used to find a function's scope - to be used for finding all the params/locals/return type
-     * since they need to be declared at the top of the function.
-     */
-    findScopeByName(scopeName) {
-      if (this.scopeName == scopeName) {
-        return this;
-      }
-      const matches = this._childrenContexts.map((c) => c.findScopeByName(scopeName)).filter((c) => c != void 0);
-      if (matches.length == 0) {
+      const resolvedType = variableSymbol.symbolDefinition.resolveSymbol();
+      if (!(resolvedType instanceof VariableSymbolDefinition)) {
         return void 0;
-      } else if (matches.length > 1) {
-        throw new Error("Duplicate scope names found. They should be globally unique");
-      } else {
-        return matches[0];
       }
-    }
-    get size() {
-      return this._backingMap.size;
-    }
-    /**
-     * Returns all keys in this scope and the parents
-     */
-    getKeys(out) {
-      if (out == void 0) {
-        out = [];
-      }
-      out.push(...this.getKeysInThisScope());
-      if (this.parent != void 0) {
-        this.parent.getKeys(out);
-      }
-      return out;
-    }
-    /**
-     * Returns all keys in this scope
-     */
-    getKeysInThisScope() {
-      return [...this._backingMap.keys()];
-    }
-    get childContexts() {
-      return this._childrenContexts;
-    }
-    get isGlobal() {
-      return this.parent == void 0;
-    }
-    get isInFunction() {
-      return !this.isGlobal;
-    }
-    /**
-     * Returns the global (root) scope.
-     */
-    getGlobalScope() {
-      if (this.parent == void 0) {
-        return this;
-      }
-      return this.parent.getGlobalScope();
+      const type = resolvedType.resolvedType;
+      return type;
     }
     /**
      * Returns the content of the table, formatted as a markdown string
      * Call from the global scope, it will populate with all the child scopes
      */
     toMarkdownString(includeBuiltIn = false, includeHeader = true, automaticPadToLength = true) {
-      const IDENTIFIER_PADDING = 20;
-      const KIND_PADDING = 15;
-      const TYPE_EXPRESSION_PADDING = 25;
-      const SCOPE_PADDING = 35;
-      const TYPE_DEF_PADDING = 35;
-      const SOURCE_LOCATION_PADDING = 10;
-      const paddingConfig = {
-        identifierPadding: IDENTIFIER_PADDING,
-        kindPadding: KIND_PADDING,
-        typeExpressionPadding: TYPE_EXPRESSION_PADDING,
-        scopePadding: SCOPE_PADDING,
-        typeDefPadding: TYPE_DEF_PADDING,
-        sourceLocationPadding: SOURCE_LOCATION_PADDING
-      };
-      let rows = [];
-      this.getRowsForMarkdownString(rows, includeBuiltIn);
-      let content2 = "";
-      if (automaticPadToLength) {
-        const getNextMultiple = /* @__PURE__ */ __name((n, multiple) => {
-          return n + n % multiple;
-        }, "getNextMultiple");
-        const TEXT_BUFFER = 2;
-        for (const row of rows) {
-          paddingConfig.identifierPadding = Math.max(paddingConfig.identifierPadding, row.identifier.length + TEXT_BUFFER);
-          paddingConfig.kindPadding = Math.max(paddingConfig.kindPadding, row.symbolType.length + TEXT_BUFFER);
-          paddingConfig.typeExpressionPadding = Math.max(paddingConfig.typeExpressionPadding, row.typeExpression.length + TEXT_BUFFER);
-          paddingConfig.scopePadding = Math.max(paddingConfig.scopePadding, row.scope.length + TEXT_BUFFER);
-          paddingConfig.typeDefPadding = Math.max(paddingConfig.typeDefPadding, row.typeDefinition.length + TEXT_BUFFER);
-          paddingConfig.sourceLocationPadding = Math.max(paddingConfig.sourceLocationPadding, row.source.length + TEXT_BUFFER);
-        }
-        let key;
-        for (key in paddingConfig) {
-          paddingConfig[key] = getNextMultiple(paddingConfig[key], 4);
-        }
-      }
-      rows = rows.map((r) => {
-        const out = {
-          identifier: r.identifier.padEnd(paddingConfig.identifierPadding),
-          symbolType: r.symbolType.padEnd(paddingConfig.kindPadding),
-          typeExpression: r.typeExpression.padEnd(paddingConfig.typeExpressionPadding),
-          scope: r.scope.padEnd(paddingConfig.scopePadding),
-          typeDefinition: r.typeDefinition.padEnd(paddingConfig.typeDefPadding),
-          source: r.source.padEnd(paddingConfig.sourceLocationPadding)
-        };
-        return out;
-      });
-      let header = "";
-      if (includeHeader) {
-        header = `|${"identifier".padEnd(paddingConfig.identifierPadding)} |${"kind".padEnd(paddingConfig.kindPadding)} |${"scope".padEnd(paddingConfig.scopePadding)} |${"type expression".padEnd(paddingConfig.typeExpressionPadding)} |${"type".padEnd(paddingConfig.typeDefPadding)} |${"source".padEnd(paddingConfig.sourceLocationPadding)} |
-`;
-        header += `|${"-".repeat(paddingConfig.identifierPadding + 1)}|${"-".repeat(paddingConfig.kindPadding + 1)}|${"-".repeat(paddingConfig.scopePadding + 1)}|${"-".repeat(paddingConfig.typeExpressionPadding + 1)}|${"-".repeat(paddingConfig.typeDefPadding + 1)}|${"-".repeat(paddingConfig.sourceLocationPadding + 1)}|
-`;
-      }
-      content2 += header;
-      for (const row of rows) {
-        content2 += `|${row.identifier} |${row.symbolType} |${row.scope} |${row.typeExpression} |${row.typeDefinition} |${row.source} |
-`;
-      }
-      return content2;
-    }
-    getRowsForMarkdownString(outParamRows, includeBuiltIn = false) {
-      for (const [key, symbol] of this._backingMap.entries()) {
-        const symbolType = symbol.symbolDefinition.symbolType;
-        const scopeName = this.scopeName + ` (${this.id})`;
-        const isBuiltIn = symbol.symbolDefinition.symbolType != "Operator" || symbol.symbolDefinition.symbolType != "Operator" ? symbol.isBuiltIn : false;
-        if (isBuiltIn && !includeBuiltIn) {
-          continue;
-        }
-        const formatTypeString = /* @__PURE__ */ __name((t) => {
-          return t?.toString() ?? "inferred";
-        }, "formatTypeString");
-        if (symbol.symbolDefinition.symbolType == "Variable") {
-          const typeExpressionString = formatTypeString(symbol.symbolDefinition.declaredType);
-          const typeDefinitionString = symbol.symbolDefinition.resolvedType?.toShortString() ?? "unknown?";
-          const isConstString = symbol.symbolDefinition.isConst ? "C" : "V";
-          const scopeType = symbol.symbolDefinition.scopeType;
-          const row = {
-            identifier: key,
-            symbolType: `${symbolType} (${isConstString}) [${scopeType}]`,
-            typeExpression: typeExpressionString,
-            scope: scopeName,
-            typeDefinition: typeDefinitionString,
-            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
-          };
-          outParamRows.push(row);
-        } else if (symbol.symbolDefinition.symbolType == "Type") {
-          const typeDefinitionString = symbol.symbolDefinition.typeDefinition?.toString() ?? "unresolved";
-          const typeExpressionString = symbol.symbolDefinition.typeExpression.toString();
-          const specializations = [];
-          let resp;
-          try {
-            resp = this.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
-          } catch (ex) {
-            resp = resolveTypeResponseFailSingleError("TypeLookupFailed", ex.message);
-          }
-          if (resp.success == true && resp.type instanceof AlgebraicDataTypeDefinition) {
-            const resolvedType = resp.type;
-            for (const f of resolvedType.typeInstantiations ?? []) {
-              const specRow = {
-                identifier: key,
-                symbolType: "Type Instance",
-                typeExpression: f.expression.toString(),
-                scope: f.declaringScope.scopeName + ` (${f.declaringScope.id})`,
-                typeDefinition: f.toString(),
-                source: ""
-                // No source for instantiations? At least not for now
-              };
-              specializations.push(specRow);
-            }
-          }
-          const row = {
-            identifier: key,
-            symbolType,
-            typeExpression: typeExpressionString,
-            scope: scopeName,
-            typeDefinition: typeDefinitionString,
-            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
-          };
-          outParamRows.push(row);
-          outParamRows.push(...specializations);
-        } else if (symbol.symbolDefinition.symbolType == "TypeBound") {
-          const typeParameters = symbol.symbolDefinition.definitionNode.typeParameters?.map((t) => t.identifier.name) ?? [];
-          const requirementDefString = symbol.symbolDefinition.typeBoundDefinition?.toString() ?? "UNBOUND";
-          const row = {
-            identifier: symbol.symbolDefinition.definitionNode.identifier.name,
-            symbolType: symbol.symbolDefinition.symbolType,
-            typeExpression: `${symbol.symbolName}<${typeParameters.join(",")}>`,
-            scope: scopeName,
-            typeDefinition: requirementDefString,
-            source: symbol.symbolDefinition.definitionNode.firstToken.createTokenSourceString()
-          };
-          outParamRows.push(row);
-        } else if (symbol.symbolDefinition.symbolType == "Function" || symbol.symbolDefinition.symbolType == "Operator") {
-          for (const overload of symbol.symbolDefinition.overloads) {
-            if (overload.isBuiltIn && !includeBuiltIn) {
-              continue;
-            }
-            const isCreatedFromTypeBoundStr = overload.typeBoundSource ? "*" : "";
-            const genericParams = overload.typeParametersExpression ? `<${overload.typeParametersExpression.map((t) => t.toString()).join(", ")}> ` : "";
-            const typeParameterString = overload.typeParameterDefinitions == void 0 ? "" : `<${overload.typeParameterDefinitions.map((t) => t.name).join(",")}>`;
-            const typeDefinitionString = overload.typeDefinition?.toString() ?? "ERROR";
-            let typeBoundExpressionInfo = "";
-            let typeBoundDefinitionInfo = "";
-            if (overload.typeBoundSource != void 0) {
-              const tbSymbol = overload.typeBoundSource.typeBoundSymbol;
-              const tbParamExpression = overload.typeBoundSource.typeParameterExpression._identifier.name;
-              typeBoundExpressionInfo = ` [Type Bound: ${tbSymbol.symbolName} (from: ${tbParamExpression})]`;
-              if (overload.typeBoundSource.resolvedTypeBoundInfo != void 0) {
-                const resolved = overload.typeBoundSource.resolvedTypeBoundInfo;
-                const args = resolved.arguments.map((t) => t.toShortString());
-                const def = resolved.definition.toShortString();
-                typeBoundDefinitionInfo = ` [Type Bound: ${def} (from: ${args})]`;
-              }
-            }
-            const overloadRow = {
-              identifier: key,
-              symbolType: `O${isCreatedFromTypeBoundStr} ` + symbolType,
-              typeExpression: `${genericParams}${overload.typeExpression.toString()}` + typeBoundExpressionInfo,
-              typeDefinition: `${typeParameterString}${typeDefinitionString}` + typeBoundDefinitionInfo,
-              scope: overload.declaringScope.scopeName + ` (${overload.declaringScope.id})`,
-              source: overload.definitionNode.firstToken.createTokenSourceString()
-            };
-            outParamRows.push(overloadRow);
-            for (const specialization of overload.specializations ?? []) {
-              const specializationRow = {
-                identifier: key,
-                symbolType: `S${isCreatedFromTypeBoundStr} ` + symbolType,
-                typeExpression: specialization.instantiatedType.expression.toString(),
-                typeDefinition: specialization.instantiatedType.toString(),
-                scope: overload.declaringScope.scopeName + ` (${overload.declaringScope.id})`,
-                source: overload.definitionNode.firstToken.createTokenSourceString()
-              };
-              outParamRows.push(specializationRow);
-            }
-          }
-        }
-      }
-      for (const child of this._childrenContexts) {
-        child.getRowsForMarkdownString(outParamRows, includeBuiltIn);
-      }
+      return toMarkdownString4(this, includeBuiltIn, includeHeader, automaticPadToLength);
     }
   };
+
+  // ../compiler/dist/src/compiler/symbol/SymbolDefinition.js
+  var SymbolInformation4 = class _SymbolInformation {
+    static {
+      __name(this, "SymbolInformation");
+    }
+    symbolName;
+    bindingPath;
+    declaringScope;
+    symbolDefinition;
+    shadow;
+    isBuiltIn;
+    isShadowable;
+    isExternallyDefined;
+    // Mostly just hacked in so that I don't have to change too much code in the symbol table, but I prefer keyword arguments
+    // for functions that take in a large number of parameters
+    static create(args) {
+      return new _SymbolInformation(args.symbolName, args.bindingPath, args.declaringScope, args.symbolDefinition, args.shadow, args.isBuiltIn, args.isShadowable, args.isExternallyDefined);
+    }
+    // Used to track the order that the symbols are created. I think I added this in for debugging binding during namespace scanning, since
+    // it can be somewhat sensitive to proper symbol order expansion.
+    internalCounter = getAndIncSymbolDefCounter();
+    constructor(symbolName, bindingPath, declaringScope, symbolDefinition, shadow, isBuiltIn, isShadowable, isExternallyDefined) {
+      this.symbolName = symbolName;
+      this.bindingPath = bindingPath;
+      this.declaringScope = declaringScope;
+      this.symbolDefinition = symbolDefinition;
+      this.shadow = shadow;
+      this.isBuiltIn = isBuiltIn;
+      this.isShadowable = isShadowable;
+      this.isExternallyDefined = isExternallyDefined;
+    }
+    markdownInfo() {
+      const internal = this.symbolDefinition.markdownInfo();
+      const out = {
+        identifier: this.symbolName,
+        pathExpression: this.bindingPath?.toString() ?? "",
+        symbolType: this.symbolDefinition.symbolType,
+        scope: `${this.declaringScope.scopeName}(${this.declaringScope.id})`,
+        definitionData: internal
+      };
+      return out;
+    }
+  };
+  var AbstractSymbolDefinition = class {
+    static {
+      __name(this, "AbstractSymbolDefinition");
+    }
+    symbolType;
+    definitionNode;
+    constructor(symbolType, definitionNode) {
+      this.symbolType = symbolType;
+      this.definitionNode = definitionNode;
+    }
+    // Used to resolve any indirect symbols (symbol references) to their root symbol definition
+    resolveSymbol() {
+      return this;
+    }
+  };
+  var VariableSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "VariableSymbolDefinition");
+    }
+    name;
+    declaredType;
+    scopeType;
+    isConst;
+    // Resolved Type is set in the checker
+    _resolvedType = void 0;
+    constructor(definitionNode, name, declaredType, scopeType, isConst) {
+      super("Variable", definitionNode);
+      this.name = name;
+      this.declaredType = declaredType;
+      this.scopeType = scopeType;
+      this.isConst = isConst;
+    }
+    set resolvedType(value) {
+      if (this._resolvedType == void 0) {
+        this._resolvedType = value;
+      } else {
+        if (!value.equals(this._resolvedType)) {
+          throw new Error(`Type resolution conflicts. For variable: ${this.name} Original type is ${this._resolvedType.toShortString()}, new type is ${value.toShortString()}`);
+        }
+      }
+    }
+    get resolvedType() {
+      return this._resolvedType;
+    }
+    markdownInfo() {
+      const typeExpressionString = formatTypeString(this.declaredType);
+      const typeDefinitionString = this.resolvedType?.toShortString() ?? "unknown?";
+      const isConstString = this.isConst ? "C" : "V";
+      const scopeType = this.scopeType;
+      const row = {
+        binderResolvedInfo: `(${isConstString}) (${scopeType}) ` + typeExpressionString,
+        checkerResolvedInfo: typeDefinitionString,
+        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
+      };
+      return row;
+    }
+  };
+  var ErasedSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "ErasedSymbolDefinition");
+    }
+    constructor() {
+      super("ErasedSymbol", void 0);
+    }
+    markdownInfo() {
+      const row = {
+        binderResolvedInfo: `--erased--`,
+        checkerResolvedInfo: `--erased--`,
+        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
+      };
+      return row;
+    }
+  };
+  var TypeSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "TypeSymbolDefinition");
+    }
+    typeExpression;
+    _typeDefinition;
+    _genericTypeParamInfo;
+    _genericTypeParamInfoSet = false;
+    // will be undefined if the parameter is not a generic type param
+    // I think its set in the checker?
+    constructor(definitionNode, typeExpression) {
+      super("Type", definitionNode);
+      this.typeExpression = typeExpression;
+    }
+    // TODO: clean up this interface a bit
+    get compositeDefinitionNode() {
+      if (this.definitionNode instanceof AstCompositeDefinition) {
+        return this.definitionNode;
+      }
+      return void 0;
+    }
+    set typeDefinition(value) {
+      if (this._typeDefinition == void 0) {
+        this._typeDefinition = value;
+      } else {
+        if (!this._typeDefinition.equals(value)) {
+          throw new Error(`Double type definition binding. Original type is ${this._typeDefinition.toShortString()}, new type is ${value.toShortString()}`);
+        }
+      }
+    }
+    get typeDefinition() {
+      return this._typeDefinition;
+    }
+    set genericTypeParamInfo(value) {
+      if (this._genericTypeParamInfoSet) {
+        throw new Error("Double binding!");
+      }
+      this._genericTypeParamInfo = value;
+      this._genericTypeParamInfoSet = true;
+    }
+    get genericTypeParamInfo() {
+      return this._genericTypeParamInfo;
+    }
+    markdownInfo() {
+      const out = {
+        binderResolvedInfo: this.typeExpression.toString(),
+        checkerResolvedInfo: this._typeDefinition?.toString() ?? "unresolved",
+        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
+      };
+      if (this._typeDefinition instanceof AlgebraicDataTypeDefinition && this._typeDefinition.typeInstantiations != void 0) {
+        const formattedTypeInstantiations = this._typeDefinition.typeInstantiations.map((instance) => {
+          const out2 = {
+            binderResolvedInfo: instance.expression.toString(),
+            checkerResolvedInfo: instance.toString(),
+            source: ""
+            // no source for instantiated types
+          };
+          return out2;
+        });
+        out.childDefinitions = formattedTypeInstantiations;
+      }
+      return out;
+    }
+  };
+  var TypeBoundSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "TypeBoundSymbolDefinition");
+    }
+    definitionNode;
+    // Should be set in the checker
+    _typeBoundDefinition;
+    constructor(definitionNode) {
+      super("TypeBound", definitionNode);
+      this.definitionNode = definitionNode;
+    }
+    set typeBoundDefinition(value) {
+      if (this._typeBoundDefinition != void 0) {
+        throw new Error("Redef!");
+      }
+      this._typeBoundDefinition = value;
+    }
+    get typeBoundDefinition() {
+      return this._typeBoundDefinition;
+    }
+    get name() {
+      return this.definitionNode.identifier.symbolName;
+    }
+    markdownInfo() {
+      const typeParameters = this.definitionNode.typeParameters?.map((t) => t.identifier.name) ?? [];
+      const requirementDefString = this.typeBoundDefinition?.toString() ?? "UNBOUND";
+      const out = {
+        binderResolvedInfo: `${this.definitionNode.identifier.name}<${typeParameters.join(",")}>`,
+        checkerResolvedInfo: requirementDefString,
+        source: this.definitionNode.firstToken.createTokenSourceString()
+      };
+      return out;
+    }
+  };
+  var CallableSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "CallableSymbolDefinition");
+    }
+    name;
+    symbolType;
+    overloads;
+    constructor(name, symbolType, overloads) {
+      super(symbolType, void 0);
+      this.name = name;
+      this.symbolType = symbolType;
+      this.overloads = overloads;
+    }
+    markdownInfo() {
+      const mainOut = {
+        skip: true,
+        binderResolvedInfo: "",
+        checkerResolvedInfo: "",
+        source: "",
+        childDefinitions: []
+      };
+      for (const overload of this.overloads) {
+        if (overload.isBuiltIn) {
+          continue;
+        }
+        const genericParams = overload.typeParametersExpression ? `<${overload.typeParametersExpression.map((t) => t.toString()).join(", ")}> ` : "";
+        const typeParameterString = overload.typeParameterDefinitions == void 0 ? "" : `<${overload.typeParameterDefinitions.map((t) => t.name).join(",")}>`;
+        const typeDefinitionString = overload.typeDefinition?.toString() ?? "ERROR";
+        let typeBoundExpressionInfo = "";
+        let typeBoundDefinitionInfo = "";
+        if (overload.typeBoundSource != void 0) {
+          const tbSymbol = overload.typeBoundSource.typeBoundSymbol;
+          const tbParamExpression = overload.typeBoundSource.typeParameterExpression._identifier.name;
+          typeBoundExpressionInfo = ` [Type Bound: ${tbSymbol?.typeBoundDefinition?.name} (from: ${tbParamExpression})]`;
+          if (overload.typeBoundSource.resolvedTypeBoundInfo != void 0) {
+            const resolved = overload.typeBoundSource.resolvedTypeBoundInfo;
+            const args = resolved.arguments.map((t) => t.toShortString());
+            const def = resolved.definition.toShortString();
+            typeBoundDefinitionInfo = ` [Type Bound: ${def} (from: ${args})]`;
+          }
+        }
+        const overloadInfo = {
+          binderResolvedInfo: `${genericParams}${overload.typeExpression.toString()}${typeBoundExpressionInfo}`,
+          checkerResolvedInfo: `${typeParameterString}${typeDefinitionString}${typeBoundDefinitionInfo}`,
+          source: overload.definitionNode.firstToken.createTokenSourceString()
+        };
+        mainOut.childDefinitions?.push(overloadInfo);
+        for (const specialization of overload.specializations ?? []) {
+          const specializationInfo = {
+            binderResolvedInfo: specialization.instantiatedType.expression.toString(),
+            checkerResolvedInfo: specialization.instantiatedType.toString(),
+            source: ""
+            // specializations don't have a source. They have a first instantiation, but that's not really a concrete value
+          };
+          mainOut.childDefinitions?.push(specializationInfo);
+        }
+      }
+      return mainOut;
+    }
+  };
+  var NamespaceSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "NamespaceSymbolDefinition");
+    }
+    definitionNode;
+    constructor(definitionNode) {
+      super("Namespace", definitionNode);
+      this.definitionNode = definitionNode;
+    }
+    markdownInfo() {
+      const out = {
+        binderResolvedInfo: "",
+        checkerResolvedInfo: "",
+        source: `${this.definitionNode.firstToken.createTokenSourceString()}`
+      };
+      return out;
+    }
+  };
+  var SymbolReferenceDefinition = class _SymbolReferenceDefinition extends AbstractSymbolDefinition {
+    static {
+      __name(this, "SymbolReferenceDefinition");
+    }
+    originalSymbol;
+    constructor(definitionNode, originalSymbol) {
+      super("SymbolReference", definitionNode);
+      this.originalSymbol = originalSymbol;
+    }
+    resolveOriginalScope() {
+      if (this.originalSymbol instanceof _SymbolReferenceDefinition) {
+        return this.originalSymbol.resolveOriginalScope();
+      }
+      return this.originalSymbol.declaringScope;
+    }
+    resolveSymbol() {
+      return this.originalSymbol.symbolDefinition.resolveSymbol();
+    }
+    markdownInfo() {
+      const referencedData = this.originalSymbol.markdownInfo();
+      const out = {
+        binderResolvedInfo: `(Ref) -> ${referencedData.definitionData.binderResolvedInfo}`,
+        checkerResolvedInfo: `(Ref) -> ${referencedData.definitionData.checkerResolvedInfo}`,
+        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
+      };
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/symbol/GlobalTableUtils.js
   function createGlobalSymbolTable() {
-    const table = new SymbolTable("global", void 0);
+    const table = new SymbolTable("global", void 0, void 0);
     for (const t of BUILT_IN_SCALAR_TYPE_NAMES) {
       const config = BuiltInScalarConfig[t];
       const astTypeDefinition = config.astValues.astTypeDefinition;
-      const err = table.declareType(astTypeDefinition, true);
+      const err = table.declareType(astTypeDefinition, void 0, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
       }
     }
     for (const t of BUILT_IN_NUMERIC_OPERATIONS) {
-      const err = table.declareCallable(t, true);
+      const err = table.declareCallable(t, void 0, false, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
       }
-      const definitionScope = new SymbolTable(`${t.symbolName}.${t.params.map((t2) => t2.typeExpression.toString())}.definition`, table);
-      const bodyScope = new SymbolTable(`${t.symbolName}.${t.params.map((t2) => t2.typeExpression.toString())}.body`, definitionScope);
+      const definitionScope = new SymbolTable(`${t.symbolName}.${t.params.map((t2) => t2.typeExpression.toString())}.definition`, table, t);
+      const bodyScope = new SymbolTable(`${t.symbolName}.${t.params.map((t2) => t2.typeExpression.toString())}.body`, definitionScope, t);
       t.definitionScope = definitionScope;
       t.bodyScope = bodyScope;
       for (const param of t.params) {
-        const err2 = bodyScope.declareVariable(param, "Param", true);
+        const err2 = bodyScope.declareVariable(param, void 0, "Param", true);
         if (err2) {
           console.log(err2);
           throw new Error(`Error during bind`);
@@ -332974,6 +334409,59 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   __name(createGlobalSymbolTable, "createGlobalSymbolTable");
 
   // ../compiler/dist/src/compiler/Binder.js
+  function getScopeType(context) {
+    if (context.state == "declaration") {
+      return "Global";
+    } else if (context.state == "definitionSignature") {
+      return "Param";
+    } else if (context.state == "definitionBody") {
+      return "Local";
+    } else {
+      throw new Error("Unreachable");
+    }
+  }
+  __name(getScopeType, "getScopeType");
+  var BinderWorkList = class {
+    static {
+      __name(this, "BinderWorkList");
+    }
+    declarationsToProcess;
+    definitionSignatureToProcess;
+    definitionBodiesToProcess;
+    standaloneStatements;
+    // this is like expressions or statements in the global scope. Which is bad and useless, but allowed
+    constructor() {
+      this.declarationsToProcess = [];
+      this.definitionSignatureToProcess = [];
+      this.definitionBodiesToProcess = [];
+      this.standaloneStatements = [];
+    }
+    pushDeclaration(node, context) {
+      this.declarationsToProcess.push({ node, context });
+    }
+    pushDefinitionSignature(node, context) {
+      this.definitionSignatureToProcess.push({ node, context });
+    }
+    pushDefinitionBody(node, context) {
+      this.definitionBodiesToProcess.push({ node, context });
+    }
+    pushStandaloneStatement(node, context) {
+      this.standaloneStatements.push({ node, context });
+    }
+    pop() {
+      let out;
+      if (this.declarationsToProcess.length > 0) {
+        out = this.declarationsToProcess.pop();
+      } else if (this.definitionSignatureToProcess.length > 0) {
+        out = this.definitionSignatureToProcess.pop();
+      } else if (this.definitionBodiesToProcess.length > 0) {
+        out = this.definitionBodiesToProcess.pop();
+      } else if (this.standaloneStatements.length > 0) {
+        out = this.standaloneStatements.pop();
+      }
+      return out;
+    }
+  };
   var Binder = class extends AstNodeTraverser {
     static {
       __name(this, "Binder");
@@ -332982,13 +334470,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // used to deduplicate anonymous scopes (e.g. blocks)
     static createContext(violations) {
       const symbolTableCreatorContext = {
+        worklist: new BinderWorkList(),
         violations,
-        table: createGlobalSymbolTable()
+        table: createGlobalSymbolTable(),
+        currentNamespacePath: void 0,
+        namespaceRegistery: new NamespaceRegistry(),
+        additionalContext: { state: "declaration", currentNamespaceNode: void 0 }
       };
       return symbolTableCreatorContext;
     }
     initContext() {
       throw new Error("The context must be passed in since it depends on the 'violations' array which needs to be chained");
+    }
+    drainWorkList(worklist) {
+      let item = worklist.pop();
+      while (item != void 0) {
+        this.traverse(item.node, item.context);
+        item = worklist.pop();
+      }
     }
     traverse(node, context) {
       const returnedContext = super.traverse(node, context);
@@ -332997,13 +334496,36 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return returnedContext;
     }
-    // assorted grammatical constructs
+    // traverseGroupNode and traverseBlockNode are the main ways that definitions are hoisted and how
+    // my two stage (bind defintitions and then traverse definitions) are implemented
     traverseGroupNode(groupNode, context) {
-      groupNode.astNodes.forEach((node) => {
+      this.bindDefinitionsForNodes(groupNode, context);
+      this.drainWorkList(context.worklist);
+      groupNode.astNodes.forEach((node) => this.traverse(node, context));
+      return context;
+    }
+    traverseBlockNode(node, context, createNewScope = true) {
+      node.augmentedProperties.scope = context.table;
+      let newContext;
+      if (createNewScope) {
+        newContext = this.createBlockContext(node, "_block", context);
+      } else {
+        newContext = context;
+      }
+      node.bodyScope = newContext.table;
+      this.bindDefinitionsForNodes(node, newContext);
+      this.drainWorkList(context.worklist);
+      node.astNodes.forEach((node2) => this.traverse(node2, newContext));
+      node.augmentedProperties.scope = newContext.table;
+      return context;
+    }
+    bindDefinitionsForNodes(groupingNode, context) {
+      groupingNode.astNodes.forEach((node) => {
         if (node instanceof AstAbstractCallableDefinition) {
           let error;
-          if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition) {
-            error = context.table.declareCallable(node, false);
+          if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition || node instanceof AstDeclareFunctionStatement) {
+            const isExternallyDefined = node instanceof AstDeclareFunctionStatement ? true : false;
+            error = context.table.declareCallable(node, context.currentNamespacePath, isExternallyDefined, false);
           } else {
             throw new Error(`Not implemented for type: ${node.constructor.name}`);
           }
@@ -333011,41 +334533,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             context.violations.push(error);
           }
         } else if (node instanceof AstCompositeDefinition) {
-          const error = context.table.declareType(node);
+          const error = context.table.declareType(node, context.currentNamespacePath);
           if (error != void 0) {
             context.violations.push(error);
           }
+          context.worklist.pushDefinitionSignature(node, context);
         } else if (node instanceof AstTypeBoundDefinition) {
-          const error = context.table.declareTypeBound(node);
+          const error = context.table.declareTypeBound(node, context.currentNamespacePath);
           if (error != void 0) {
             context.violations.push(error);
           }
+          context.worklist.pushDeclaration(node, context);
+        } else if (node instanceof AstNamespaceDefinition) {
+        } else {
         }
       });
-      groupNode.astNodes.forEach((n) => {
-        if (!(n instanceof AstTypeDefinitionStatement)) {
-          this.traverse(n, context);
-        }
-      });
-      return context;
-    }
-    traverseBlockNode(node, context, createNewScope = true) {
-      node.augmentedProperties.scope = context.table;
-      let newContext;
-      if (createNewScope) {
-        newContext = this.createBlockContext("_block", context);
-      } else {
-        newContext = {
-          table: context.table,
-          violations: context.violations
-        };
-      }
-      node.bodyScope = newContext.table;
-      node.astNodes.forEach((n) => {
-        this.traverse(n, newContext);
-      });
-      node.augmentedProperties.scope = newContext.table;
-      return context;
     }
     // definitions
     traverseFunctionDefinition(node, context) {
@@ -333087,29 +334589,30 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseCompositeDefinition(node, context) {
+      if (node.definitionScope != void 0) {
+        return context;
+      }
       const fields = node.fields;
       const seenFieldNames = /* @__PURE__ */ new Set();
       for (const field of fields) {
-        const name = field.variable.name;
-        if (seenFieldNames.has(name)) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "CompositeFieldDuplicateName",
-            message: formatErrorMessage(`The ${node.compositeType} '${node.identifier.name}' has fields with duplicate names. 
-          The duplicated name is '${name}'. 
-          Referenced ${node.firstToken.createTokenSourceString()}`)
-          };
+        const fieldName = field.variable.name;
+        if (seenFieldNames.has(fieldName)) {
+          const error = BINDER_ERROR_MESSAGES.duplicateFieldInCompositeTypeDefinition(node, fieldName);
           context.violations.push(error);
           return context;
         }
-        seenFieldNames.add(name);
+        seenFieldNames.add(fieldName);
       }
       const scope = context.table;
-      const compositeDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope);
+      const compositeDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope, node);
       node.definitionScope = compositeDefinitionScope;
       const definitionContext = {
+        worklist: context.worklist,
         table: compositeDefinitionScope,
-        violations: context.violations
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: context.additionalContext
       };
       if (node.typeParameters != void 0) {
         for (const typeParameter of node.typeParameters) {
@@ -333124,13 +334627,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return definitionContext;
     }
     traverseTypeBoundDefinition(node, context) {
+      if (node.definitionScope != void 0) {
+        return context;
+      }
       const requirements = node.requirements;
       const scope = context.table;
-      const typeBoundDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope);
+      const typeBoundDefinitionScope = new SymbolTable(`${node.identifier.name}.definition`, scope, node);
       node.definitionScope = typeBoundDefinitionScope;
       const definitionContext = {
+        worklist: context.worklist,
         table: typeBoundDefinitionScope,
-        violations: context.violations
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: context.additionalContext
       };
       if (node.typeParameters != void 0) {
         for (const typeParameter of node.typeParameters) {
@@ -333167,7 +334677,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseDefinitionTypeParameter(node, context) {
       if (node.typeBoundExpression == void 0) {
-        const error2 = context.table.bindGenericType(node);
+        const error2 = context.table.bindGenericType(node, context.currentNamespacePath);
         if (error2 != void 0) {
           context.violations.push(error2);
         }
@@ -333177,7 +334687,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (boundSymbol == void 0) {
         const error2 = {
           firstToken: node.typeBoundExpression.firstToken,
-          type: "ReferenceNotDefined",
+          type: "SymbolNotDefined",
           message: formatErrorMessage(`
             For generic parameter ${node.identifier.name}, Type bound with name ${node.typeBoundExpression.identifier.name} could not be found in the current scope.
             Referenced on: ${node.firstToken.createTokenSourceString()}
@@ -333198,13 +334708,59 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.violations.push(error2);
         return context;
       }
-      const error = context.table.bindGenericType(node);
+      const error = context.table.bindGenericType(node, context.currentNamespacePath);
       if (error != void 0) {
         context.violations.push(error);
       }
       for (const arg of node.typeBoundExpression.typeArguments ?? []) {
         this.traverse(arg, context);
       }
+      return context;
+    }
+    traverseNamespaceDefinition(namespaceDefinitionNode, context) {
+      if (namespaceDefinitionNode.definitionScope != void 0) {
+        return context;
+      }
+      const namespacePathExpression = astPathToPathExpression(namespaceDefinitionNode.pathExpression);
+      if (namespacePathExpression.hasRelativeComponent()) {
+        const error = BINDER_ERROR_MESSAGES.namespaceDefinitionIsRelative(namespaceDefinitionNode, namespacePathExpression);
+        context.violations.push(error);
+        return context;
+      }
+      const namespaceScope = new SymbolTable(`namespace:${namespacePathExpression.toString()}`, context.table, namespaceDefinitionNode);
+      namespaceDefinitionNode.definitionScope = namespaceScope;
+      let nestedPathExpression = context.currentNamespacePath == void 0 ? namespacePathExpression : context.currentNamespacePath.naiveConcat(namespacePathExpression);
+      nestedPathExpression = nestedPathExpression.normalize();
+      const possibleErr = context.table.declareNamespace(namespaceDefinitionNode, nestedPathExpression, false);
+      if (possibleErr != void 0) {
+        context.violations.push(possibleErr);
+      }
+      const newContext = {
+        worklist: context.worklist,
+        violations: context.violations,
+        table: namespaceDefinitionNode.definitionScope,
+        currentNamespacePath: nestedPathExpression,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: { state: "declaration", currentNamespaceNode: namespaceDefinitionNode }
+      };
+      this.traverseBlockNode(namespaceDefinitionNode.body, newContext, false);
+      const symbolName = namespaceDefinitionNode.symbolName;
+      if (symbolName == void 0) {
+        throw new Error("I haven't thought this through yet");
+      }
+      const symbol = context.table.findSymbol(symbolName);
+      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Namespace") {
+        const err = {
+          firstToken: namespaceDefinitionNode.firstToken,
+          type: "SymbolTypeMismatch",
+          message: formatErrorMessage(`Expecting symbol '${symbolName}' to be of namespace type, but instead was: ${symbol?.symbolDefinition.symbolType}.
+          Referenced on: ${namespaceDefinitionNode.firstToken.createTokenSourceString()}`)
+        };
+        context.violations.push(err);
+        return context;
+      }
+      const namespace = new Namespace2(nestedPathExpression, namespaceDefinitionNode, namespaceScope, symbol);
+      context.namespaceRegistery.addNamespace(namespace);
       return context;
     }
     // literals
@@ -333238,34 +334794,34 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return context;
     }
+    checkIfSymbolExists(node, symbolName, scope) {
+      const existingSymbol = scope.findSymbol(symbolName);
+      if (existingSymbol == void 0) {
+        const error = BINDER_ERROR_MESSAGES.symbolNotFound(node, symbolName);
+        return error;
+      } else if (existingSymbol.symbolDefinition.symbolType == "ErasedSymbol") {
+        const error = BINDER_ERROR_MESSAGES.symbolErased(node, symbolName);
+        return error;
+      }
+      return void 0;
+    }
     // expressions
-    traverseIdentifierExpression(node, context) {
-      if (!context.table.isInFunction) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "ExpressionNotInFunction",
-          message: formatErrorMessage(`Expression found outside a function body. 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-        };
+    traverseValueExprIdentifier(node, context) {
+      if (context.additionalContext.state != "definitionBody") {
+        const error = BINDER_ERROR_MESSAGES.expressionNotInFunction(node);
         context.violations.push(error);
         return context;
       }
-      const existingSymbol = context.table.findSymbol(node.symbolName);
-      if (existingSymbol == void 0) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "ReferenceNotDefined",
-          message: formatErrorMessage(`Identifier '${node.name}' is referenced before being defined. 
-        Referenced ${node.firstToken.createTokenSourceString()}`)
-        };
-        context.violations.push(error);
-        return context;
+      const maybeErr = this.checkIfSymbolExists(node, node.identifier.symbolName, context.table);
+      if (maybeErr != void 0) {
+        context.violations.push(maybeErr);
       }
       return context;
     }
-    traverseIdentifierExpressionWithTypeArguments(node, context) {
-      this.traverseIdentifierExpression(node.identifier, context);
-      node.typeArguments.forEach((typeArg) => this.traverse(typeArg, context));
+    traverseValueExprIdentifierWithTypeArgs(node, context) {
+      const newNode = new AstValueExpressionIdentifier(node.parseTreeNode, node.identifierWithTypeArguments.identifier);
+      this.traverseValueExprIdentifier(newNode, context);
+      node.identifierWithTypeArguments.typeArguments.forEach((typeArg) => this.traverse(typeArg, context));
       return context;
     }
     traverseTypeCastingExpression(node, context) {
@@ -333279,26 +334835,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     // "Callable" expressions - I guess a concrete definition is that they require name and type-based dispatch
     traverseUnaryOperation(node, context) {
-      if (!context.table.isInFunction) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "ExpressionNotInFunction",
-          message: formatErrorMessage(`Expression found outside a function body. 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-        };
+      if (context.additionalContext.state != "definitionBody") {
+        const error = BINDER_ERROR_MESSAGES.expressionNotInFunction(node);
         context.violations.push(error);
         return context;
       }
       return this.traverse(node.operand, context);
     }
     traverseBinaryOperation(node, context) {
-      if (!context.table.isInFunction) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "ExpressionNotInFunction",
-          message: formatErrorMessage(`Expression found outside a function body. 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-        };
+      if (context.additionalContext.state != "definitionBody") {
+        const error = BINDER_ERROR_MESSAGES.expressionNotInFunction(node);
         context.violations.push(error);
         return context;
       }
@@ -333307,13 +334853,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseCallExpression(node, context) {
-      if (!context.table.isInFunction) {
-        const error = {
-          firstToken: node.firstToken,
-          type: "ExpressionNotInFunction",
-          message: formatErrorMessage(`Expression found outside a function body. 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-        };
+      if (context.additionalContext.state != "definitionBody") {
+        const error = BINDER_ERROR_MESSAGES.expressionNotInFunction(node);
         context.violations.push(error);
         return context;
       }
@@ -333337,30 +334878,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseBaseTypeExpression(node, context) {
-      const resp = context.table.findTypeSymbol(node.symbolName);
-      if (resp.success == false) {
-        if (resp.symbol == void 0) {
-          const error = {
-            firstToken: node.firstToken,
-            type: "ReferenceNotDefined",
-            message: formatErrorMessage(`
-        Type '${node.symbolName}' is referenced before being defined. 
-        Referenced on: ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.violations.push(error);
-          return context;
-        }
-        if (resp.symbol.symbolDefinition.symbolType != "Type") {
-          const error = {
-            firstToken: node.firstToken,
-            type: "SymbolTypeMismatch",
-            message: formatErrorMessage(`
-          Attempting to reference symbol with name:'${node.symbolName}' but the identifier is not a Type, it is instead a ${resp.symbol.symbolDefinition.symbolType} 
-          Referenced on: ${node.firstToken.createTokenSourceString()}`)
-          };
-          context.violations.push(error);
-          return context;
-        }
+      const resp = context.table.findSymbol(node.symbolName);
+      if (resp == void 0) {
+        const error = BINDER_ERROR_MESSAGES.symbolNotFound(node, node.symbolName);
+        context.violations.push(error);
+        return context;
+      }
+      const resolvedDef = resp.symbolDefinition.resolveSymbol();
+      if (resolvedDef.symbolType != "Type") {
+        const error = BINDER_ERROR_MESSAGES.symbolHasWrongSymbolType(
+          node,
+          node.symbolName,
+          resolvedDef,
+          "Type"
+          /* SymbolType.Type */
+        );
+        context.violations.push(error);
+        return context;
       }
       return context;
     }
@@ -333392,9 +334926,45 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return context;
     }
+    traverseDeclareFunctionStatement(node, context) {
+      this.internalTraverseCallableDefinition(
+        node,
+        context,
+        "Function"
+        /* SymbolType.Function */
+      );
+      return context;
+    }
+    traverseImportStatement(importStatementNode, context) {
+      const astPath = importStatementNode.path;
+      let path = astPathToPathExpression(astPath).normalize();
+      if (!path.isAnchored()) {
+        const currentContextPath = context.currentNamespacePath ?? PathExpression.globalScopePathExpression();
+        path = path.naiveConcat(currentContextPath).normalize();
+      }
+      const { qualifier, identifier: identifier3 } = path.splitToQualifierIdentifier();
+      const namespace = context.namespaceRegistery.findNamespace(qualifier);
+      if (namespace == void 0) {
+        const err = BINDER_ERROR_MESSAGES.namespaceNotFound(importStatementNode, qualifier);
+        context.violations.push(err);
+        return context;
+      }
+      const symbolName = identifier3.toString();
+      const symbolFromNamespace = namespace.findSymbol(symbolName);
+      if (symbolFromNamespace == void 0) {
+        const err = BINDER_ERROR_MESSAGES.symbolNotFoundInNamespace(importStatementNode, symbolName, namespace.path);
+        context.violations.push(err);
+        return context;
+      }
+      const maybeBindError = context.table.createSymbolAlias(symbolName, context.currentNamespacePath, symbolFromNamespace, importStatementNode);
+      if (maybeBindError != void 0) {
+        context.violations.push(maybeBindError);
+      }
+      return context;
+    }
     // statements
     traverseAssignmentStatement(node, context) {
-      if (!context.table.isInFunction) {
+      if (context.additionalContext.state != "definitionBody") {
         const error = {
           firstToken: node.firstToken,
           type: "AssignmentNotInFunction",
@@ -333407,16 +334977,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const name = node.symbolName;
       const existingDefinition = context.table.findSymbol(name);
       if (existingDefinition == void 0) {
-        const error = {
-          firstToken: node.lhs.firstToken,
-          type: "ReferenceNotDefined",
-          message: formatErrorMessage(`Variable ${name} is referenced before being defined. 
-        Referenced ${node.lhs.firstToken.createTokenSourceString()}`)
-        };
+        const error = BINDER_ERROR_MESSAGES.symbolNotFound(node, name);
+        context.violations.push(error);
+        return context;
+      } else if (existingDefinition.symbolDefinition.symbolType == "ErasedSymbol") {
+        const error = BINDER_ERROR_MESSAGES.symbolErased(node, name);
         context.violations.push(error);
         return context;
       }
-      if (existingDefinition.symbolDefinition.symbolType == "Variable" && existingDefinition.symbolDefinition.isConst) {
+      const resolvedDefinition = existingDefinition.symbolDefinition.resolveSymbol();
+      if (resolvedDefinition instanceof VariableSymbolDefinition && resolvedDefinition.isConst) {
         const error = {
           firstToken: node.lhs.firstToken,
           type: "ConstReassigned",
@@ -333431,11 +335001,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseAstSimpleVariableAccess(node, context) {
-      this.traverse(node.identifier, context);
+      const maybeErr = this.checkIfSymbolExists(node, node.identifier.symbolName, context.table);
+      if (maybeErr != void 0) {
+        context.violations.push(maybeErr);
+      }
       return context;
     }
     traverseVariableFieldAccess(node, context) {
-      this.traverse(node.identifier, context);
+      const maybeErr = this.checkIfSymbolExists(node, node.identifier.symbolName, context.table);
+      if (maybeErr != void 0) {
+        context.violations.push(maybeErr);
+      }
       return context;
     }
     traverseVariableDereference(node, context) {
@@ -333448,12 +335024,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (wrappedControlBlock != void 0) {
         return context;
       }
-      const error = {
-        firstToken: node.firstToken,
-        type: "ControlFlowStatementNotInControlBlock",
-        message: formatErrorMessage(`Break from a non-control flow statement. 
-      Referenced ${node.firstToken.createTokenSourceString()}`)
-      };
+      const error = BINDER_ERROR_MESSAGES.controlStatementNotInBlock(node, "Break");
       context.violations.push(error);
       return context;
     }
@@ -333462,17 +335033,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (wrappedControlBlock != void 0) {
         return context;
       }
-      const error = {
-        firstToken: node.firstToken,
-        type: "ControlFlowStatementNotInControlBlock",
-        message: formatErrorMessage(`Break from a non-control flow statement. 
-      Referenced ${node.firstToken.createTokenSourceString()}`)
-      };
+      const error = BINDER_ERROR_MESSAGES.controlStatementNotInBlock(node, "Continue");
       context.violations.push(error);
       return context;
     }
     traverseIfStatement(node, context) {
-      if (!context.table.isInFunction) {
+      if (context.additionalContext.state != "definitionBody") {
         const error = {
           firstToken: node.firstToken,
           type: "ControlFlowStatementNotInFunction",
@@ -333483,16 +335049,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return context;
       }
       this.traverse(node.condition, context);
-      const bodyContext = this.createBlockContext("_if", context);
+      const bodyContext = this.createBlockContext(node.body, "_if", context);
       this.traverseBlockNode(node.body, bodyContext);
-      const elseBodyContext = this.createBlockContext("_else", context);
+      const elseBodyContext = this.createBlockContext(node.elseBody, "_else", context);
       if (node.elseBody) {
         this.traverseBlockNode(node.elseBody, elseBodyContext);
       }
       return context;
     }
     traverseWhileStatement(node, context) {
-      if (!context.table.isInFunction) {
+      if (context.additionalContext.state != "definitionBody") {
         const error = {
           firstToken: node.firstToken,
           type: "ControlFlowStatementNotInFunction",
@@ -333503,13 +335069,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return context;
       }
       this.traverse(node.condition, context);
-      const bodyContext = this.createBlockContext("_while", context);
+      const bodyContext = this.createBlockContext(node.body, "_while", context);
       this.traverseBlockNode(node.body, bodyContext, false);
       node.body.augmentedProperties.scope = bodyContext.table;
       return context;
     }
     traverseForStatement(node, context) {
-      if (!context.table.isInFunction) {
+      if (context.additionalContext.state != "definitionBody") {
         const error = {
           firstToken: node.firstToken,
           type: "ControlFlowStatementNotInFunction",
@@ -333528,16 +335094,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.increment) {
         this.traverse(node.increment, context);
       }
-      const bodyContext = this.createBlockContext("_for", context);
+      const bodyContext = this.createBlockContext(node.body, "_for", context);
       this.traverseBlockNode(node.body, bodyContext, false);
       return context;
     }
     traverseSwitchStatement(node, context) {
       this.traverse(node.expression, context);
       for (const c of node.caseStatements) {
-        const bodyContext = this.createBlockContext("_case", context);
+        const bodyContext = this.createBlockContext(node, "_case", context);
         const error = bodyContext.table.declareVariable(
           c.condition,
+          context.currentNamespacePath,
           "Local"
           /* ScopeType.Local */
         );
@@ -333555,7 +335122,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseReturnStatement(node, context) {
       if (context.table.isGlobal) {
         const error = {
-          firstToken: node.tokens[0],
+          firstToken: node.firstToken,
           type: "ReturnFromGlobalScope",
           message: formatErrorMessage(`There's a return statement in the global scope. 
         Referenced: ${node.firstToken.createTokenSourceString()}`)
@@ -333587,7 +335154,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           return context;
         }
       }
-      const error = context.table.declareVariable(node);
+      const scopeType = getScopeType(context.additionalContext);
+      const error = context.table.declareVariable(node, context.currentNamespacePath, scopeType);
       if (error != void 0) {
         context.violations.push(error);
         return context;
@@ -333601,7 +335169,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (functionDeclaration == void 0 || functionDeclaration.symbolDefinition == void 0 || functionDeclaration.symbolDefinition.symbolType != expectedSymbolType) {
         const error = {
           firstToken: node.firstToken,
-          type: "ReferenceNotDefined",
+          type: "SymbolNotDefined",
           message: formatErrorMessage(`Function with name: ${node.symbolName} was not properly bound. Check the other errors to see why 
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
@@ -333610,17 +335178,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const scope = context.table;
       const functionName = node.identifier.name;
-      const definitionScope = new SymbolTable(`${functionName}.definition`, scope);
-      const bodyScope = new SymbolTable(`${functionName}.body`, definitionScope);
+      const definitionScope = new SymbolTable(`${functionName}.definition`, scope, node);
+      const nonGlobalVariablesInParent = definitionScope.findAllSymbolsInThisAndParents().filter((t) => {
+        const resolved = t.symbolDefinition.resolveSymbol();
+        return resolved instanceof VariableSymbolDefinition && resolved.scopeType != "Global";
+      });
+      nonGlobalVariablesInParent.forEach((v) => {
+        definitionScope.maskSymbolInOuterScope(v.symbolName, true);
+      });
+      const bodyScope = new SymbolTable(`${functionName}.body`, definitionScope, node);
       node.definitionScope = definitionScope;
       node.bodyScope = bodyScope;
       const definitionContext = {
+        worklist: context.worklist,
         table: definitionScope,
-        violations: context.violations
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: context.additionalContext
+        // I think this is correct - the function signature is not yet in the function, only the body is
       };
       const bodyContext = {
+        worklist: context.worklist,
         table: bodyScope,
-        violations: context.violations
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: { state: "definitionBody", currentFunctionBody: node }
       };
       if (node.typeParameters != void 0) {
         for (const typeParameter of node.typeParameters) {
@@ -333629,7 +335213,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             const bounds = typeParameter.typeBoundExpression;
             const typeBoundSymbol = context.table.findSymbol(bounds.symbolName);
             if (typeBoundSymbol == void 0 || typeBoundSymbol.symbolDefinition.symbolType != "TypeBound") {
-              const errorType = typeBoundSymbol == void 0 ? "ReferenceNotDefined" : "SymbolTypeMismatch";
+              const errorType = typeBoundSymbol == void 0 ? "SymbolNotDefined" : "SymbolTypeMismatch";
               const error = {
                 firstToken: typeParameter.firstToken,
                 type: errorType,
@@ -333641,7 +335225,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
               context.violations.push(error);
               continue;
             }
-            definitionContext.table.declareTypeBoundFunctions(typeParameter, typeBoundSymbol);
+            definitionContext.table.declareTypeBoundFunctions(typeParameter, context.currentNamespacePath, typeBoundSymbol);
           }
         }
       }
@@ -333649,6 +335233,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         this.traverse(param.typeExpression, definitionContext);
         const error = bodyScope.declareVariable(
           param,
+          context.currentNamespacePath,
           "Param"
           /* ScopeType.Param */
         );
@@ -333659,19 +335244,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.traverse(node.returnTypeExpression, definitionContext);
       return bodyContext;
     }
-    traverseTypeDefinition(node, context) {
-      const error = context.table.declareType(node);
+    traverseTypeAliasingStatement(node, context) {
+      const error = context.table.declareType(node, context.currentNamespacePath);
       if (error != void 0) {
         context.violations.push(error);
       }
       return this.traverse(node.typeExpression, context);
     }
-    createBlockContext(blockTypeLabel, parentContext) {
+    createBlockContext(node, blockTypeLabel, parentContext) {
       const newScopeName = `${parentContext.table.scopeName}_${blockTypeLabel}_${this.scopeIdCounter++}`;
-      const newTable = new SymbolTable(newScopeName, parentContext.table);
+      const newTable = new SymbolTable(newScopeName, parentContext.table, node);
       const newContext = {
+        worklist: parentContext.worklist,
         table: newTable,
-        violations: parentContext.violations
+        violations: parentContext.violations,
+        currentNamespacePath: parentContext.currentNamespacePath,
+        namespaceRegistery: parentContext.namespaceRegistery,
+        additionalContext: parentContext.additionalContext
       };
       return newContext;
     }
@@ -333708,14 +335297,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.symbolTableScanned = true;
     }
     bindTypeDefsToAllTypeSymbols(context) {
-      const typeSymbols = [...context.table.findAllSymbolsByTypeInThis(
-        "Type"
-        /* SymbolType.Type */
-      )];
+      const typeSymbols = context.table.findAllSymbolsInThis().filter((t) => t.symbolDefinition.resolveSymbol() instanceof TypeSymbolDefinition).map((t) => t.symbolDefinition.resolveSymbol());
       for (const typeSymbol of typeSymbols) {
-        const resp = context.table.resolveTypeDefinition(typeSymbol.symbolDefinition.typeExpression);
+        const resp = context.table.resolveTypeDefinition(typeSymbol.typeExpression);
         if (resp.success == false) {
-          const defNode = typeSymbol.symbolDefinition.definitionNode;
+          const defNode = typeSymbol.definitionNode;
           resp.errors.forEach((e) => {
             const mappedError = ResolveTypeErrorToSemanticError[e.error];
             const out = {
@@ -333729,7 +335315,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const cascadingError = {
             firstToken: defNode.firstToken,
             type: "CascadingError",
-            message: formatErrorMessage(`Failed to bind type def to symbol: ${typeSymbol.symbolName}, expression: ${typeSymbol.symbolDefinition.typeExpression}.
+            message: formatErrorMessage(`Failed to bind type def to symbol. expression: ${typeSymbol.typeExpression}.
             Referenced on: ${defNode.firstToken.createTokenSourceString()}`)
           };
           context.typeMismatches.push(cascadingError);
@@ -333743,23 +335329,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
               throw new Error("Handling type bounds for generic ADTs aren't implemented yet");
             }
           }
-          if (typeSymbol.symbolDefinition.typeDefinition == void 0) {
-            typeSymbol.symbolDefinition.typeDefinition = resp.type;
+          if (typeSymbol.typeDefinition == void 0) {
+            typeSymbol.typeDefinition = resp.type;
           } else {
-            if (!typeSymbol.symbolDefinition.typeDefinition.equals(resp.type)) {
-              throw new Error(`Rebinding type def to symbol ${typeSymbol.symbolName}. Before it was: ${typeSymbol.symbolDefinition.typeDefinition.toString()}, new binding is ${resp.type.toString()}`);
+            if (!typeSymbol.typeDefinition.equals(resp.type)) {
+              throw new Error(`Rebinding type def to symbol. Before it was: ${typeSymbol.typeDefinition.toString()}, new binding is ${resp.type.toString()}`);
             }
           }
         }
       }
     }
     bindTypeBoundDefsToAllTypeBoundSymbols(context) {
-      const typeBoundSymbols = [...context.table.findAllSymbolsByTypeInThis(
-        "TypeBound"
-        /* SymbolType.TypeBound */
-      )];
+      const typeBoundSymbols = context.table.findAllSymbolsInThis().filter((t) => t.symbolDefinition.resolveSymbol() instanceof TypeBoundSymbolDefinition).map((t) => t.symbolDefinition.resolveSymbol());
       for (const typeBoundSymbol of typeBoundSymbols) {
-        const node = typeBoundSymbol.symbolDefinition.definitionNode;
+        const node = typeBoundSymbol.definitionNode;
         const traversalScope = node.definitionScope;
         if (traversalScope == void 0) {
           throw new Error(`Scope is not properly bound to node with symbolname: ${node.symbolName}`);
@@ -333833,7 +335416,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           };
           context.typeMismatches.push(error);
         }
-        const resp = context.table.resolveTypeBound(node.symbolName);
+        const resp = context.table.resolveTypeBoundDefinition(node.symbolName);
         if (resp.success == false) {
           console.error(resp);
           throw new Error("Failed to resolve type bound");
@@ -333841,20 +335424,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
     bindTypeBoundInfoToTypeParameters(context) {
-      const typeSymbols = [...context.table.findAllSymbolsByTypeInThis(
-        "Type"
-        /* SymbolType.Type */
-      )];
+      const typeSymbols = context.table.findAllSymbolsInThis().filter((t) => t.symbolDefinition.resolveSymbol() instanceof TypeSymbolDefinition).map((t) => t.symbolDefinition.resolveSymbol());
       for (const typeSymbol of typeSymbols) {
-        if (typeSymbol.symbolDefinition.genericTypeParamInfo == void 0) {
+        if (typeSymbol.genericTypeParamInfo == void 0) {
           continue;
         }
-        const typeBoundInfo = typeSymbol.symbolDefinition.genericTypeParamInfo.typeBoundInfo;
+        const typeBoundInfo = typeSymbol.genericTypeParamInfo.typeBoundInfo;
         if (typeBoundInfo == void 0) {
           continue;
         }
         const typeParameterExp = typeBoundInfo.typeParameterExpression;
-        const typeBoundDef = typeBoundInfo.typeBoundSymbol.symbolDefinition.typeBoundDefinition;
+        const typeBoundDef = typeBoundInfo.typeBoundSymbol.typeBoundDefinition;
         if (typeBoundDef == void 0) {
           throw new Error(`The type bound definition was undefined, but this should have been set earlier`);
         }
@@ -333896,18 +335476,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
     bindFunctionTypeDefsToFunctions(context) {
-      const callableSymbols = [
-        ...context.table.findAllSymbolsByTypeInThis(
-          "Function"
-          /* SymbolType.Function */
-        ),
-        ...context.table.findAllSymbolsByTypeInThis(
-          "Operator"
-          /* SymbolType.Operator */
-        )
-      ];
+      const callableSymbols = context.table.findAllSymbolsInThis().filter((t) => t.symbolDefinition.resolveSymbol() instanceof CallableSymbolDefinition).map((t) => t.symbolDefinition.resolveSymbol());
       for (const symbol of callableSymbols) {
-        const overloads = symbol.symbolDefinition.overloads;
+        const overloads = symbol.overloads;
         for (let i = 0; i < overloads.length; i++) {
           const overload = overloads[i];
           const overloadScope = overload.definitionNode.definitionScope;
@@ -333940,7 +335511,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             }
             overload.typeDefinition = overloadType;
           } else {
-            const typeBoundDefinitionResp = context.table.resolveTypeBound(overload.typeBoundSource.typeBoundSymbol.symbolName);
+            const typeBoundDefinitionResp = context.table.resolveTypeBoundDefinition(overload.typeBoundSource.typeBoundSymbol.name);
             if (typeBoundDefinitionResp.success == false) {
               throw new Error("FIXME: bad error handling");
             }
@@ -333970,18 +335541,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
     checkSymbolTableForDuplicateFunctionSigs(context) {
-      const callableSymbols = [
-        ...context.table.findAllSymbolsByTypeInThis(
-          "Function"
-          /* SymbolType.Function */
-        ),
-        ...context.table.findAllSymbolsByTypeInThis(
-          "Operator"
-          /* SymbolType.Operator */
-        )
-      ];
+      const callableSymbols = context.table.findAllSymbolsInThis().filter((t) => t.symbolDefinition.resolveSymbol() instanceof CallableSymbolDefinition).map((t) => t.symbolDefinition.resolveSymbol());
       for (const symbol of callableSymbols) {
-        const overloads = symbol.symbolDefinition.overloads;
+        const overloads = symbol.overloads;
         for (let i = 0; i < overloads.length; i++) {
           const a = overloads[i];
           const aType = a.typeDefinition;
@@ -334026,8 +335588,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return typeDefinition;
     }
     traverseBlockNode(node, context) {
+      const blockScope = node.bodyScope;
+      const newContext = {
+        typeMismatches: context.typeMismatches,
+        table: blockScope,
+        contextualTypeForDisambiguation: context.contextualTypeForDisambiguation
+      };
       for (const n of node.astNodes) {
-        this.traverse(n, context);
+        this.traverse(n, newContext);
       }
       return UndeterminedTypeTypeDefinition.instance;
     }
@@ -334066,13 +335634,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const functionTypeDefinition = this.traverseCallableDefinition(node, context);
       return functionTypeDefinition;
     }
-    traverseTypeDefinition(node, context) {
+    traverseTypeAliasingStatement(node, context) {
+      return UndeterminedTypeTypeDefinition.instance;
+    }
+    traverseNamespaceDefinition(node, context) {
+      const newContext = {
+        typeMismatches: context.typeMismatches,
+        table: node.definitionScope
+      };
+      this.traverse(node.body, newContext);
       return UndeterminedTypeTypeDefinition.instance;
     }
     traverseCompositeDefinition(node, context) {
       const scope = context.table;
       const symbol = scope.findSymbol(node.symbolName);
-      if (symbol == void 0 || symbol.symbolDefinition.symbolType != "Type") {
+      if (symbol == void 0) {
+        const error = {
+          firstToken: node.firstToken,
+          type: "SymbolTypeMismatch",
+          message: formatErrorMessage(`
+        Unable to resolve symbol '${node.symbolName} to struct type. Entry type in the symbol table was undefined
+        Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(error);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const resolvedSymbol = symbol.symbolDefinition.resolveSymbol();
+      if (!(resolvedSymbol instanceof TypeSymbolDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "SymbolTypeMismatch",
@@ -334083,14 +335671,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.typeMismatches.push(error);
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const typeDefResp = scope.resolveTypeDefinition(symbol.symbolDefinition.typeExpression);
+      const typeDefResp = scope.resolveTypeDefinition(resolvedSymbol.typeExpression);
       if (typeDefResp.success == false) {
         return UndeterminedTypeTypeDefinition.instance;
       }
       return typeDefResp.type;
     }
     traverseTypeBoundDefinition(node, context) {
-      const resp = context.table.resolveTypeBound(node.symbolName);
+      const resp = context.table.resolveTypeBoundDefinition(node.symbolName);
       if (resp.success == false) {
         console.error(resp);
         throw new Error("Failed to resolve type bound");
@@ -334190,13 +335778,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new ArrayTypeDefinition(context.table, arrayType, arrayTypes.length);
     }
     traverseCompositeLiteral(node, context) {
-      const resp = context.table.findTypeSymbol(node.compositeSymbolName);
-      if (resp.success == false) {
+      const resp = context.table.findSymbol(node.compositeSymbolName);
+      if (resp == void 0 || !(resp.symbolDefinition.resolveSymbol() instanceof TypeSymbolDefinition)) {
         const error = {
           firstToken: node.firstToken,
           type: "SymbolTypeMismatch",
           message: formatErrorMessage(`Composite literal found for a symbol that's not a type. 
-        The type of '${node.compositeSymbolName}' was '${resp.symbol?.symbolDefinition?.symbolType}'
+        The type of '${node.compositeSymbolName}' was '${resp?.symbolDefinition?.symbolType}'
         Referenced on: ${node.firstToken.createTokenSourceString()}`)
         };
         context.typeMismatches.push(error);
@@ -334328,51 +335916,53 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return typeDefinition;
     }
     // expressions
-    traverseIdentifierExpression(node, context) {
+    traverseValueExprIdentifier(node, context) {
       const scope = context.table;
-      const symbol = scope.findSymbol(node.symbolName);
-      const currentSymbolBinding = node.getSymbolBinding();
+      const symbol = scope.findSymbol(node.identifier.symbolName);
+      const currentSymbolBinding = node.identifier.getSymbolBinding();
       if (currentSymbolBinding != void 0) {
         return currentSymbolBinding.typeDefinition ?? UndeterminedTypeTypeDefinition.instance;
       }
-      if (symbol.symbolDefinition.symbolType == "Variable") {
-        const type = context.table.resolveVariableTypeDefinition(node.name);
+      const resolvedSymbolDefinition = symbol.symbolDefinition.resolveSymbol();
+      if (resolvedSymbolDefinition instanceof VariableSymbolDefinition) {
+        const type = context.table.resolveVariableTypeDefinition(node.identifier.name);
         const resolvedSymbolInfo = {
           symbolType: "Variable",
-          symbol,
+          symbolDefinition: resolvedSymbolDefinition,
           typeDefinition: type?.resolveType()
         };
-        node.setSymbolBinding(resolvedSymbolInfo);
+        node.identifier.setSymbolBinding(resolvedSymbolInfo);
         return type ?? UndeterminedTypeTypeDefinition.instance;
-      } else if (symbol.symbolDefinition.symbolType == "Function") {
-        const res = this.resolveFunctionReferenceAndBind(node, context, symbol);
+      } else if (resolvedSymbolDefinition instanceof CallableSymbolDefinition) {
+        const res = this.resolveFunctionReferenceAndBind(node.identifier, context, resolvedSymbolDefinition);
         if (res.success == true) {
           return res.result.typeDefinition;
         } else {
-          this.createErrorMessagesForFunctionResolutionFail(node, node.name, context, res);
+          this.createErrorMessagesForFunctionResolutionFail(node, node.identifier.name, context, res);
           return UndeterminedTypeTypeDefinition.instance;
         }
       }
       const error = {
         firstToken: node.firstToken,
-        type: "ReferenceNotDefined",
+        type: "SymbolNotDefined",
         message: formatErrorMessage(`
-      Checker traverse identifier is not implemented for type ${symbol.symbolDefinition.symbolType} for identifier ${node.name}
+      Checker traverse identifier is not implemented for type ${symbol.symbolDefinition.symbolType} for identifier ${node.identifier.name}
       Referenced on: ${node.firstToken.createTokenSourceString()}`)
       };
       context.typeMismatches.push(error);
       return UndeterminedTypeTypeDefinition.instance;
     }
-    traverseIdentifierExpressionWithTypeArguments(node, context) {
-      node.typeArguments.forEach((typeArg) => this.traverse(typeArg, context));
-      const displayString = `${node.identifier.name}<${node.typeArguments.map((t) => t.toString()).join(", ")}>`;
+    traverseValueExprIdentifierWithTypeArgs(node, context) {
+      node.identifierWithTypeArguments.typeArguments.forEach((typeArg) => this.traverse(typeArg, context));
+      const displayString = `${node.identifierWithTypeArguments.identifier.name}<${node.identifierWithTypeArguments.typeArguments.map((t) => t.toString()).join(", ")}>`;
       const scope = context.table;
-      const symbol = scope.findSymbol(node.symbolName);
-      const currentSymbolBinding = node.getSymbolBinding();
+      const symbol = scope.findSymbol(node.identifierWithTypeArguments.symbolName);
+      const currentSymbolBinding = node.identifierWithTypeArguments.getSymbolBinding();
       if (currentSymbolBinding != void 0) {
         return currentSymbolBinding.typeDefinition ?? UndeterminedTypeTypeDefinition.instance;
       }
-      if (symbol.symbolDefinition.symbolType == "Variable") {
+      const resolvedSymbolDefinition = symbol.symbolDefinition.resolveSymbol();
+      if (resolvedSymbolDefinition instanceof VariableSymbolDefinition) {
         const error2 = {
           firstToken: node.firstToken,
           type: "TypeArgumentsOnValueVariable",
@@ -334383,8 +335973,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         context.typeMismatches.push(error2);
         return UndeterminedTypeTypeDefinition.instance;
-      } else if (symbol.symbolDefinition.symbolType == "Function") {
-        const res = this.resolveFunctionReferenceAndBind(node, context, symbol);
+      } else if (resolvedSymbolDefinition instanceof CallableSymbolDefinition) {
+        const res = this.resolveFunctionReferenceAndBind(node.identifierWithTypeArguments, context, resolvedSymbolDefinition);
         if (res.success == true) {
           return res.result.typeDefinition;
         } else {
@@ -334394,7 +335984,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const error = {
         firstToken: node.firstToken,
-        type: "ReferenceNotDefined",
+        type: "SymbolNotDefined",
         message: formatErrorMessage(`
       Checker traverse identifier is not implemented for type ${symbol.symbolDefinition.symbolType} for identifier ${displayString}
       Referenced on: ${node.firstToken.createTokenSourceString()}`)
@@ -334519,11 +336109,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       let functionName;
       let resolvedTypeArguments = void 0;
-      if (node.internal instanceof AstIdentifierNode) {
+      if (node.internal instanceof AstValueExpressionIdentifier) {
         functionName = node.internal.symbolName;
-      } else if (node.internal instanceof AstIdentiferWithTypeArgumentsNode) {
-        functionName = node.symbolName;
-        const unresolvedTypeArgumets = node.internal.typeArguments.map((arg) => this.traverse(arg, context));
+      } else if (node.internal instanceof AstValueExpressionIdentifierWithTypeArguments) {
+        functionName = node.internal.symbolName;
+        const unresolvedTypeArgumets = node.internal.identifierWithTypeArguments.typeArguments.map((arg) => this.traverse(arg, context));
         if (unresolvedTypeArgumets.some((t) => t.resolveType() == void 0)) {
           return UndeterminedTypeTypeDefinition.instance;
         }
@@ -334540,7 +336130,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "NoMatchingFunctionSignature",
-            message: formatErrorMessage(`Unable to resolve overload for callable with name: '${node.internal.symbolName}'.
+            message: formatErrorMessage(`Unable to statically resolve overload for callable with name: '${node.internal.symbolName}'.
           Input types were: (${callArgumentTypes.map((t) => t.toString()).join(", ")})
           Referenced on: ${node.firstToken.createTokenSourceString()} 
           `)
@@ -334556,7 +336146,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "CallOnUncallable",
-            message: formatErrorMessage(`Attempting to call expression ${node.tokens.join(" ")}, but that expression is
+            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.join(" ")}, but that expression is
            not a function type. Instead it is: ${typeOfInternal.toString()}.
            Referenced on: ${node.firstToken.createTokenSourceString()}
           `)
@@ -334568,9 +336158,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "IncorrectNumberOfArgs",
-            message: formatErrorMessage(`Attempting to call expression ${node.tokens.join(" ")} but got the incorrect number of function arguments.
+            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.join(" ")} but got the incorrect number of function arguments.
           Function type was: ${resolvedCallExpressionType.toString()}
           But arguments to the call was: ${callArgumentTypes.map((t) => t.toShortString()).join(", ")}
+          isStatic: ${isStaticCall}
           Referenced on: ${node.firstToken.createTokenSourceString()}
           `)
           };
@@ -334592,6 +336183,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             message: formatErrorMessage(`Attempting to call expression ${node.tokens.join(" ")} but got the incorrect argument types.
           Function type was: ${resolvedCallExpressionType.toString()}
           But arguments to the call was: ${callArgumentTypes.map((t) => t.toShortString()).join(", ")}
+          staticCall?: ${isStaticCall}
           Referenced on: ${node.firstToken.createTokenSourceString()}
           `)
           };
@@ -334827,6 +336419,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return UndeterminedTypeTypeDefinition.instance;
       }
       return typeResp.type;
+    }
+    traverseDeclareFunctionStatement(node, context) {
+      const functionTypeDefinition = this.traverseCallableDefinition(node, context);
+      return functionTypeDefinition;
+    }
+    traverseImportStatement(node, context) {
+      return UndeterminedTypeTypeDefinition.instance;
     }
     // statements
     traverseAssignmentStatement(node, context) {
@@ -335177,22 +336776,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         expressionType = this.traverse(node.expression, newContext);
       }
       const scope = node.augmentedProperties.scope;
-      const resp = scope.findVariableSymbol(node.symbolName);
-      if (!resp.success) {
-        const symbol2 = resp.symbol;
-        throw new Error(`Expected symbol kind for identifier '${node.symbolName}' to be Variable but was instead ${symbol2?.symbolDefinition?.symbolType}`);
+      const resp = scope.findSymbol(node.symbolName);
+      if (resp == void 0) {
+        throw new Error(`Expected symbol kind for identifier '${node.symbolName}' to be Variable but was instead undefined`);
       }
-      const symbol = resp.symbol;
+      const resolvedSymbolDefinition = resp.symbolDefinition.resolveSymbol();
+      if (!(resolvedSymbolDefinition instanceof VariableSymbolDefinition)) {
+        throw new Error(`Expected symbol kind for identifier '${node.symbolName}' to be Variable but was instead ${resolvedSymbolDefinition.symbolType}`);
+      }
       const variableTypeExpression = node.variable.typeExpression;
       let variableTypeDefinition = UndeterminedTypeTypeDefinition.instance;
       if (variableTypeExpression != void 0) {
         variableTypeDefinition = this.traverse(variableTypeExpression, context);
-        if (symbol.symbolDefinition.resolvedType == void 0) {
+        if (resolvedSymbolDefinition.resolvedType == void 0) {
           context.table.bindVariableType(node.symbolName, variableTypeDefinition.resolveType());
         } else {
-          if (!symbol.symbolDefinition.resolvedType.equals(variableTypeDefinition.resolveType())) {
+          if (!resolvedSymbolDefinition.resolvedType.equals(variableTypeDefinition.resolveType())) {
             throw new Error(`Found a symbol entry that has a different type than the type expression
-          Symbol type was: ${symbol.symbolDefinition.resolvedType.toString()}, but variable was of type: ${variableTypeDefinition.toString()}`);
+          Symbol type was: ${resolvedSymbolDefinition.resolvedType.toString()}, but variable was of type: ${variableTypeDefinition.toString()}`);
           }
         }
       }
@@ -335226,13 +336827,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return variableTypeDefinition;
     }
-    resolveFunctionReferenceAndBind(expressionNode, context, rhsSymbol) {
+    resolveFunctionReferenceAndBind(expressionNode, context, rhsSymbolDef) {
       const lhsTypeDefinition = context.contextualTypeForDisambiguation;
       let typeArguments = void 0;
       if (expressionNode instanceof AstIdentiferWithTypeArgumentsNode) {
         typeArguments = expressionNode.typeArguments.map((t) => this.traverse(t, context).resolveType());
       }
-      const unfilteredOverloads = rhsSymbol.symbolDefinition.overloads;
+      const unfilteredOverloads = rhsSymbolDef.overloads;
       const overloadsWithMatchingTypeArity = unfilteredOverloads.filter((o) => o.typeParameterDefinitions?.length == typeArguments?.length);
       let overloadsMatchingOnType = [];
       let selectedOverload;
@@ -335274,7 +336875,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         const bindingInformation = {
           symbolType: "Function",
-          symbol: rhsSymbol,
+          symbolDefinition: rhsSymbolDef,
           overload: selectedOverload,
           typeArguments,
           typeDefinition: resolvedTypeDefinition
@@ -335337,7 +336938,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (node.typeBoundExpression == void 0) {
         return UndeterminedTypeTypeDefinition.instance;
       }
-      const resp = context.table.resolveTypeBound(node.typeBoundExpression.symbolName);
+      const resp = context.table.resolveTypeBoundDefinition(node.typeBoundExpression.symbolName);
       if (resp.success == false) {
         const error = {
           firstToken: node.firstToken,
@@ -335429,6 +337030,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.parseWatOperatorDefinition(c);
       } else if (c.matchedRule?.name == PARSER_RULE_NAMES.typeboundDefinition) {
         return this.parseTypeBoundDefinition(c);
+      } else if (c.matchedRule?.name == PARSER_RULE_NAMES.block) {
+        return this.parseBlock(c);
+      } else if (c.matchedRule?.name == PARSER_RULE_NAMES.namespaceDefinition) {
+        return this.parseNamespaceDefinition(c);
       } else if (c.matchedRule?.name == PARSER_RULE_NAMES.controlFlowStatements) {
         return this.parseControlFlowStatement(c);
       }
@@ -335463,6 +337068,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const fields = this.parseTypeBoundRequirements(root.children[4]);
       return new AstTypeBoundDefinition(root, identifier3, genericTypeExpression, fields);
     }
+    parseNamespaceDefinition(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.namespaceDefinition);
+      this.expectNumberOfChildren(root, 3);
+      const path = this.parsePathExpression(root.children[1]);
+      const block = this.parseBlock(root.children[2]);
+      return new AstNamespaceDefinition(root, path, block);
+    }
     parseOptionalTypeParameters(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.optionalTypeParameters);
       this.expectNumberOfChildren(root, 0, 1);
@@ -335478,21 +337090,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return typeParameters;
     }
     parseGenericTypeFields(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeParameterCommaList}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const genericFields = root.children[0];
-      this.expectNumberOfChildren(genericFields, 3);
-      const firstField = this.parseTypeParameter(genericFields.children[0], 0);
-      const typeParameters = [firstField];
-      const additionalArgs = genericFields.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseTypeParameter(n, i + 1);
-        typeParameters.push(x);
-      }
-      return typeParameters;
+      let i = 0;
+      const callback = /* @__PURE__ */ __name((node) => {
+        i += 1;
+        return this.parseTypeParameter(node, i);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.typeParameterCommaList], callback);
     }
     parseTypeParameter(root, typeParameterIndex) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeParameter);
@@ -335515,38 +337118,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new AstTypeBoundExpression(root, identifier3, typeArgs);
     }
     parseStructFields(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.compositeFields}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const structMembersList = root.children[0];
-      this.expectNumberOfChildren(structMembersList, 3);
-      const firstField = this.parseParamWithType(structMembersList.children[0]);
-      const identifiers = [firstField];
-      const additionalArgs = structMembersList.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseParamWithType(n);
-        identifiers.push(x);
-      }
-      return identifiers;
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseParamWithType(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.compositeFields], callback);
     }
     parseTypeBoundRequirements(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeboundRequirements}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const constraintLists = root.children[0];
-      this.expectNumberOfChildren(constraintLists, 3);
-      const firstField = this.parseTypeBoundRequirement(constraintLists.children[0]);
-      const identifiers = [firstField];
-      const additionalArgs = constraintLists.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseTypeBoundRequirement(n);
-        identifiers.push(x);
-      }
-      return identifiers;
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseTypeBoundRequirement(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.typeboundRequirements], callback);
     }
     parseTypeBoundRequirement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeboundRequirement);
@@ -335590,7 +337171,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseIfStatement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.ifStatement);
       this.expectNumberOfChildren(root, 6);
-      const expression = this.parseExpressionToAst(root.children[2]);
+      const expression = this.parseValueExpression(root.children[2]);
       const block = this.parseBlock(root.children[4]);
       let elseBlock = void 0;
       if (root.children[5].children.length > 0) {
@@ -335601,7 +337182,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseWhileStatement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.whileStatement);
       this.expectNumberOfChildren(root, 5);
-      const exp = this.parseExpressionToAst(root.children[2]);
+      const exp = this.parseValueExpression(root.children[2]);
       const block = this.parseBlock(root.children[4]);
       return new AstWhileStatement(root, exp, block);
     }
@@ -335623,7 +337204,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const conditionParse = root.children[4];
       let condition;
       if (conditionParse.children.length > 0) {
-        condition = this.parseExpressionToAst(conditionParse.children[0]);
+        condition = this.parseValueExpression(conditionParse.children[0]);
       }
       const incrementParse = root.children[6];
       let increment;
@@ -335638,7 +337219,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseSwitchStatement(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.switchStatement);
       this.expectNumberOfChildren(root, 8);
-      const expression = this.parseExpressionToAst(root.children[2]);
+      const expression = this.parseValueExpression(root.children[2]);
       const caseStatements = this.parseCaseStatements(root.children[5]);
       let elseBlock = void 0;
       if (root.children[6].children.length > 0) {
@@ -335717,21 +337298,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new AstFunctionDefinition(root, name, genericTypeExpression, params, returnType, block);
     }
     parseFunctionParams(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.functionParameterList}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const functionParameterList = root.children[0];
-      this.expectNumberOfChildren(functionParameterList, 3);
-      const firstParam = this.parseParamWithType(functionParameterList.children[0]);
-      const identifiers = [firstParam];
-      const additionalArgs = functionParameterList.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseParamWithType(n);
-        identifiers.push(x);
-      }
-      return identifiers;
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseParamWithType(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.functionParameterList], callback);
     }
     parseParamWithType(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.paramWithType);
@@ -335751,29 +337321,53 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectParseRuleName(root, PARSER_RULE_NAMES.simpleStatements);
       this.expectNumberOfChildren(root, 1);
       const child = root.children[0];
-      if (child.matchedRule?.name == PARSER_RULE_NAMES.variableDeclarationStatement) {
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.declarationStatements) {
+        return this.parseDeclarations(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.variableDeclarationStatement) {
         return this.parseVariableDeclaration(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.assignmentStatement) {
         return this.parseVariableAssignment(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.returnStatement) {
         return this.parseReturnStatement(child);
-      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.expression) {
-        return this.parseExpressionToAst(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.valueExpression) {
+        return this.parseValueExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.typeAliasingStatement) {
         return this.parseTypeDefinition(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.breakKeyword) {
         return new AstBreakStatement(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.continueKeyword) {
         return new AstContinueStatement(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.importStatement) {
+        return this.parseImportStatement(child);
       }
-      throw new Error(`Unimplemented for rule name: ${child.matchedRule?.name}`);
+      throw new Error(`Unimplemented for rule name: ${child.matchedRule?.name}, ${root.tokensAsString}`);
+    }
+    parseDeclarations(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.declarationStatements);
+      this.expectNumberOfChildren(root, 1);
+      const child = root.children[0];
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.declareFunctionStatement) {
+        return this.parseDeclareFunctionStatement(child);
+      }
+      throw new Error(`Unimplemented for rule name: ${child.matchedRule?.name}, ${root.tokensAsString}`);
+    }
+    parseDeclareFunctionStatement(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.declareFunctionStatement);
+      this.expectNumberOfChildren(root, 8);
+      const iden = this.parseIdentifier(root.children[2]);
+      const optTypeParams = this.parseOptionalTypeParameters(root.children[3]);
+      const parameters = this.parseFunctionParams(root.children[5]);
+      const optReturnTypeParse = root.children[7];
+      const returnTypeExp = this.parseOptionalTypeAnnotation(optReturnTypeParse) ?? new AstUnitTypeExpression(optReturnTypeParse);
+      const out = new AstDeclareFunctionStatement(root, iden, optTypeParams, parameters, returnTypeExp);
+      return out;
     }
     parseVariableDeclaration(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.variableDeclarationStatement);
       this.expectNumberOfChildren(root, 5);
       const constOrVar = root.children[0].children[0];
       const varDecType = constOrVar.matchedRule?.name ?? "";
-      if (varDecType != PARSER_RULE_NAMES.constKeyword && varDecType != PARSER_RULE_NAMES.varKeyword) {
+      if (varDecType != PARSER_RULE_NAMES.constKeyword && varDecType != PARSER_RULE_NAMES.varKeyword && varDecType != PARSER_RULE_NAMES.letKeyword) {
         throw new Error(`Failed to handle variable declaration of type: ${varDecType}`);
       }
       const isConstant = varDecType == PARSER_RULE_NAMES.constKeyword ? true : false;
@@ -335784,7 +337378,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const type = this.parseOptionalTypeAnnotation(optVariableType);
       const variable = new AstSimpleVariableAccess(root, identifier3);
       const varWithType = new AstVariableWithOptType(root, isConstant, variable, type);
-      const expressionAst = this.parseExpressionToAst(expression);
+      const expressionAst = this.parseValueExpression(expression);
       return new AstVariableDeclarationStatement(root, varWithType, expressionAst);
     }
     parseVariableAssignment(root) {
@@ -335796,7 +337390,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (operator == void 0) {
         throw new Error(`Failed to find assignment operator for rule name: ${opName}`);
       }
-      const expression = this.parseExpressionToAst(root.children[2]);
+      const expression = this.parseValueExpression(root.children[2]);
       return new AstVariableAssignmentStatement(root, variable, operator, expression);
     }
     parseReturnStatement(root) {
@@ -335810,15 +337404,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectNumberOfChildren(root, 4);
       const identifier3 = this.parseIdentifier(root.children[1]);
       const typeExpression = this.parseTypeExpression(root.children[3]);
-      return new AstTypeDefinitionStatement(root, identifier3, typeExpression);
+      return new AstTypeAliasingStatement(root, identifier3, typeExpression);
     }
     parseTypeExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeExpression);
       this.expectNumberOfChildren(root, 1);
       const child = root.children[0];
-      if (child.matchedRule?.name == PARSER_RULE_NAMES.identifier) {
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.parenthizedTypeExpression) {
+        return this.parseParenthizedTypeExpression(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.identifier) {
         const idNode = this.parseIdentifier(child);
-        return new BaseTypeExpression(child, idNode);
+        return new NamedTypeExpression(child, idNode);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.pointerTypeExpression) {
         const internal = this.parseTypeExpression(child.children[1]);
         return new PointerTypeExpression(child, internal);
@@ -335829,7 +337425,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (sizeNode.children[0].matchedRule?.name == PARSER_RULE_NAMES.asterisk) {
           size2 = void 0;
         } else if (sizeNode.children[0].matchedRule?.name == PARSER_RULE_NAMES.integerLiteral) {
-          const numberAtom = this.parseNumberAtom(sizeNode.children[0]);
+          const numberAtom = this.parseNumberLiteral(sizeNode.children[0]);
           if (!numberAtom.isInt) {
             throw new Error("Parsing for array size failed.");
           }
@@ -335847,21 +337443,36 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.neverKeyword) {
         return new AstNeverTypeExpression(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.identifierWithTypeArguments) {
-        const baseType = new BaseTypeExpression(child, this.parseIdentifier(child.children[0]));
+        const baseType = new NamedTypeExpression(child, this.parseIdentifier(child.children[0]));
         const typeArguments = this.parseTypeArguments(child.children[1]);
         return new TypeInstantiatingTypeExpression(baseType, typeArguments);
       }
       throw new Error(`Type expression parsing is not implemented for type: ${child.matchedRule?.name}`);
     }
+    parseParenthizedTypeExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.parenthizedTypeExpression);
+      this.expectNumberOfChildren(root, 3);
+      return this.parseTypeExpression(root.children[1]);
+    }
     parseTupleExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.tupleTypeExpression);
-      this.expectNumberOfChildren(root, 3);
-      const optionalTupleTypeCommaList = root.children[1];
-      const expressions = this.parseOptionalTypeCommaList(optionalTupleTypeCommaList);
-      if (expressions.length == 0) {
+      this.expectNumberOfChildren(root, 1);
+      const child = root.children[0];
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.unitTupleTypeExpression) {
         return new AstUnitTypeExpression(root);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.itemTupleTypeExpression) {
+        return this.parseItemTupleTypeExpression(child);
       }
-      return new TupleTypeExpression(root, expressions);
+      throw new Error(`Failed to parse tuple type with rule name: ${child.matchedRule?.name}`);
+    }
+    parseItemTupleTypeExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.itemTupleTypeExpression);
+      this.expectNumberOfChildren(root, 5);
+      const firstExpression = root.children[1];
+      const firstType = this.parseTypeExpression(firstExpression);
+      const optionalTupleTypeCommaList = root.children[3];
+      const tailExpressions = this.parseOptionalTypeCommaList(optionalTupleTypeCommaList);
+      return new TupleTypeExpression(root, [firstType, ...tailExpressions]);
     }
     parseFunctionTypeExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.oldStyleFunctionTypeExpression);
@@ -335880,57 +337491,70 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new FunctionTypeExpression(root, parameterTypes, returnType);
     }
     parseOptionalTypeCommaList(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.typeCommaList}`);
-      if (root.children.length == 0) {
-        return [];
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseTypeExpression(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.typeCommaList], callback);
+    }
+    parseImportStatement(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.importStatement);
+      this.expectNumberOfChildren(root, 2);
+      const pathExpressionNode = root.children[1];
+      const pathExpression = this.parsePathExpression(pathExpressionNode);
+      return new AstImportStatement(root, pathExpression);
+    }
+    parsePathExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.pathExpression);
+      const firstComponentNode = root.children[0];
+      const firstComponent = this.parsePathComponent(firstComponentNode);
+      const tailNodes = root.children[1];
+      const tail3 = [];
+      for (let i = 0; i < tailNodes.children.length; i++) {
+        const currentSegment = tailNodes.children[i];
+        const componentNode = currentSegment.children[1];
+        const componenet = this.parsePathComponent(componentNode);
+        tail3.push(componenet);
       }
-      const list = root.children[0];
-      this.expectNumberOfChildren(list, 3);
-      const first2 = this.parseTypeExpression(list.children[0]);
-      const expressions = [first2];
-      const additionalArgs = list.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseTypeExpression(n);
-        expressions.push(x);
+      return new AstPathExpression(root, [firstComponent, ...tail3]);
+    }
+    parsePathComponent(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.pathComponent);
+      this.expectNumberOfChildren(root, 1);
+      const child = root.children[0];
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.dotDot) {
+        return new AstPathComponentDotDot(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.dot) {
+        return new AstPathComponentDot(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.identifier) {
+        const identifier3 = this.parseIdentifier(child);
+        return new AstPathComponentIdentifier(child, identifier3);
       }
-      return expressions;
+      throw new Error(`PathComponent unhandled for rule: ${child.matchedRule?.name}, ${root.tokensAsString}`);
     }
     // You need to go top-down like a recursive descent parser.
     // I tried to build it bottom-up, but it was a big mess and all my previous tests would break when I'd move up 1 level.
-    parseExpressionToAst(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.expression, PARSER_RULE_NAMES.bracketedExpression);
+    parseValueExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.valueExpression, PARSER_RULE_NAMES.bracketedExpression);
       if (root.children.length == 1 && root.children[0].matchedRule?.name == PARSER_RULE_NAMES.logicalExpression) {
         return this.parseLogicalExpression(root.children[0]);
       } else if (root.children.length == 3) {
-        return this.parseExpressionToAst(root.children[1]);
+        return this.parseValueExpression(root.children[1]);
       }
       throw new Error("Not yet implemented");
     }
     parseOptionalExpression(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.optionalExpression);
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.optionalValueExpression);
       this.expectNumberOfChildren(root, 0, 1);
       if (root.children.length == 0) {
         return void 0;
       }
-      return this.parseExpressionToAst(root.children[0]);
+      return this.parseValueExpression(root.children[0]);
     }
     parseIdentifierList(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.builtInFunctionArgumentList}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const functionCallIdentifiersList = root.children[0];
-      this.expectNumberOfChildren(functionCallIdentifiersList, 3);
-      const firstExpressionParse = functionCallIdentifiersList.children[0];
-      const firstIdentifier = this.parseIdentifier(firstExpressionParse);
-      const identifiers = [firstIdentifier];
-      const additionalArgs = functionCallIdentifiersList.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const exp = this.parseIdentifier(additionalArgs.children[i].children[1]);
-        identifiers.push(exp);
-      }
-      return identifiers;
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseIdentifier(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.builtInFunctionArgumentList], callback);
     }
     parseFunctionArgs(root) {
       this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.functionArgumentList}`, `optional_${PARSER_RULE_NAMES.callExpressionArgumentList}`);
@@ -335940,21 +337564,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const functionCallArgumentList = root.children[0];
       this.expectNumberOfChildren(functionCallArgumentList, 3);
       const firstExpressionParse = functionCallArgumentList.children[0];
-      const firstExpression = this.parseExpressionToAst(firstExpressionParse);
+      const firstExpression = this.parseValueExpression(firstExpressionParse);
       const expressions = [firstExpression];
       const additionalArgs = functionCallArgumentList.children[1];
       for (let i = 0; i < additionalArgs.children.length; i++) {
-        const exp = this.parseExpressionToAst(additionalArgs.children[i].children[1]);
+        const exp = this.parseValueExpression(additionalArgs.children[i].children[1]);
         expressions.push(exp);
       }
       return expressions;
     }
-    parseZeroOrMoreMatch(root) {
+    parseMultiMatchedBinaryExpression(lhsExpressionNode, root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.multiMatchUnary, PARSER_RULE_NAMES.multiMatchProduct, PARSER_RULE_NAMES.multiMatchSum, PARSER_RULE_NAMES.multiMatchBitwise, PARSER_RULE_NAMES.multiMatchComparison, PARSER_RULE_NAMES.multiMatchLogical);
       if (root.children.length == 0) {
-        return void 0;
+        return lhsExpressionNode;
       }
-      const parsedPairs = [];
+      let res = lhsExpressionNode;
       for (let i = 0; i < root.children.length; i++) {
         const underscore = root.children[i];
         const opName = underscore.children[0].children[0].matchedRule?.name ?? "";
@@ -335975,70 +337599,43 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (rhsNode.matchedRule?.name == PARSER_RULE_NAMES.unaryExpressionOrPrimary) {
           rhsAst = this.parseUnaryOrTypecasting(rhsNode);
         } else if (rhsNode.matchedRule?.name == PARSER_RULE_NAMES.bracketedExpression) {
-          rhsAst = this.parseExpressionToAst(rhsNode);
+          rhsAst = this.parseValueExpression(rhsNode);
         } else {
           throw new Error(`Failed to parse RHS. Received rulename was: ${rhsNode.matchedRule?.name}`);
         }
-        parsedPairs.push({ operator, rhs: rhsAst });
+        res = new AstBinaryOperation(root, res, operator, rhsAst);
       }
-      let res = parsedPairs[0].rhs;
-      for (let i = 1; i < parsedPairs.length; i++) {
-        const op = parsedPairs[i].operator;
-        const rhs = parsedPairs[i].rhs;
-        const node = new AstBinaryOperation(rhs.parseTreeNode, res, op, rhs);
-        res = node;
-      }
-      return { operator: parsedPairs[0].operator, rhs: res };
+      return res;
     }
     parseLogicalExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.logicalExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseComparisonExpression(root.children[0]);
-      const rhs = this.parseZeroOrMoreMatch(root.children[1]);
-      if (rhs == void 0) {
-        return lhs;
-      }
-      return new AstBinaryOperation(root, lhs, rhs.operator, rhs.rhs);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
     }
     parseComparisonExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.comparisonExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseBitwiseExpression(root.children[0]);
-      const rhs = this.parseZeroOrMoreMatch(root.children[1]);
-      if (rhs == void 0) {
-        return lhs;
-      }
-      return new AstBinaryOperation(root, lhs, rhs.operator, rhs.rhs);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
     }
     parseBitwiseExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.bitwiseExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseSumExpression(root.children[0]);
-      const rhs = this.parseZeroOrMoreMatch(root.children[1]);
-      if (rhs == void 0) {
-        return lhs;
-      }
-      return new AstBinaryOperation(root, lhs, rhs.operator, rhs.rhs);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
     }
     parseSumExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.sumExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseProductExpression(root.children[0]);
-      const rhs = this.parseZeroOrMoreMatch(root.children[1]);
-      if (rhs == void 0) {
-        return lhs;
-      }
-      return new AstBinaryOperation(root, lhs, rhs.operator, rhs.rhs);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
     }
     parseProductExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.productExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseUnaryOrTypecasting(root.children[0]);
-      const rhs = this.parseZeroOrMoreMatch(root.children[1]);
-      if (rhs == void 0) {
-        return lhs;
-      }
-      return new AstBinaryOperation(root, lhs, rhs.operator, rhs.rhs);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
     }
     parseUnaryOrTypecasting(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.unaryExpressionOrPrimary);
@@ -336104,9 +337701,30 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectNumberOfChildren(root, 2);
       const fieldAccessNode = root.children[0];
       const fieldAccess = this.parseFieldAccessExpression(fieldAccessNode);
-      const args = this.parseFunctionArgs(root.children[1].children[0].children[1]);
-      const argsGroup = new GroupAstNode(root.children[1], args);
-      return new AstCallExpression(root, fieldAccess, argsGroup);
+      const chainedArgs = this.parseCallExpressionMultiMatch(root.children[1]);
+      let current = new AstCallExpression(chainedArgs[0].parseTreeNode, fieldAccess, chainedArgs[0]);
+      for (let i = 1; i < chainedArgs.length; i++) {
+        const nextArgs = chainedArgs[i];
+        const next = new AstCallExpression(nextArgs.parseTreeNode, current, nextArgs);
+        current = next;
+      }
+      return current;
+    }
+    parseCallExpressionMultiMatch(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.callExpressionMultiMatch);
+      const out = [];
+      for (const currentTail of root.children) {
+        out.push(new GroupAstNode(currentTail, this.parseCallExpressionTail(currentTail)));
+      }
+      return out;
+    }
+    parseCallExpressionTail(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.callExpressionTail);
+      this.expectNumberOfChildren(root, 3);
+      return this.parseCallExpressionArgumentList(root.children[1]);
+    }
+    parseCallExpressionArgumentList(root) {
+      return this.parseFunctionArgs(root);
     }
     parseIndexingExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.indexingExpression);
@@ -336117,7 +337735,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       let current = fieldAccess;
       for (let i = 0; i < tail3.children.length; i++) {
         const indexExpressionNode = tail3.children[i].children[1];
-        const indexExpression = this.parseExpressionToAst(indexExpressionNode);
+        const indexExpression = this.parseValueExpression(indexExpressionNode);
         const indexingNode = new AstBinaryOperation(root, fieldAccess, "[]", indexExpression);
         current = indexingNode;
       }
@@ -336156,9 +337774,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectNumberOfChildren(root, 1);
       const primaryChild = root.children[0];
       if (primaryChild.matchedRule?.name == PARSER_RULE_NAMES.expressionAtom) {
-        return this.parseAtomNode(primaryChild);
+        return this.parsePrimaryValueExpression(primaryChild);
       } else if (primaryChild.matchedRule?.name == PARSER_RULE_NAMES.bracketedExpression) {
-        return this.parseExpressionToAst(primaryChild);
+        return this.parseValueExpression(primaryChild);
       } else if (primaryChild.matchedRule?.name == PARSER_RULE_NAMES.variableBrackets) {
         return this.parseVariableBrackets(primaryChild);
       }
@@ -336184,10 +337802,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error(`Failed to parse unary expression for child node: ${unaryOrPrimary.children[0].matchedRule?.name}`);
     }
     parseTreeToAst(root) {
-      if (root.matchedRule?.name != PARSER_RULE_NAMES.expression) {
+      if (root.matchedRule?.name != PARSER_RULE_NAMES.valueExpression) {
         return this.parseTreeToAst(root.children[0]);
       } else {
-        return this.parseExpressionToAst(root);
+        return this.parseValueExpression(root);
       }
     }
     parseOptionalTypeAnnotation(root) {
@@ -336199,18 +337817,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return void 0;
       }
     }
-    parseAtomNode(root) {
+    parsePrimaryValueExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.expressionAtom);
       this.expectNumberOfChildren(root, 1);
       const child = root.children[0];
-      if (child.matchedRule?.name == PARSER_RULE_NAMES.numberMatcher) {
-        return this.parseNumberAtom(child);
-      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.identifierWithTypeArguments) {
-        return this.parseIdentifierWithTypeArguments(child);
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.identifierWithTypeArguments) {
+        const idenWithTypeArgs = this.parseIdentifierWithTypeArguments(child);
+        return new AstValueExpressionIdentifierWithTypeArguments(root, idenWithTypeArgs);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.identifier) {
-        return this.parseIdentifier(child);
+        const iden = this.parseIdentifier(child);
+        return new AstValueExpressionIdentifier(root, iden);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.literal) {
-        return this.parseLiteralAtom(child);
+        return this.parseValueLiteral(child);
       }
       throw new Error(`Undefined atom node type. RuleName: ${root.matchedRule?.name}`);
     }
@@ -336233,7 +337851,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.parseVariableFieldAccess(v);
       } else if (v.matchedRule?.name == PARSER_RULE_NAMES.variableIndexingAccess) {
         const internal = this.parseVariableAssignmentLhs(v.children[0]);
-        const expression = this.parseExpressionToAst(v.children[2]);
+        const expression = this.parseValueExpression(v.children[2]);
         return new AstVariableIndexAccess(v, internal, expression);
       } else if (v.matchedRule?.name == PARSER_RULE_NAMES.simpleVariableAccess) {
         return this.parseSimpleVariableAccess(v);
@@ -336256,25 +337874,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseVariableBrackets(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.variableBrackets);
       this.expectNumberOfChildren(root, 3);
-      return this.parseVariableAssignmentLhs(root.children[1]);
+      return this.parseValueExpression(root.children[1]);
     }
-    parseNumberAtom(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.numberMatcher, PARSER_RULE_NAMES.integerLiteral, PARSER_RULE_NAMES.floatLiteral);
-      this.expectNumberOfChildren(root, 0);
-      if (root.matchedRule?.name == PARSER_RULE_NAMES.floatLiteral) {
-        return new AstFloatLiteral(root);
-      } else if (root.matchedRule?.name == PARSER_RULE_NAMES.integerLiteral) {
-        return new AstIntLiteral(root);
-      }
-      throw new Error(`Failed to handle number literal ${root.matchedRule?.name}`);
-    }
-    parseVariableAtom(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.identifier);
-      this.expectNumberOfChildren(root, 0);
-      const idNode = this.parseIdentifier(root);
-      return idNode;
-    }
-    parseLiteralAtom(root) {
+    parseValueLiteral(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.literal);
       this.expectNumberOfChildren(root, 1);
       const child = root.children[0];
@@ -336285,13 +337887,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.arrayLiteral) {
         return this.parseArrayLiteral(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.numberMatcher || child.matchedRule?.name == PARSER_RULE_NAMES.integerLiteral || child.matchedRule?.name == PARSER_RULE_NAMES.floatLiteral) {
-        return this.parseNumberAtom(child);
+        return this.parseNumberLiteral(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.trueLiteral || child.matchedRule?.name == PARSER_RULE_NAMES.falseLiteral) {
         return new AstBooleanLiteral(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.nullLiteral) {
         return new AstNullPtrLiteral(child);
       }
       throw new Error(`Parsing literal for ${child.matchedRule?.name} is not defined`);
+    }
+    parseNumberLiteral(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.numberMatcher, PARSER_RULE_NAMES.integerLiteral, PARSER_RULE_NAMES.floatLiteral);
+      this.expectNumberOfChildren(root, 0);
+      if (root.matchedRule?.name == PARSER_RULE_NAMES.floatLiteral) {
+        return new AstFloatLiteral(root);
+      } else if (root.matchedRule?.name == PARSER_RULE_NAMES.integerLiteral) {
+        return new AstIntLiteral(root);
+      }
+      throw new Error(`Failed to handle number literal ${root.matchedRule?.name}`);
     }
     parseCompositeLiteral(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.compositeLiteral);
@@ -336316,38 +337928,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     parseTypeExpressionList(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.typeExpressionList);
       const child = root.children[0];
-      this.expectParseRuleName(child, `optional_${PARSER_RULE_NAMES.typeExpressionCommaList}`);
-      if (child.children.length == 0) {
-        return [];
-      }
-      const typeExpressions = child.children[0];
-      this.expectNumberOfChildren(typeExpressions, 3);
-      const first2 = this.parseTypeExpression(typeExpressions.children[0]);
-      const expressions = [first2];
-      const additionalArgs = typeExpressions.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseTypeExpression(n);
-        expressions.push(x);
-      }
-      return expressions;
+      const callback = /* @__PURE__ */ __name((root2) => {
+        return this.parseTypeExpression(root2);
+      }, "callback");
+      return this.parseCommaList(child, [PARSER_RULE_NAMES.typeExpressionCommaList], callback);
     }
     parseStructAssignments(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.structLiteralAssignments}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const structAssignments = root.children[0];
-      this.expectNumberOfChildren(structAssignments, 3);
-      const firstAssignment = this.parseVariableAssignment(structAssignments.children[0]);
-      const assignments = [firstAssignment];
-      const additionalArgs = structAssignments.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseVariableAssignment(n);
-        assignments.push(x);
-      }
-      return assignments;
+      const callback = /* @__PURE__ */ __name((root2) => {
+        return this.parseVariableAssignment(root2);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.structLiteralAssignments], callback);
     }
     parseTupleLiteral(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.tupleLiteral);
@@ -336362,21 +337952,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return new AstArrayLiteral(root, expressions);
     }
     parseExpressionTerms(root) {
-      this.expectParseRuleName(root, `optional_${PARSER_RULE_NAMES.expressionTerms}`);
-      if (root.children.length == 0) {
-        return [];
-      }
-      const expressionsNodes = root.children[0];
-      this.expectNumberOfChildren(expressionsNodes, 3);
-      const first2 = this.parseExpressionToAst(expressionsNodes.children[0]);
-      const expressions = [first2];
-      const additionalArgs = expressionsNodes.children[1];
-      for (let i = 0; i < additionalArgs.children.length; i++) {
-        const n = additionalArgs.children[i].children[1];
-        const x = this.parseExpressionToAst(n);
-        expressions.push(x);
-      }
-      return expressions;
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseValueExpression(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.expressionTerms], callback);
     }
     parseIdentifierWithTypeArguments(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.identifierWithTypeArguments);
@@ -336404,7 +337983,27 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const idNode = new AstIdentifierNode(root, token.tokens[0].lexeme);
       return idNode;
     }
-    // throws if not expected
+    parseCommaList(commaListRoot, ruleNameWithoutOptionalPrefix, callback) {
+      const mappedNames = ruleNameWithoutOptionalPrefix.map((r) => `optional_${r}`);
+      this.expectParseRuleName(commaListRoot, ...mappedNames);
+      if (commaListRoot.children.length == 0) {
+        return [];
+      }
+      const first2 = commaListRoot.children[0];
+      this.expectNumberOfChildren(first2, 3);
+      const out = [];
+      const firstParsed = callback(first2.children[0]);
+      const assignments = [firstParsed];
+      const additionalArgs = first2.children[1];
+      for (let i = 0; i < additionalArgs.children.length; i++) {
+        const n = additionalArgs.children[i].children[1];
+        const x = callback(n);
+        assignments.push(x);
+      }
+      return assignments;
+    }
+    // Internal validation functions. Its much easier to debug the parser if I throw when my assumptions are not correct
+    // rather than pass through potentially incorrect data and have to debug it later.
     expectParseRuleName(root, ...names) {
       if (root.matchedRule == void 0 || !names.includes(root.matchedRule.name)) {
         throw new Error(`Wrong rule name received. Expected: '${names.join(" ")}'. Received: '${root.matchedRule?.name}'`);
@@ -336594,6 +338193,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "||"
       /* TokenType.OrOr */
     );
+    const dotDot = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.dotDot,
+      ".."
+      /* TokenType.DotDot */
+    );
+    const colonColon = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.colonColon,
+      "::"
+      /* TokenType.ColonColon */
+    );
     const operatorSymbols = parser2.createOrderedChoice(PARSER_RULE_NAMES.operatorSymbols, asterisk, exclaim, tilde, minus, plus, slash, percentSymbol, bitwiseOr, bitwiseXor, bitwiseAnd, equality, notEquals, greaterEqual, lessEqual, greater, lessThan, logicalAnd, logicalOr);
     const equalsAssignment = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.equals,
@@ -336624,6 +338233,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       PARSER_RULE_NAMES.varKeyword,
       "var"
       /* TokenType.Var */
+    );
+    const letMatcher = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.letKeyword,
+      "let"
+      /* TokenType.Let */
     );
     const ifKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.ifKeyword,
@@ -336664,6 +338278,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       PARSER_RULE_NAMES.continueKeyword,
       "continue"
       /* TokenType.Continue */
+    );
+    const importKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.importKeyword,
+      "import"
+      /* TokenType.Import */
+    );
+    const namespaceKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.namespaceKeyword,
+      "namespace"
+      /* TokenType.Namespace */
+    );
+    const declareKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.declareKeyword,
+      "declare"
+      /* TokenType.Declare */
     );
     const functionKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.functionKeyword,
@@ -336720,7 +338349,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "never"
       /* TokenType.Never */
     );
-    const identifierMatcher = parser2.createTokenMatcher(
+    const identifier3 = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.identifier,
       "Identifier"
       /* TokenType.Identifier */
@@ -336757,6 +338386,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return out;
     }
     __name(optionalCommaList, "optionalCommaList");
+    const pathComponent = parser2.createOrderedChoice(PARSER_RULE_NAMES.pathComponent, dotDot, identifier3, dotMatcher);
+    const pathTail = parser2.createZeroOrMore(PARSER_RULE_NAMES.pathTail, parser2.createSequence(PARSER_RULE_NAMES.pathSegment, colonColon, pathComponent));
+    const pathExpression = parser2.createSequence(PARSER_RULE_NAMES.pathExpression, pathComponent, pathTail);
     const typeExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeExpression);
     const typeAnnotation = parser2.createSequence(
       PARSER_RULE_NAMES.typeAnnotation,
@@ -336777,7 +338409,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     );
     const pointerTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.pointerTypeExpression, asterisk, typeExpression);
     const typeCommaList = optionalCommaList(PARSER_RULE_NAMES.typeCommaList, typeExpression);
-    const tupleTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.tupleTypeExpression, leftParen, typeCommaList, rightParen);
+    const unitTupleTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.unitTupleTypeExpression, leftParen, rightParen);
+    const itemTupleTypeExpression = parser2.createSequence(
+      PARSER_RULE_NAMES.itemTupleTypeExpression,
+      leftParen,
+      typeExpression,
+      // requires at least one element and a trailing comma
+      commaMatcher,
+      typeCommaList,
+      // 0-or-more elements here, but the
+      rightParen
+    );
+    const tupleTypeExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.tupleTypeExpression, unitTupleTypeExpression, itemTupleTypeExpression);
     const oldStyleFunctionTypeExpression = parser2.createSequence(
       // function(types): type?
       // TODO: I eventually want to change this to (args) => returnType?
@@ -336791,7 +338434,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const typescriptStyleFunctionTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.typescriptStyleFunctionTypeExpression, leftParen, typeCommaList, rightParen, fatRightArrow, typeExpression);
     const typeParameterBounds = parser2.createSequence(PARSER_RULE_NAMES.typeParameterBounds);
     const optionalTypeParameterBounds = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeParameterBounds, parser2.createSequence(PARSER_RULE_NAMES.typeParameterBoundsWithColon, colon, typeParameterBounds));
-    const typeParameter = parser2.createSequence(PARSER_RULE_NAMES.typeParameter, identifierMatcher, optionalTypeParameterBounds);
+    const typeParameter = parser2.createSequence(PARSER_RULE_NAMES.typeParameter, identifier3, optionalTypeParameterBounds);
     const typeParameterList = parser2.createSequence(PARSER_RULE_NAMES.typeParameterList, optionalCommaList(PARSER_RULE_NAMES.typeParameterCommaList, typeParameter));
     const typeExpressionList = parser2.createSequence(PARSER_RULE_NAMES.typeExpressionList, optionalCommaList(PARSER_RULE_NAMES.typeExpressionCommaList, typeExpression));
     const typeParameters = parser2.createSequence(
@@ -336802,24 +338445,28 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       greater
     );
     const typeArguments = parser2.createSequence(PARSER_RULE_NAMES.typeArguments, lessThan, typeExpressionList, greater);
-    const identifierWithTypeArguments = parser2.createSequence(PARSER_RULE_NAMES.identifierWithTypeArguments, identifierMatcher, typeArguments);
+    const identifierWithTypeArguments = parser2.createSequence(PARSER_RULE_NAMES.identifierWithTypeArguments, identifier3, typeArguments);
+    const parenthesizedTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.parenthizedTypeExpression, leftParen, typeExpression, rightParen);
     typeExpression.symbols.push(
-      oldStyleFunctionTypeExpression,
-      // function(i32, i32): i32
+      // These are ordered so that they'll match in the correct order.
       typescriptStyleFunctionTypeExpression,
       // (T, A) => X
+      tupleTypeExpression,
+      // (i32, i32, i32)
+      parenthesizedTypeExpression,
+      // (some_expression) // used to support higher precedence. In cases like functions, this helps resolve the ambiguity
+      oldStyleFunctionTypeExpression,
+      // function(i32, i32): i32
       pointerTypeExpression,
       // **i32
       arrayTypeExpression,
       // [i32, 5], [i32, *]
-      tupleTypeExpression,
-      // (i32, i32, i32)
       unitKeyword,
       // matches "unit" - which is an alias for ()
       neverKeyword,
       // matches "never"
       identifierWithTypeArguments,
-      identifierMatcher
+      identifier3
     );
     const tupleLiteral = parser2.createSequence(PARSER_RULE_NAMES.tupleLiteral);
     const arrayLiteral = parser2.createSequence(PARSER_RULE_NAMES.arrayLiteral);
@@ -336830,13 +338477,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "BlockWatText"
       /* TokenType.BlockWatText */
     );
-    const atom = parser2.createOrderedChoice(PARSER_RULE_NAMES.expressionAtom, literal, identifierWithTypeArguments, identifierMatcher);
+    const atom = parser2.createOrderedChoice(PARSER_RULE_NAMES.expressionAtom, literal, identifierWithTypeArguments, identifier3);
     const primary = parser2.createOrderedChoice(PARSER_RULE_NAMES.primary);
     const fieldAccessExpression = parser2.createSequence(
       PARSER_RULE_NAMES.fieldAccessExpression,
       primary,
       // has the zero-or-more so that it can match stuff like A.b.c;
-      parser2.createZeroOrMore(PARSER_RULE_NAMES.fieldAccessSuffix, parser2.createSequence(PARSER_RULE_NAMES.dotThenIdentifier, dotMatcher, identifierMatcher))
+      parser2.createZeroOrMore(PARSER_RULE_NAMES.fieldAccessSuffix, parser2.createSequence(PARSER_RULE_NAMES.dotThenIdentifier, dotMatcher, identifier3))
     );
     const compilerBuiltInFunction = parser2.createSequence(PARSER_RULE_NAMES.compilerBuiltInFunctions);
     const callExpression = parser2.createSequence(PARSER_RULE_NAMES.callExpression);
@@ -336871,83 +338518,99 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const comparisonExpression = parser2.createSequence(PARSER_RULE_NAMES.comparisonExpression, bitwiseExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.multiMatchComparison, parser2.createSequence(PARSER_RULE_NAMES.bitwiseTail, comparisonOperators, bitwiseExpression)));
     const logicalOperators = parser2.createOrderedChoice(PARSER_RULE_NAMES.logicalOperators, logicalAnd, logicalOr);
     const logicalExpression = parser2.createSequence(PARSER_RULE_NAMES.logicalExpression, comparisonExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.multiMatchLogical, parser2.createSequence(PARSER_RULE_NAMES.comparisonTail, logicalOperators, comparisonExpression)));
-    const expression = parser2.createOrderedChoice(PARSER_RULE_NAMES.expression, logicalExpression);
-    const optionalExpression = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalExpression, expression);
-    const expressionTerms = optionalCommaList(PARSER_RULE_NAMES.expressionTerms, expression);
+    const valueExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.valueExpression, logicalExpression);
+    const optionalExpression = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalValueExpression, valueExpression);
+    const expressionTerms = optionalCommaList(PARSER_RULE_NAMES.expressionTerms, valueExpression);
     tupleLiteral.symbols.push(leftParen, expressionTerms, rightParen);
     arrayLiteral.symbols.push(leftSquare, expressionTerms, rightSquare);
-    const bracketedExpression = parser2.createSequence(PARSER_RULE_NAMES.bracketedExpression, leftParen, expression, rightParen);
+    const bracketedExpression = parser2.createSequence(PARSER_RULE_NAMES.bracketedExpression, leftParen, valueExpression, rightParen);
     const compilerBuiltInFunctionNames = parser2.createOrderedChoice(PARSER_RULE_NAMES.compilerBuiltInFunctionNames, sizeOfKeyword);
-    compilerBuiltInFunction.symbols.push(compilerBuiltInFunctionNames, leftParen, optionalCommaList(PARSER_RULE_NAMES.builtInFunctionArgumentList, identifierMatcher), rightParen);
+    compilerBuiltInFunction.symbols.push(compilerBuiltInFunctionNames, leftParen, optionalCommaList(PARSER_RULE_NAMES.builtInFunctionArgumentList, identifier3), rightParen);
     indexingExpression.symbols.push(
       fieldAccessExpression,
       // this is oneOrMore so that I can do stuff like: A[1][2][3]; though A[(1, 2, 3)] (with a tuple) is also parse-able. Stuff like A[1, 2, 3] is not supported
-      parser2.createOneOrMore(PARSER_RULE_NAMES.indexingExpressionMultiMatch, parser2.createSequence(PARSER_RULE_NAMES.indexingExpressionTail, leftSquare, expression, rightSquare))
+      parser2.createOneOrMore(PARSER_RULE_NAMES.indexingExpressionMultiMatch, parser2.createSequence(PARSER_RULE_NAMES.indexingExpressionTail, leftSquare, valueExpression, rightSquare))
     );
     primary.symbols.push(bracketedExpression, atom);
     const returnStatement = parser2.createSequence(PARSER_RULE_NAMES.returnStatement, returnKeyword, optionalExpression);
     const assignmentVariableAccess = parser2.createOrderedChoice(PARSER_RULE_NAMES.assignmentVariableAccess);
     const nonLeftVariableAccess = parser2.createOrderedChoice(PARSER_RULE_NAMES.nonLeftVariableAccess);
-    const simpleVariableAccess = parser2.createSequence(PARSER_RULE_NAMES.simpleVariableAccess, identifierMatcher);
+    const simpleVariableAccess = parser2.createSequence(PARSER_RULE_NAMES.simpleVariableAccess, identifier3);
     const variableBrackets = parser2.createSequence(PARSER_RULE_NAMES.variableBrackets, leftParen, assignmentVariableAccess, rightParen);
     const variableDereferenceAccess = parser2.createSequence(PARSER_RULE_NAMES.variableDereferenceAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableDereferenceOneOrMoreAsterisk, asterisk), assignmentVariableAccess);
-    const variableIndexingAccess = parser2.createSequence(PARSER_RULE_NAMES.variableIndexingAccess, nonLeftVariableAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableIndexingTail, parser2.createSequence(PARSER_RULE_NAMES.variableIndexingExpressions, leftSquare, expression, rightSquare)));
-    const variableFieldAccess = parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccess, nonLeftVariableAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableFieldAccessTail, parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccessDotIdentifier, dotMatcher, identifierMatcher)));
+    const variableIndexingAccess = parser2.createSequence(PARSER_RULE_NAMES.variableIndexingAccess, nonLeftVariableAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableIndexingTail, parser2.createSequence(PARSER_RULE_NAMES.variableIndexingExpressions, leftSquare, valueExpression, rightSquare)));
+    const variableFieldAccess = parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccess, nonLeftVariableAccess, parser2.createOneOrMore(PARSER_RULE_NAMES.variableFieldAccessTail, parser2.createSequence(PARSER_RULE_NAMES.variableFieldAccessDotIdentifier, dotMatcher, identifier3)));
     assignmentVariableAccess.symbols.push(variableFieldAccess, variableBrackets, variableIndexingAccess, variableDereferenceAccess, simpleVariableAccess);
     nonLeftVariableAccess.symbols.push(variableBrackets, variableDereferenceAccess, simpleVariableAccess);
     const assignmentOperators = parser2.createOrderedChoice(PARSER_RULE_NAMES.assignmentOperators, equalsAssignment);
-    const assignmentStatement = parser2.createSequence(PARSER_RULE_NAMES.assignmentStatement, assignmentVariableAccess, assignmentOperators, expression);
+    const assignmentStatement = parser2.createSequence(PARSER_RULE_NAMES.assignmentStatement, assignmentVariableAccess, assignmentOperators, valueExpression);
     const structLiteralAssignments = optionalCommaList(PARSER_RULE_NAMES.structLiteralAssignments, assignmentStatement);
-    const variableDeclarationOperator = parser2.createOrderedChoice(PARSER_RULE_NAMES.variableDeclarationOperators, constMatcher, varMatcher);
+    const variableDeclarationOperator = parser2.createOrderedChoice(PARSER_RULE_NAMES.variableDeclarationOperators, constMatcher, varMatcher, letMatcher);
     const optionalTypeParameters = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeParameters, typeParameters);
     const optionalTypeArguments = parser2.createZeroOrMore(PARSER_RULE_NAMES.optionalTypeArguments, typeArguments);
-    typeParameterBounds.symbols.push(identifierMatcher, optionalTypeArguments);
+    typeParameterBounds.symbols.push(identifier3, optionalTypeArguments);
     compositeLiteral.symbols.push(typeExpression, leftCurly, structLiteralAssignments, rightCurly);
     callExpression.symbols.push(
       fieldAccessExpression,
+      // the name or the expression that returns the function to call
       // optionalTypeArguments, // type arguments are moved to the identifier.
       parser2.createOneOrMore(
         PARSER_RULE_NAMES.callExpressionMultiMatch,
         // this is oneOrMore so that I can do stuff like: A(1)(2)(3); Stuff like A(1, 2, 3) is also supported
-        parser2.createSequence(PARSER_RULE_NAMES.callExpressionTail, leftParen, optionalCommaList(PARSER_RULE_NAMES.callExpressionArgumentList, expression), rightParen)
+        parser2.createSequence(PARSER_RULE_NAMES.callExpressionTail, leftParen, optionalCommaList(PARSER_RULE_NAMES.callExpressionArgumentList, valueExpression), rightParen)
       )
     );
     const variableDeclaration = parser2.createSequence(
       PARSER_RULE_NAMES.variableDeclarationStatement,
       variableDeclarationOperator,
-      identifierMatcher,
+      identifier3,
       // optionalTypeMatcher should be variableDeclarationType
       optionalTypeAnnotation,
       // If the type is not supplied I'll have to do type inference from the RHS expression
       equalsAssignment,
-      expression
+      valueExpression
     );
-    const typeAliasDefinitionStatement = parser2.createSequence(PARSER_RULE_NAMES.typeAliasingStatement, typeAliasKeyword, identifierMatcher, equalsAssignment, typeExpression);
-    const simpleStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.simpleStatements, variableDeclaration, assignmentStatement, typeAliasDefinitionStatement, breakKeyword, continueKeyword, returnStatement, expression);
+    const typeAliasDefinitionStatement = parser2.createSequence(PARSER_RULE_NAMES.typeAliasingStatement, typeAliasKeyword, identifier3, equalsAssignment, typeExpression);
+    const importStatement = parser2.createSequence(PARSER_RULE_NAMES.importStatement, importKeyword, pathExpression);
+    const paramWithType = parser2.createSequence(PARSER_RULE_NAMES.paramWithType, identifier3, typeAnnotation);
+    const paramWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.paramWithOptionalType, identifier3, optionalTypeAnnotation);
+    const functionDefinitionParameters = optionalCommaList(PARSER_RULE_NAMES.functionDefinitionParameters, paramWithType);
+    const declareFunctionStatement = parser2.createSequence(
+      PARSER_RULE_NAMES.declareFunctionStatement,
+      declareKeyword,
+      functionKeyword,
+      identifier3,
+      optionalTypeParameters,
+      // Grammatically I allow this, but I don't know how to use this
+      leftParen,
+      // its maybe slightly weird having the parens at this level and not in the functionDefinitionParameters rule
+      functionDefinitionParameters,
+      rightParen,
+      optionalTypeAnnotation
+    );
+    const declarationStatements = parser2.createOrderedChoice(PARSER_RULE_NAMES.declarationStatements, declareFunctionStatement);
+    const simpleStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.simpleStatements, declarationStatements, variableDeclaration, assignmentStatement, typeAliasDefinitionStatement, importStatement, breakKeyword, continueKeyword, returnStatement, valueExpression);
     const statement = parser2.createOrderedChoice(PARSER_RULE_NAMES.statement);
     const statements = parser2.createZeroOrMore(PARSER_RULE_NAMES.statements, statement);
-    const paramWithType = parser2.createSequence(PARSER_RULE_NAMES.paramWithType, identifierMatcher, typeAnnotation);
-    const paramWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.paramWithOptionalType, identifierMatcher, optionalTypeAnnotation);
     const typeboundRequirementType = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementType, functionKeyword, operatorKeyword);
-    const typeboundIdentifierMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementIdentifier, operatorSymbols, identifierMatcher);
+    const typeboundIdentifierMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementIdentifier, operatorSymbols, identifier3);
     const typeboundRequirement = parser2.createSequence(PARSER_RULE_NAMES.typeboundRequirement, typeboundRequirementType, typeboundIdentifierMatcher, typeAnnotation);
     const block = parser2.createSequence(PARSER_RULE_NAMES.block, leftCurly, statements, rightCurly);
     const elseBlock = parser2.createSequence(PARSER_RULE_NAMES.elseBlock, elseKeyword, block);
     const optElse = parser2.createZeroOrOne("else?", elseBlock);
-    const ifStatement = parser2.createSequence(PARSER_RULE_NAMES.ifStatement, ifKeyword, leftParen, expression, rightParen, block, optElse);
-    const whileStatement = parser2.createSequence(PARSER_RULE_NAMES.whileStatement, whileKeyword, leftParen, expression, rightParen, block);
+    const ifStatement = parser2.createSequence(PARSER_RULE_NAMES.ifStatement, ifKeyword, leftParen, valueExpression, rightParen, block, optElse);
+    const whileStatement = parser2.createSequence(PARSER_RULE_NAMES.whileStatement, whileKeyword, leftParen, valueExpression, rightParen, block);
     const caseStatement = parser2.createSequence(PARSER_RULE_NAMES.caseStatement, caseKeyword, leftParen, paramWithOptionalType, rightParen, block);
     const zeroOrMoreCaseStatements = parser2.createZeroOrMore(PARSER_RULE_NAMES.caseStatements, caseStatement);
-    const switchStatement = parser2.createSequence(PARSER_RULE_NAMES.switchStatement, switchKeyword, leftParen, expression, rightParen, leftCurly, zeroOrMoreCaseStatements, optElse, rightCurly);
+    const switchStatement = parser2.createSequence(PARSER_RULE_NAMES.switchStatement, switchKeyword, leftParen, valueExpression, rightParen, leftCurly, zeroOrMoreCaseStatements, optElse, rightCurly);
     const forInitialization = parser2.createZeroOrOne("forInitialization?", parser2.createOrderedChoice("forInitialization", variableDeclaration, assignmentStatement));
-    const forCondition = parser2.createZeroOrOne("forCondition?", expression);
+    const forCondition = parser2.createZeroOrOne("forCondition?", valueExpression);
     const forIncrement = parser2.createZeroOrOne("forIncrement?", assignmentStatement);
     const forStatement = parser2.createSequence(PARSER_RULE_NAMES.forStatement, forKeyword, leftParen, forInitialization, semiColon, forCondition, semiColon, forIncrement, rightParen, block);
-    const functionDefinitionParameters = optionalCommaList(PARSER_RULE_NAMES.functionDefinitionParameters, paramWithType);
     const functionDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.functionDefinition,
       functionKeyword,
-      identifierMatcher,
+      identifier3,
       optionalTypeParameters,
       leftParen,
       // its maybe slightly weird having the parens at this level and not in the functionDefinitionParameters rule
@@ -336960,7 +338623,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const watFunctionDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.watFunctionDefinition,
       watFunctionKeyword,
-      identifierMatcher,
+      identifier3,
       // optionalTypeParameters, // I'm not supporting generics for watfunctions - I don't have a way to monomorphize the body, so its meaningless.
       leftParen,
       functionDefinitionParameters,
@@ -336976,7 +338639,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const compositeDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.compositeDefinition,
       compositeTypeKeywords,
-      identifierMatcher,
+      identifier3,
       optionalTypeParameters,
       leftCurly,
       optionalCommaList(PARSER_RULE_NAMES.compositeFields, paramWithType),
@@ -336986,15 +338649,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const typeboundDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.typeboundDefinition,
       typeboundKeyword,
-      identifierMatcher,
+      identifier3,
       optionalTypeParameters,
       // while it can be parsed without type parameters, it will fail in the checker as there must be at least 1 type parameter for a type bound to be useful/make sense
       leftCurly,
       optionalCommaList(PARSER_RULE_NAMES.typeboundRequirements, typeboundRequirement),
       rightCurly
     );
+    const namespaceDefinition = parser2.createSequence(PARSER_RULE_NAMES.namespaceDefinition, namespaceKeyword, pathExpression, block);
     const controlFlowStatements = parser2.createOrderedChoice(PARSER_RULE_NAMES.controlFlowStatements, ifStatement, whileStatement, forStatement, switchStatement);
-    const complexStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.complexStatement, functionDefinition, watFunctionDefinition, operatorOverloadDefinition, watOperatorOverloadDefinition, compositeDefinition, typeboundDefinition, controlFlowStatements);
+    const complexStatement = parser2.createOrderedChoice(PARSER_RULE_NAMES.complexStatement, functionDefinition, watFunctionDefinition, operatorOverloadDefinition, watOperatorOverloadDefinition, compositeDefinition, typeboundDefinition, namespaceDefinition, controlFlowStatements, block);
     statement.symbols.push(complexStatement, parser2.createSequence(PARSER_RULE_NAMES.statementWithSemicolon, simpleStatement, semiColon), semiColon);
     parser2.root = statements;
     return parser2;
@@ -337127,9 +338791,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       /* TokenType.Comma */
     },
     {
+      matcher: /^\.\./,
+      tokenType: ".."
+      /* TokenType.DotDot */
+    },
+    {
       matcher: /^\./,
       tokenType: "."
       /* TokenType.Dot */
+    },
+    {
+      matcher: /^::/,
+      tokenType: "::"
+      /* TokenType.ColonColon */
     },
     {
       matcher: /^:/,
@@ -338164,385 +339838,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/wasm/WasmUtils.js
-  function formatComment(str) {
-    if (str.trim().length == 0) {
-      return "";
-    }
-    str = str.replace(/;/g, "_");
-    return `(; ${str.trim()} ;)`;
-  }
-  __name(formatComment, "formatComment");
-
-  // ../compiler/dist/src/compiler/wasm/WasmDefinitions.js
-  var WasmFuncParam = class {
-    static {
-      __name(this, "WasmFuncParam");
-    }
-    node;
-    label;
-    type;
-    constructor(node, label, type) {
-      this.node = node;
-      this.label = label;
-      this.type = type;
-      if (label != void 0 && !label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-    }
-    toWatJson(options2) {
-      if (this.label == void 0) {
-        return ["param", this.type];
-      } else {
-        return ["param", this.label, this.type];
-      }
-    }
-  };
-  var WasmFuncReturn = class {
-    static {
-      __name(this, "WasmFuncReturn");
-    }
-    node;
-    type;
-    constructor(node, type) {
-      this.node = node;
-      this.type = type;
-    }
-    toWatJson(options2) {
-      return ["result", this.type];
-    }
-  };
-  var WasmFuncLocal = class {
-    static {
-      __name(this, "WasmFuncLocal");
-    }
-    node;
-    label;
-    type;
-    constructor(node, label, type) {
-      this.node = node;
-      this.label = label;
-      this.type = type;
-      if (label != void 0 && !label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-    }
-    toWatJson(options2) {
-      if (this.label == void 0) {
-        return ["local", this.type];
-      } else {
-        return ["local", this.label, this.type];
-      }
-    }
-  };
-  var WasmFunction = class {
-    static {
-      __name(this, "WasmFunction");
-    }
-    node;
-    label;
-    params;
-    returns;
-    locals;
-    body;
-    constructor(node, label, params, returns, locals, body) {
-      this.node = node;
-      this.label = label;
-      this.params = params;
-      this.returns = returns;
-      this.locals = locals;
-      this.body = body;
-      if (!label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-    }
-    toWatJson(options2) {
-      return [
-        `func ${this.label}`,
-        ...this.params.map((p) => p.toWatJson(options2)),
-        ...this.returns.map((r) => r.toWatJson(options2)),
-        ...this.locals.map((l) => l.toWatJson(options2)),
-        ...this.body.map((b) => b.toWatJson(options2))
-      ];
-    }
-  };
-  var WasmTable = class {
-    static {
-      __name(this, "WasmTable");
-    }
-    node;
-    label;
-    initialSize;
-    tableType;
-    constructor(node, label, initialSize, tableType) {
-      this.node = node;
-      this.label = label;
-      this.initialSize = initialSize;
-      this.tableType = tableType;
-      if (!label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-    }
-    toWatJson(options2) {
-      return [`table `, this.label, `${this.initialSize}`, this.tableType];
-    }
-  };
-  var WasmElem = class {
-    static {
-      __name(this, "WasmElem");
-    }
-    node;
-    tableLabel;
-    initialIndex;
-    functionLabels;
-    constructor(node, tableLabel, initialIndex, functionLabels) {
-      this.node = node;
-      this.tableLabel = tableLabel;
-      this.initialIndex = initialIndex;
-      this.functionLabels = functionLabels;
-      if (tableLabel != void 0 && !tableLabel.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${tableLabel}`);
-      }
-      if (functionLabels.some((fLabel) => !fLabel.startsWith("$"))) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${functionLabels}`);
-      }
-    }
-    toWatJson(options2) {
-      if (this.initialIndex != void 0) {
-        return [`elem `, this.tableLabel, [this.initialIndex.toWatJson(options2)], ...this.functionLabels];
-      } else {
-        return [`elem `, this.tableLabel, ...this.functionLabels];
-      }
-    }
-  };
-  var WasmModule = class {
-    static {
-      __name(this, "WasmModule");
-    }
-    inputs;
-    constructor(inputs) {
-      this.inputs = inputs;
-    }
-    toWatJson(options2) {
-      return [
-        "module",
-        ...this.inputs.globals?.map((g) => g.toWatJson(options2)) ?? [],
-        ...this.inputs.funcs?.map((f) => f.toWatJson(options2)) ?? [],
-        ...this.inputs.datas?.map((f) => f.toWatJson(options2)) ?? [],
-        ...this.inputs.mems ?? [],
-        ...this.inputs.exports ?? [],
-        ...this.inputs.tables?.map((g) => g.toWatJson(options2)) ?? [],
-        ...this.inputs.elems?.map((e) => e.toWatJson(options2)) ?? [],
-        ...this.inputs.types ?? []
-      ];
-    }
-  };
-
-  // ../compiler/dist/src/compiler/wasm/WasmInstructions.js
-  var WasmInstruction = class {
-    static {
-      __name(this, "WasmInstruction");
-    }
-    node;
-    otherArgs;
-    constructor(node, otherArgs) {
-      this.node = node;
-      this.otherArgs = otherArgs;
-    }
-  };
-  var WasmConst = class extends WasmInstruction {
-    static {
-      __name(this, "WasmConst");
-    }
-    node;
-    type;
-    value;
-    otherArgs;
-    constructor(node, type, value, otherArgs) {
-      super(node, otherArgs);
-      this.node = node;
-      this.type = type;
-      this.value = value;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return `${this.type}.const ${this.value} ${formatComment(comment)}`;
-    }
-  };
-  var WasmTypedStackInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WasmTypedStackInstruction");
-    }
-    node;
-    type;
-    instruction;
-    otherArgs;
-    constructor(node, type, instruction, otherArgs) {
-      super(node, otherArgs);
-      this.node = node;
-      this.type = type;
-      this.instruction = instruction;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return `${this.type}.${this.instruction} ${formatComment(comment)}`;
-    }
-  };
-  var WatControlInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WatControlInstruction");
-    }
-    node;
-    instruction;
-    label;
-    constructor(node, instruction, label) {
-      if (label != void 0 && !label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-      super(node);
-      this.node = node;
-      this.instruction = instruction;
-      this.label = label;
-    }
-    toWatJson(options2) {
-      if (this.label == void 0) {
-        return `${this.instruction}`;
-      }
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return `${this.instruction} ${this.label} ${formatComment(comment)}`;
-    }
-  };
-  var WatVariableInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WatVariableInstruction");
-    }
-    node;
-    instruction;
-    label;
-    otherArgs;
-    constructor(node, instruction, label, otherArgs) {
-      if (!label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-      super(node);
-      this.node = node;
-      this.instruction = instruction;
-      this.label = label;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return `${this.instruction} ${this.label} ${formatComment(comment)}`;
-    }
-  };
-  var WasmIfInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WasmIfInstruction");
-    }
-    thenInstructions;
-    elseInstructions;
-    otherArgs;
-    constructor(node, thenInstructions, elseInstructions, otherArgs) {
-      super(node);
-      this.thenInstructions = thenInstructions;
-      this.elseInstructions = elseInstructions;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const thenBlock = this.thenInstructions.map((i) => i.toWatJson(options2));
-      if (this.elseInstructions == void 0) {
-        const res2 = ["if", ["then", ...thenBlock]];
-        return res2;
-      }
-      const elseBlock = this.elseInstructions.map((i) => i.toWatJson(options2));
-      const res = ["if", ["then", ...thenBlock], ["else", ...elseBlock]];
-      return res;
-    }
-  };
-  var WasmBlockInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WasmBlockInstruction");
-    }
-    type;
-    label;
-    instructions;
-    constructor(node, type, label, instructions) {
-      if (!label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-      super(node);
-      this.type = type;
-      this.label = label;
-      this.instructions = instructions;
-    }
-    toWatJson(options2) {
-      return [`${this.type} ${this.label}`, ...this.instructions.map((i) => i.toWatJson(options2))];
-    }
-  };
-  var WasmFunctionCall = class extends WasmInstruction {
-    static {
-      __name(this, "WasmFunctionCall");
-    }
-    node;
-    label;
-    otherArgs;
-    constructor(node, label, otherArgs) {
-      if (!label.startsWith("$")) {
-        throw new Error(`Wasm variables must start with a $ sign, but received ${label}`);
-      }
-      super(node);
-      this.node = node;
-      this.label = label;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return `call ${this.label} ${formatComment(comment)}`;
-    }
-  };
-  var WasmStringInstruction = class extends WasmInstruction {
-    static {
-      __name(this, "WasmStringInstruction");
-    }
-    node;
-    content;
-    constructor(node, content2) {
-      super(node);
-      this.node = node;
-      this.content = content2;
-    }
-    toWatJson(options2) {
-      return this.content;
-    }
-  };
-  var WatIndirectFunctionCall = class extends WasmInstruction {
-    static {
-      __name(this, "WatIndirectFunctionCall");
-    }
-    node;
-    params;
-    results;
-    otherArgs;
-    constructor(node, params, results, otherArgs) {
-      super(node);
-      this.node = node;
-      this.params = params;
-      this.results = results;
-      this.otherArgs = otherArgs;
-    }
-    toWatJson(options2) {
-      const comment = this.otherArgs?.comment ? `${this.otherArgs.comment}` : "";
-      return [
-        "call_indirect",
-        ...this.params.map((p) => p.toWatJson(options2)),
-        ...this.results.map((p) => p.toWatJson(options2)),
-        formatComment(comment)
-      ];
-    }
-  };
-
   // ../compiler/dist/src/compiler/ir/instructions/IROperations.js
   var IROperation = class extends IRExpression {
     static {
@@ -338633,10 +339928,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     nameMapper = new WatNameMapper();
     typeMapper = new WatTypeMapper();
     convertToWasmModule(irModule) {
-      const applicableFunctions = [...irModule.getConcreteFunctions()].filter((f) => !(f.callableOverload.definitionNode instanceof AstWatOperatorDefinition));
+      const applicableFunctions = [...irModule.getConcreteFunctions()].filter((f) => !(f.callableOverload.definitionNode instanceof AstWatOperatorDefinition) && !(f.callableOverload.definitionNode instanceof AstDeclareFunctionStatement));
       const tableAndElemMapper = new WatTableAndElemMapper(applicableFunctions);
       const instructionEmitter = new WatInstructionEmitterV2(this.nameMapper, this.typeMapper, tableAndElemMapper);
       const wasmFunctions = applicableFunctions.map((f) => this.convertFunctionDefinition(instructionEmitter, f));
+      const importMapper = new WatImportMapper();
+      const importedFunctions = [...irModule.getConcreteFunctions()].filter((f) => f.callableOverload.definitionNode instanceof AstDeclareFunctionStatement);
+      importedFunctions.forEach((f) => {
+        const wasmSig = this.convertFunctionSignature(f);
+        const name = f.identifier.name;
+        importMapper.mapIrFunction(name, wasmSig);
+      });
       tableAndElemMapper.validate(wasmFunctions);
       let exports2 = [`(export "mem" (memory 0))`];
       for (const func of wasmFunctions) {
@@ -338651,18 +339953,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         mems: [`(memory 10)`],
         exports: exports2,
         tables: [table],
-        elems: [elem]
+        elems: [elem],
+        imports: importMapper.outputData()
       });
+    }
+    convertFunctionSignature(irFunction) {
+      const label = this.nameMapper.mapIrFunctionName(irFunction);
+      const params = [...irFunction.parameterVariables.values()].map((p) => {
+        const mappedName = this.nameMapper.mapIrVarName(p);
+        const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
+        return mappedTypes.map((t) => new WasmFuncParam(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
+      }).flat();
+      const returnType = this.typeMapper.flattenType(irFunction.functionType.returnType).map((t) => new WasmFuncReturn(void 0, t));
+      return new WasmFunctionSignature(irFunction.callableOverload.definitionNode, label, params, returnType);
     }
     convertFunctionDefinition(instructionEmitter, irFunction) {
       try {
-        const label = this.nameMapper.mapIrFunctionName(irFunction);
-        const params = [...irFunction.parameterVariables.values()].map((p) => {
-          const mappedName = this.nameMapper.mapIrVarName(p);
-          const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
-          return mappedTypes.map((t) => new WasmFuncParam(void 0, WatNameMapper.joinMappedName(t.name), t.wasmType));
-        }).flat();
-        const returnType = this.typeMapper.flattenType(irFunction.functionType.returnType).map((t) => new WasmFuncReturn(void 0, t));
+        const signature = this.convertFunctionSignature(irFunction);
         const locals = [...irFunction.localVariables.values()].map((p) => {
           const mappedName = this.nameMapper.mapIrVarName(p);
           const mappedTypes = this.typeMapper.mapNameAndType([mappedName], p.type);
@@ -338681,7 +339988,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else {
           throw new Error(`Unable to convert callable of type ${def.constructor.name}`);
         }
-        return new WasmFunction(void 0, label, params, returnType, locals, body);
+        return new WasmFunction(def, signature.label, signature.params, signature.returns, locals, body);
       } catch (ex) {
         console.log(`Failed to convert function with key: ${irFunction.identifier.toShortString()} ${irFunction.getCategory()}`);
         throw ex;
@@ -338718,7 +340025,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const name = irFuncIdentifier.name;
       const typeArgs = irFuncIdentifier.typeArguments?.map((t) => this.mapIrTypeName(t)).join(".");
       const paramTypes = irFunction.irParameterTypes.map((p) => this.mapIrTypeName(p)).join(".");
-      const unsanitizedName = `${name}.s:${scope}.t:${typeArgs}.p:${paramTypes}`;
+      const retType = this.mapIrTypeName(irFunction.irReturnType);
+      const unsanitizedName = `${name}.s:${scope}.t:${typeArgs}.p:${paramTypes}.r:${retType}`;
       const sanitizedName = _WatNameMapper.sanitizeName(unsanitizedName);
       return "$" + sanitizedName;
     }
@@ -338861,6 +340169,25 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         table,
         elem
       };
+    }
+  };
+  var WatImportMapper = class {
+    static {
+      __name(this, "WatImportMapper");
+    }
+    // Technically the map is 2-layer, and it can also support variables, memories, tables,
+    // but I'm not ready to support either of those yet
+    _backingMap = /* @__PURE__ */ new Map();
+    mapIrFunction(name, wasmFunctionSignature) {
+      if (this._backingMap.has(name)) {
+        const existingKeys = [...this._backingMap.keys()];
+        throw new Error(`Duplicate names for imports found. Attempting to insert ${name}, map already has ${existingKeys}.`);
+      }
+      const wasmItem = new WasmImport(void 0, "env", name, wasmFunctionSignature);
+      this._backingMap.set(name, wasmItem);
+    }
+    outputData() {
+      return [...this._backingMap.values()];
     }
   };
   var WatInstructionEmitterV2 = class {
@@ -339515,6 +340842,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const cat = this.getCategory();
       return cat == "genericFunctionTemplate" || cat == "genericParameterizedFunction" || cat == "typeboundPlaceholder";
     }
+    hasInstructions() {
+      return this.callableOverload.definitionNode instanceof AstFunctionDefinition || this.callableOverload.definitionNode instanceof AstOperatorDefinition;
+    }
+    isExternalSymbol() {
+      return this.callableOverload.definitionNode instanceof AstDeclareFunctionStatement;
+    }
     areInstructionsPopulated() {
       return this._instructions != void 0;
     }
@@ -339569,7 +340902,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.localVariables.getOrThrow(key);
       }
       console.log(this.parameterVariables.keyStrings(), this.localVariables.keyStrings());
-      throw new Error(`Lookup for variable with identifier: ${key.hashKey()} failed.`);
+      const formattedName = `${this.identifier.toShortString()}.${this.callableOverload.definitionNode.bodyScope.id}`;
+      throw new Error(`Lookup for variable with identifier: ${key.hashKey()} failed in function with name: ${formattedName}.`);
     }
     /**
      * Creates a temporary variable to store a variable.
@@ -339587,23 +340921,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const symbolName = `${label}.${this.tempStoreCounter++}`;
       const identifier3 = new IRVariableIdentifier(scope, symbolName);
       const irType = module2.types.internTypeDefinition(module2, type);
-      const symbolDefinition = {
-        symbolType: "Variable",
-        definitionNode: void 0,
-        // This is pretty hacky, but I shouldn't be referencing the definition nodes here, so we're probably good
-        declaredType: type.expression,
-        resolvedType: type,
-        scopeType: "Local",
-        isConst: false
-      };
-      const symbolInfo = {
-        symbolName: "",
+      const symbolDefinition = new VariableSymbolDefinition(void 0, symbolName, type.expression, "Local", false);
+      const symbolInfo = SymbolInformation4.create({
+        symbolName,
+        bindingPath: void 0,
         declaringScope: scope,
         symbolDefinition,
         shadow: void 0,
         isBuiltIn: false,
-        isShadowable: false
-      };
+        isShadowable: false,
+        isExternallyDefined: false
+      });
       const variable = new IRVariable(identifier3, irType, symbolInfo);
       if (this.localVariables.has(variable.identifier)) {
         throw new Error(`Duplicate variable with identifier: ${variable.identifier.hashKey()} created`);
@@ -339700,8 +341028,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }, "internVariables");
       const paramVariableSymbols = callableOverload.definitionNode.params.map((p) => bodyScope.findSymbolInThisScope(p.symbolName));
       internVariables(paramVariableSymbols, "Param", paramVariables);
-      const localVariableSymbols = bodyScope.findAllSymbolsByType(
-        "Variable"
+      const localVariableSymbols = bodyScope.findAllSymbolsInThisAndChildren().filter(
+        (v) => v.symbolDefinition.symbolType == "Variable"
         /* SymbolType.Variable */
       );
       internVariables(localVariableSymbols, "Local", localVariables);
@@ -339914,24 +341242,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const globalScope = context.table.getGlobalScope();
       const module2 = new IRModule();
       this.bindTypeDefinitions(module2, globalScope);
-      const globalVariables = globalScope.findAllSymbolsByType(
-        "Variable"
-        /* SymbolType.Variable */
-      ).map((v) => v).filter(
+      const globalVariables = globalScope.findAllSymbolsInThisAndChildren().filter((s) => s.symbolDefinition instanceof VariableSymbolDefinition).map((v) => v).filter(
         (v) => v.symbolDefinition.scopeType == "Global"
         /* ScopeType.Global */
       );
       this.bindGlobalVariables(module2, globalVariables);
-      const callables = [
-        ...globalScope.findAllSymbolsByType(
-          "Function"
-          /* SymbolType.Function */
-        ),
-        ...globalScope.findAllSymbolsByType(
-          "Operator"
-          /* SymbolType.Operator */
-        )
-      ].map((s) => s);
+      const callables = globalScope.findAllSymbolsInThisAndChildren().filter((s) => s.symbolDefinition instanceof CallableSymbolDefinition).map((s) => s);
       this.bindCallableDefinitions(module2, callables);
       const functionsToInstantiate = new FunctionMonomorphizationStack();
       [...module2.functions.values()].forEach((functionDefinition) => {
@@ -339966,10 +341282,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const instructionConverter = new IRInstructionConverter();
       while (!functionsToInstantiate.isEmpty()) {
         const context2 = functionsToInstantiate.pop();
-        const functionDefinition = context2.func.definition;
+        const irFunctionDefinition = context2.func.definition;
         try {
-          const instructions = instructionConverter.traverse(functionDefinition.callableOverload.definitionNode, context2);
-          functionDefinition.setInstructions(instructions);
+          const astFunctionDefintion = irFunctionDefinition.callableOverload.definitionNode;
+          let instructions;
+          if (astFunctionDefintion instanceof AstFunctionDefinition || astFunctionDefintion instanceof AstOperatorDefinition) {
+            const body = astFunctionDefintion.body;
+            instructions = instructionConverter.traverse(body, context2);
+          } else if (astFunctionDefintion instanceof AstWatFunctionDefinition || astFunctionDefintion instanceof AstWatOperatorDefinition || astFunctionDefintion instanceof AstDeclareFunctionStatement) {
+            instructions = [];
+          } else {
+            throw new Error(`Unhandled code path for callable node of type ${astFunctionDefintion.constructor.name}`);
+          }
+          irFunctionDefinition.setInstructions(instructions);
         } catch (ex) {
           console.log(`Failed when converting function: ${context2.func.definition.identifier.toShortString()} with key ${context2.func.definition.identifier.hashKey()}`);
           console.log(JSON.stringify(module2.toJson({}), null, 2));
@@ -339980,10 +341305,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     bindTypeDefinitions(module2, globalScope) {
       const typesToInstantiateStack = [];
-      const typeSymbols = globalScope.findAllSymbolsByType(
-        "Type"
-        /* SymbolType.Type */
-      );
+      const typeSymbols = globalScope.findAllSymbolsInThisAndChildren().filter((t) => t.symbolDefinition instanceof TypeSymbolDefinition).map((s) => s);
       for (const type of typeSymbols) {
         if (type.symbolDefinition.symbolType != "Type") {
           throw new Error(`Error in type mapping for symbol with name '${type.symbolName}'. It has symbol type ${type.symbolDefinition.symbolType}`);
@@ -339996,16 +341318,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
         typesToInstantiateStack.push(typeDefinition);
       }
-      const callableSymbols = [
-        ...globalScope.findAllSymbolsByType(
-          "Function"
-          /* SymbolType.Function */
-        ),
-        ...globalScope.findAllSymbolsByType(
-          "Operator"
-          /* SymbolType.Operator */
-        )
-      ];
+      const callableSymbols = globalScope.findAllSymbolsInThisAndChildren().filter((v) => v.symbolDefinition instanceof CallableSymbolDefinition).map((v) => v);
       for (const symbol of callableSymbols) {
         for (const overload of symbol.symbolDefinition.overloads) {
           if (overload.typeDefinition == void 0) {
@@ -340066,17 +341379,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return irVariable;
     }
     lookupIrFunction(context, functionCallingScope, irFunctionLookupArgs) {
-      const symbolName = irFunctionLookupArgs.symbol.symbolName;
+      const symbolName = irFunctionLookupArgs.symbolDef.name;
       const lookup = functionCallingScope.findSymbolAndScope(symbolName);
-      if (lookup == void 0 || ![
-        "Function",
-        "Operator"
-        /* SymbolType.Operator */
-      ].includes(lookup.info.symbolDefinition.symbolType)) {
+      const resolvedDef = lookup?.info.symbolDefinition.resolveSymbol();
+      if (lookup == void 0 || !(resolvedDef instanceof CallableSymbolDefinition)) {
         throw new Error(`Failed to lookup callable with name: ${symbolName}. Found ${lookup}`);
       }
       const typeArgumentsOnCallExpression = irFunctionLookupArgs.typeArguments;
-      const key = IRFunctionIdentifier.fromTypeDefinitions(context.module, lookup.scope, symbolName, irFunctionLookupArgs.overload.typeParameterDefinitions, irFunctionLookupArgs.functionTypeAfterTypeSubstitution, irFunctionLookupArgs.typeArguments);
+      let scope;
+      if (lookup.info.symbolDefinition instanceof SymbolReferenceDefinition) {
+        scope = lookup.info.symbolDefinition.resolveOriginalScope();
+      } else {
+        scope = lookup.scope;
+      }
+      const key = IRFunctionIdentifier.fromTypeDefinitions(context.module, scope, symbolName, irFunctionLookupArgs.overload.typeParameterDefinitions, irFunctionLookupArgs.functionTypeAfterTypeSubstitution, irFunctionLookupArgs.typeArguments);
       const processingFunction = context.func.definition;
       const existingCalledFunction = context.module.functions.get(key);
       const isProcessingFunctionGeneric = processingFunction.isGeneric();
@@ -340256,18 +341572,18 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return [out];
     }
-    traverseIdentifierExpression(node, context) {
-      const symbolBinding = node.getSymbolBinding();
+    traverseValueExprIdentifier(node, context) {
+      const symbolBinding = node.identifier.getSymbolBinding();
       if (symbolBinding == void 0) {
         throw new Error(`Symbol binding not bound for identifier: ${node.symbolName}. This should have been bound in the checker`);
       }
       if (symbolBinding.symbolType == "Variable") {
-        const irVariable = this.lookupIrVariable(node.name, node.augmentedProperties.scope, context);
-        return [new IRVariableGet(node, irVariable)];
+        const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
+        return [new IRVariableGet(node.identifier, irVariable)];
       } else if (symbolBinding.symbolType == "Function") {
         const functionLookupArgs = {
           typeArguments: symbolBinding.typeArguments,
-          symbol: symbolBinding.symbol,
+          symbolDef: symbolBinding.symbolDefinition,
           overload: symbolBinding.overload,
           functionTypeAfterTypeSubstitution: symbolBinding.typeDefinition
         };
@@ -340277,9 +341593,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       throw new Error(`Traversing identifier: ${node.symbolName} has a symbol type that I haven't implemented handling for (and right now its a never type so I can't print it,  but it might change)`);
     }
-    traverseIdentifierExpressionWithTypeArguments(node, context) {
-      const symbolBinding = node.getSymbolBinding();
-      const displayString = `${node.identifier.name}<${node.typeArguments.map((t) => t.toString()).join(", ")}`;
+    traverseValueExprIdentifierWithTypeArgs(node, context) {
+      const symbolBinding = node.identifierWithTypeArguments.getSymbolBinding();
+      const displayString = `${node.identifierWithTypeArguments.identifier.name}<${node.identifierWithTypeArguments.typeArguments.map((t) => t.toString()).join(", ")}`;
       if (symbolBinding == void 0) {
         throw new Error(`Symbol binding not bound for identifier: ${displayString}. This should have been bound in the checker`);
       }
@@ -340290,7 +341606,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else if (symbolBinding.symbolType == "Function") {
         const lookupArgs = {
           typeArguments: symbolBinding.typeArguments,
-          symbol: symbolBinding.symbol,
+          symbolDef: symbolBinding.symbolDefinition,
           overload: symbolBinding.overload,
           functionTypeAfterTypeSubstitution: symbolBinding.typeDefinition
         };
@@ -340443,6 +341759,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseTypeInstantiatingExpression(node, context) {
       throw new Error("Type expressions should be stripped during the IR Conversion step");
     }
+    traverseDeclareFunctionStatement(node, context) {
+      return [];
+    }
+    traverseImportStatement(node, context) {
+      return [];
+    }
     traverseAssignmentStatement(node, context) {
       const exp = new IRExpressionGroup(node.rhs, this.traverse(node.rhs, context));
       const lhs = node.lhs;
@@ -340593,30 +341915,33 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return [returnStatement];
     }
     traverseFunctionDefinition(node, context) {
-      return this.traverse(node.body, context);
-    }
-    traverseWatFunctionDefinition(node, context) {
       return [];
     }
     traverseOperatorDefinition(node, context) {
-      return this.traverse(node.body, context);
+      return [];
+    }
+    traverseWatFunctionDefinition(node, context) {
+      return [];
     }
     traverseWatOperatorDefinition(node, context) {
       return [];
     }
     // Type definitions (and composite definitions) are only used in the binder/checker (AST traversal and semantic checks)
     // so just return nothing for those
-    traverseTypeDefinition(node, context) {
-      throw new Error("Type definitions should be stripped during the IR Conversion step");
+    traverseTypeAliasingStatement(node, context) {
+      return [];
     }
     traverseCompositeDefinition(node, context) {
-      throw new Error("Type definitions should be stripped during the IR Conversion step");
+      return [];
     }
     traverseTypeBoundDefinition(node, context) {
-      throw new Error("Type bounds should have been stripped during the IR Conversion step (or possibly in the checker)");
+      return [];
     }
     traverseDefinitionTypeParameter(node, context) {
       throw new Error("Type parameters should be stripped out during the IR Conversion step (or possibly in the checker)");
+    }
+    traverseNamespaceDefinition(node, context) {
+      return [];
     }
     traverseBlockNode(node, context) {
       const out = [];
