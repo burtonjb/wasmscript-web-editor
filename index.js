@@ -327290,6 +327290,897 @@ ${tagToString(tag)}`;
     }
   };
 
+  // ../compiler/dist/src/compiler/ast/AstExpressions.js
+  var AstValueExpressionNode = class extends AstNode {
+    static {
+      __name(this, "AstValueExpressionNode");
+    }
+  };
+  var AstValueExpressionIdentifier = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstValueExpressionIdentifier");
+    }
+    identifier;
+    constructor(node, identifier3) {
+      super(node);
+      this.identifier = identifier3;
+    }
+    get symbolName() {
+      return this.identifier.symbolName;
+    }
+  };
+  var AstValueExpressionIdentifierWithTypeArguments = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstValueExpressionIdentifierWithTypeArguments");
+    }
+    identifierWithTypeArguments;
+    constructor(node, identifierWithTypeArguments) {
+      super(node);
+      this.identifierWithTypeArguments = identifierWithTypeArguments;
+    }
+    get symbolName() {
+      return this.identifierWithTypeArguments.symbolName;
+    }
+  };
+  var AstAbstractCallExpression = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstAbstractCallExpression");
+    }
+    _resolvedCallableInfo;
+    get resolvedCallableInfo() {
+      return this._resolvedCallableInfo;
+    }
+    set resolvedCallableInfo(value) {
+      this._resolvedCallableInfo = value;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      const resolvedCallInfo = this.resolvedCallableInfo;
+      if (resolvedCallInfo == void 0) {
+        out["resolvedCallInfo"] = void 0;
+      } else {
+        if (resolvedCallInfo.functionCallType == "direct") {
+          out["resolveCallInfo"] = {
+            dispatchType: resolvedCallInfo.functionCallType,
+            typeArguments: resolvedCallInfo.typeArguments?.map((t) => t.toString()),
+            overload: resolvedCallInfo.overload.typeExpression.toString(),
+            functionDefinitionNode_Loc: resolvedCallInfo.overload.definitionNode.firstToken.createTokenSourceString(),
+            functionTypeAfterSubstitution: resolvedCallInfo.functionTypeAfterTypeSubstitution.toString()
+          };
+        } else if (resolvedCallInfo.functionCallType = "indirect") {
+          out["resolveCallInfo"] = {
+            dispatchType: resolvedCallInfo.functionCallType,
+            functioNtype: resolvedCallInfo.functionType.toString(),
+            internalExpression: resolvedCallInfo.internalExpression.toJson(options2)
+          };
+        }
+      }
+      return out;
+    }
+  };
+  var AstOperationNode = class extends AstAbstractCallExpression {
+    static {
+      __name(this, "AstOperationNode");
+    }
+  };
+  var AstUnaryOperation = class extends AstOperationNode {
+    static {
+      __name(this, "AstUnaryOperation");
+    }
+    operator;
+    operand;
+    constructor(node, operator, operand) {
+      super(node);
+      this.operator = operator;
+      this.operand = operand;
+    }
+    get symbolName() {
+      return `Unary(${this.operator})`;
+    }
+    get symbolKind() {
+      return "Operator";
+    }
+    toJson(options2) {
+      const operatorStr = `${this.operator}`;
+      const out = super.toJson(options2);
+      out["operator"] = operatorStr;
+      out["operand"] = this.operand.toJson(options2);
+      return out;
+    }
+  };
+  var AstBinaryOperation = class extends AstOperationNode {
+    static {
+      __name(this, "AstBinaryOperation");
+    }
+    lhs;
+    operator;
+    rhs;
+    constructor(node, lhs, operator, rhs) {
+      super(node);
+      this.lhs = lhs;
+      this.operator = operator;
+      this.rhs = rhs;
+    }
+    get symbolName() {
+      return `Binary(${this.operator})`;
+    }
+    get symbolKind() {
+      return "Operator";
+    }
+    toJson(options2) {
+      const operatorStr = `${this.operator}`;
+      const out = super.toJson(options2);
+      out["lhs"] = this.lhs.toJson(options2);
+      out["operator"] = operatorStr;
+      out["rhs"] = this.rhs.toJson(options2);
+      return out;
+    }
+  };
+  var AstBuiltInFunctionCallExpression = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstBuiltInFunctionCallExpression");
+    }
+    builtInFunction;
+    identifier;
+    args;
+    constructor(node, builtInFunction, identifier3, args) {
+      super(node);
+      this.builtInFunction = builtInFunction;
+      this.identifier = identifier3;
+      this.args = args;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["builtin"] = this.identifier.toJson(options2);
+      out["args"] = this.args.map((a) => a.toJson(options2));
+      return out;
+    }
+  };
+  var AstCallExpression = class extends AstAbstractCallExpression {
+    static {
+      __name(this, "AstCallExpression");
+    }
+    internal;
+    callArguments;
+    constructor(node, internal, callArguments) {
+      super(node);
+      this.internal = internal;
+      this.callArguments = callArguments;
+    }
+    get symbolName() {
+      return this.internal.symbolName;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["call_internal"] = this.internal.toJson(options2);
+      out["call_arguments"] = this.callArguments.toJson(options2);
+      return out;
+    }
+  };
+  var AstTypeCastingExpression = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstTypeCastingExpression");
+    }
+    expression;
+    type;
+    constructor(node, expression, type) {
+      super(node);
+      this.expression = expression;
+      this.type = type;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["expression"] = this.expression.toJson(options2);
+      out["as"] = this.type.toJson(options2);
+      return out;
+    }
+  };
+  var AstFieldAccessExpression = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstFieldAccessExpression");
+    }
+    expression;
+    field;
+    constructor(node, expression, field) {
+      super(node);
+      this.expression = expression;
+      this.field = field;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["expression"] = this.expression.toJson(options2);
+      out["field"] = this.field.toJson(options2);
+      return out;
+    }
+  };
+  var AstRightPipeValueExpression = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstRightPipeValueExpression");
+    }
+    lhs;
+    rhs;
+    // Basically what this does is that it creates a mini-scope for the RHS, which binds the result from the LHS
+    // to the "_" in the RHS. The LHS doesn't need to be bound, since its captured from the parent env.
+    _rhsScope;
+    constructor(node, lhs, rhs) {
+      super(node);
+      this.lhs = lhs;
+      this.rhs = rhs;
+    }
+    get rhsScope() {
+      return this._rhsScope;
+    }
+    set rhsScope(value) {
+      this._rhsScope = value;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["node_type"] = "AstRightPipeValueExpression";
+      out["lhs"] = this.lhs.toJson(options2);
+      out["rhs"] = this.rhs.toJson(options2);
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstTypes.js
+  var AstTypeExpression = class extends AstNode {
+    static {
+      __name(this, "AstTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    get identifier() {
+      return void 0;
+    }
+  };
+  var AstUnitTypeExpression = class _AstUnitTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "AstUnitTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return "()";
+    }
+    equals(other) {
+      return other instanceof _AstUnitTypeExpression;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = "unit";
+      return out;
+    }
+  };
+  var AstNeverTypeExpression = class _AstNeverTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "AstNeverTypeExpression");
+    }
+    constructor(node) {
+      super(node);
+    }
+    toString() {
+      return "never";
+    }
+    equals(other) {
+      return other instanceof _AstNeverTypeExpression;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = "never";
+      return out;
+    }
+  };
+  var NamedTypeExpression = class _NamedTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "NamedTypeExpression");
+    }
+    _identifier;
+    constructor(node, _identifier) {
+      super(node);
+      this._identifier = _identifier;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    toString() {
+      return `${this.identifier.name}`;
+    }
+    equals(other) {
+      if (!(other instanceof _NamedTypeExpression)) {
+        return false;
+      }
+      return other.identifier.name == this.identifier.name;
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = this.identifier.toJson(options2);
+      return out;
+    }
+  };
+  var TypeInstantiatingTypeExpression = class _TypeInstantiatingTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "TypeInstantiatingTypeExpression");
+    }
+    typeConstructor;
+    typeArgs;
+    constructor(typeConstructor, typeArgs) {
+      super(typeConstructor.parseTreeNode);
+      this.typeConstructor = typeConstructor;
+      this.typeArgs = typeArgs;
+    }
+    get identifier() {
+      return this.typeConstructor.identifier;
+    }
+    toString() {
+      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
+    }
+    equals(other) {
+      if (this === other) {
+        return true;
+      }
+      if (!(other instanceof _TypeInstantiatingTypeExpression)) {
+        return false;
+      }
+      if (!other.typeConstructor.equals(this.typeConstructor)) {
+        return false;
+      }
+      if (this.typeArgs.length != other.typeArgs.length) {
+        return false;
+      }
+      for (let i = 0; i < this.typeArgs.length; i++) {
+        const a = this.typeArgs[i];
+        const b = other.typeArgs[i];
+        if (!a.equals(b)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type_constructor"] = this.typeConstructor.toJson(options2);
+      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
+      return out;
+    }
+  };
+  var PointerTypeExpression = class _PointerTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "PointerTypeExpression");
+    }
+    internal;
+    constructor(node, internal) {
+      super(node);
+      this.internal = internal;
+    }
+    toString() {
+      return `*${this.internal.toString()}`;
+    }
+    equals(other) {
+      if (!(other instanceof _PointerTypeExpression)) {
+        return false;
+      }
+      if (this.internal instanceof NamedTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
+        return true;
+      }
+      return this.internal.equals(other.internal);
+    }
+    get symbolName() {
+      return void 0;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    dereference() {
+      return this.internal;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["referenced_type"] = this.internal.toJson(options2);
+      return out;
+    }
+  };
+  var ArrayTypeExpression = class _ArrayTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "ArrayTypeExpression");
+    }
+    internalType;
+    length;
+    constructor(node, internalType, length) {
+      super(node);
+      this.internalType = internalType;
+      this.length = length;
+    }
+    toString() {
+      return `[${this.internalType.toString()}, ${this.length == void 0 ? "*" : this.length}]`;
+    }
+    equals(other) {
+      if (!(other instanceof _ArrayTypeExpression)) {
+        return false;
+      }
+      return this.length == other.length && this.internalType.equals(other.internalType);
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["type"] = this.internalType.toJson(options2);
+      out["length"] = this.length;
+      return out;
+    }
+  };
+  var TupleTypeExpression = class _TupleTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "TupleTypeExpression");
+    }
+    types;
+    constructor(node, types) {
+      super(node);
+      this.types = types;
+    }
+    toString() {
+      return `( ${this.types.map((t) => t.toString()).join(", ")})`;
+    }
+    equals(other) {
+      if (!(other instanceof _TupleTypeExpression)) {
+        return false;
+      }
+      if (this.types.length != other.types.length) {
+        return false;
+      }
+      for (let i = 0; i < this.types.length; i++) {
+        if (this.types[i] != other.types[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["types"] = this.types.map((t) => t.toJson(options2));
+      return out;
+    }
+  };
+  var FunctionTypeExpression = class _FunctionTypeExpression extends AstTypeExpression {
+    static {
+      __name(this, "FunctionTypeExpression");
+    }
+    parameterTypes;
+    returnType;
+    constructor(node, parameterTypes, returnType) {
+      super(node);
+      this.parameterTypes = parameterTypes;
+      this.returnType = returnType;
+    }
+    toString() {
+      const paramTypeStr = `${this.parameterTypes.map((p) => p.toString())}`;
+      const returnTypeStr = `${this.returnType == void 0 ? new AstUnitTypeExpression(this.parseTreeNode).toString() : this.returnType.toString()}`;
+      return `(${paramTypeStr}) => ${returnTypeStr}`;
+    }
+    equals(other) {
+      if (!(other instanceof _FunctionTypeExpression)) {
+        return false;
+      }
+      if (this.parameterTypes.length != other.parameterTypes.length) {
+        return false;
+      }
+      if (this.parameterTypes.length != other.parameterTypes.length) {
+        return false;
+      }
+      for (let i = 0; i < this.parameterTypes.length; i++) {
+        if (!this.parameterTypes[i].equals(other.parameterTypes[i])) {
+          return false;
+        }
+      }
+      if (this.returnType != void 0 && other.returnType == void 0 || this.returnType == void 0 && other.returnType != void 0) {
+        return false;
+      }
+      return this.returnType == void 0 && other.returnType == void 0 || this.returnType.equals(other.returnType);
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["function_param_types"] = this.parameterTypes.map((p) => p.toJson(options2));
+      out["return_type"] = this.returnType?.toJson(options2);
+      return out;
+    }
+  };
+  var AstTypeParameter = class _AstTypeParameter extends AstNode {
+    static {
+      __name(this, "AstTypeParameter");
+    }
+    typeParameterIndex;
+    typeBoundExpression;
+    _identifier;
+    constructor(node, identifier3, typeParameterIndex, typeBoundExpression) {
+      super(node);
+      this.typeParameterIndex = typeParameterIndex;
+      this.typeBoundExpression = typeBoundExpression;
+      this._identifier = identifier3;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    get symbolName() {
+      return this._identifier.symbolName;
+    }
+    toString() {
+      const name = this._identifier.name;
+      const bounds = this.typeBoundExpression ? `: ${this.typeBoundExpression?.toString()}` : "";
+      return name + bounds;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["name"] = this._identifier.name;
+      out["typeParameterIndex"] = this.typeParameterIndex;
+      if (this.typeBoundExpression != void 0) {
+        out["bounds"] = this.typeBoundExpression.toJson(options2);
+      }
+      return out;
+    }
+    equals(other) {
+      if (!(other instanceof _AstTypeParameter)) {
+        return false;
+      }
+      if (other._identifier.name != this._identifier.name) {
+        return false;
+      }
+      if (this.typeBoundExpression != void 0 && other.typeBoundExpression != void 0) {
+        return this.typeBoundExpression.equals(other.typeBoundExpression);
+      } else if (this.typeBoundExpression == void 0 && other.typeBoundExpression == void 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  };
+  var AstTypeBoundExpression = class extends AstNode {
+    static {
+      __name(this, "AstTypeBoundExpression");
+    }
+    _identifier;
+    typeArguments;
+    constructor(node, _identifier, typeArguments) {
+      super(node);
+      this._identifier = _identifier;
+      this.typeArguments = typeArguments;
+    }
+    get identifier() {
+      return this._identifier;
+    }
+    toString() {
+      const name = `${this.identifier.name}`;
+      const args = this.typeArguments ? `<${this.typeArguments.map((t) => t.toString()).join(", ")}>` : "";
+      return `${name} ${args}`.trim();
+    }
+    equals(other) {
+      return other.identifier.name == this.identifier.name;
+    }
+    get symbolName() {
+      return this.identifier.name;
+    }
+    get symbolKind() {
+      return "Type";
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["bound_name"] = this.identifier.toJson(options2);
+      if (this.typeArguments != void 0) {
+        out["type_arguments"] = this.typeArguments.map((t) => t.toJson(options2));
+      }
+      return out;
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ast/AstLiterals.js
+  var AstAbstractLiteralAtom = class extends AstValueExpressionNode {
+    static {
+      __name(this, "AstAbstractLiteralAtom");
+    }
+  };
+  var AstBooleanLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstBooleanLiteral");
+    }
+    // encodes the constants true, false, null
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get value() {
+      if (this.firstToken.lexeme == "true") {
+        return true;
+      } else if (this.firstToken.lexeme == "false") {
+        return false;
+      }
+      throw new Error("Not able to convert lexeme to value");
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const json = super.toJson(options2);
+      json["bool_literal"] = this.value;
+      return json;
+    }
+  };
+  var AstNullPtrLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstNullPtrLiteral");
+    }
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get value() {
+      return null;
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["null_literal"] = "null";
+      return out;
+    }
+  };
+  var AstNumberLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstNumberLiteral");
+    }
+    // encodes a number
+    get lexeme() {
+      return this.firstToken.lexeme;
+    }
+    get isInt() {
+      return this.firstToken.lexeme.indexOf(".") == -1;
+    }
+    get isFloat() {
+      return this.firstToken.lexeme.indexOf(".") != -1;
+    }
+    get isPositive() {
+      return this.value > 0;
+    }
+    get isNegative() {
+      return this.value < 0;
+    }
+    get value() {
+      return this.firstToken.literalValue;
+    }
+    getLiteralTypeString() {
+      return this.firstToken.literalType;
+    }
+  };
+  var AstIntLiteral = class extends AstNumberLiteral {
+    static {
+      __name(this, "AstIntLiteral");
+    }
+    get isInt() {
+      return true;
+    }
+    get isFloat() {
+      return false;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["int_literal"] = this.value;
+      return out;
+    }
+  };
+  var AstFloatLiteral = class extends AstNumberLiteral {
+    static {
+      __name(this, "AstFloatLiteral");
+    }
+    get isInt() {
+      return false;
+    }
+    get isFloat() {
+      return true;
+    }
+    get isNan() {
+      return Number.isNaN(this.value);
+    }
+    get isInfinite() {
+      const isStrRepr = typeof this.value == "string";
+      return !isStrRepr && !this.isNan && !Number.isFinite(this.value);
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["float_literal"] = this.value;
+      return out;
+    }
+  };
+  var AstTupleLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstTupleLiteral");
+    }
+    values;
+    constructor(node, values) {
+      super(node);
+      this.values = values;
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["tuple_literal"] = this.values.map((n) => n.toJson(options2));
+      return out;
+    }
+  };
+  var AstUnitValueLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstUnitValueLiteral");
+    }
+    constructor(node) {
+      super(node);
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      return out;
+    }
+  };
+  var AstArrayLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstArrayLiteral");
+    }
+    values;
+    constructor(node, values) {
+      super(node);
+      this.values = values;
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["array_literal"] = this.values.map((n) => n.toJson(options2));
+      return out;
+    }
+  };
+  var AstCompositeLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstCompositeLiteral");
+    }
+    typeExpression;
+    assignments;
+    fieldMap = /* @__PURE__ */ new Map();
+    constructor(node, typeExpression, assignments) {
+      super(node);
+      this.typeExpression = typeExpression;
+      this.assignments = assignments;
+      for (const assignment of assignments) {
+        this.fieldMap.set(assignment.lhs.name, assignment.rhs);
+      }
+    }
+    get identifier() {
+      return this.typeExpression.identifier;
+    }
+    get typeArguments() {
+      if (this.typeExpression instanceof TypeInstantiatingTypeExpression) {
+        return this.typeExpression.typeArgs;
+      }
+      return void 0;
+    }
+    get compositeSymbolName() {
+      return this.identifier?.name;
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["composite"] = this.typeExpression.toJson(options2);
+      out["assignments"] = this.assignments.map((n) => n.toJson(options2));
+      return out;
+    }
+  };
+  var functionLiteralCounter = 0;
+  function getFuncLiteralCounter() {
+    return functionLiteralCounter++;
+  }
+  __name(getFuncLiteralCounter, "getFuncLiteralCounter");
+  var AstFunctionLiteral = class extends AstAbstractLiteralAtom {
+    static {
+      __name(this, "AstFunctionLiteral");
+    }
+    params;
+    returnTypeExpression;
+    // This is just used for creating fake names. I don't really make any assumptions about names being valid,
+    // but having this is nice for debugging
+    literalCounter = getFuncLiteralCounter();
+    _definitionScope;
+    _bodyScope;
+    _resolvedType;
+    constructor(node, params, returnTypeExpression) {
+      super(node);
+      this.params = params;
+      this.returnTypeExpression = returnTypeExpression;
+    }
+    getLiteralTypeString() {
+      return void 0;
+    }
+    get definitionScope() {
+      return this._definitionScope;
+    }
+    set definitionScope(value) {
+      this._definitionScope = value;
+    }
+    get bodyScope() {
+      if (this._bodyScope == void 0) {
+        throw new Error(`Body scope for function defined on: ${this.firstToken.createTokenSourceString()} is not defined`);
+      }
+      return this._bodyScope;
+    }
+    set bodyScope(value) {
+      this._bodyScope = value;
+    }
+    get resolvedType() {
+      return this._resolvedType;
+    }
+    set resolvedType(value) {
+      this._resolvedType = value;
+    }
+    // Function definitions also have a method to get the function signature type expression,
+    // but since I have optional types for the parameters for the literals, I'll have to rely on inference I guess
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["ast_node_type"] = this.constructor.name;
+      return out;
+    }
+  };
+  var AstExpressionFunctionLiteral = class extends AstFunctionLiteral {
+    static {
+      __name(this, "AstExpressionFunctionLiteral");
+    }
+    expression;
+    constructor(node, params, returnTypeExpression, expression) {
+      super(node, params, returnTypeExpression);
+      this.expression = expression;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["params"] = this.params.map((p) => p.toJson(options2));
+      out["return_type"] = this.returnTypeExpression?.toJson(options2);
+      out["expression"] = this.expression.toJson(options2);
+      return out;
+    }
+  };
+  var AstBlockFunctionLiteral = class extends AstFunctionLiteral {
+    static {
+      __name(this, "AstBlockFunctionLiteral");
+    }
+    block;
+    constructor(node, params, returnTypeExpression, block) {
+      super(node, params, returnTypeExpression);
+      this.block = block;
+    }
+    toJson(options2) {
+      const out = super.toJson(options2);
+      out["params"] = this.params.map((p) => p.toJson(options2));
+      out["return_type"] = this.returnTypeExpression?.toJson(options2);
+      out["block"] = this.block.toJson(options2);
+      return out;
+    }
+  };
+
   // ../compiler/dist/src/compiler/ast/AstStatements.js
   var AstStatementNode = class extends AstNode {
     static {
@@ -327325,7 +328216,7 @@ ${tagToString(tag)}`;
     getParentBlock() {
       let current = this;
       while (current != void 0) {
-        if (current instanceof AstAbstractCallableDefinition) {
+        if (current instanceof AstAbstractCallableDefinition || current instanceof AstFunctionLiteral) {
           return current;
         }
         current = current.parentNode;
@@ -327816,372 +328707,6 @@ ${tagToString(tag)}`;
   }
   __name(astPathToPathExpression, "astPathToPathExpression");
 
-  // ../compiler/dist/src/compiler/ast/AstTypes.js
-  var AstTypeExpression = class extends AstNode {
-    static {
-      __name(this, "AstTypeExpression");
-    }
-    constructor(node) {
-      super(node);
-    }
-    get identifier() {
-      return void 0;
-    }
-  };
-  var AstUnitTypeExpression = class _AstUnitTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "AstUnitTypeExpression");
-    }
-    constructor(node) {
-      super(node);
-    }
-    toString() {
-      return "()";
-    }
-    equals(other) {
-      return other instanceof _AstUnitTypeExpression;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = "unit";
-      return out;
-    }
-  };
-  var AstNeverTypeExpression = class _AstNeverTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "AstNeverTypeExpression");
-    }
-    constructor(node) {
-      super(node);
-    }
-    toString() {
-      return "never";
-    }
-    equals(other) {
-      return other instanceof _AstNeverTypeExpression;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = "never";
-      return out;
-    }
-  };
-  var NamedTypeExpression = class _NamedTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "NamedTypeExpression");
-    }
-    _identifier;
-    constructor(node, _identifier) {
-      super(node);
-      this._identifier = _identifier;
-    }
-    get identifier() {
-      return this._identifier;
-    }
-    toString() {
-      return `${this.identifier.name}`;
-    }
-    equals(other) {
-      if (!(other instanceof _NamedTypeExpression)) {
-        return false;
-      }
-      return other.identifier.name == this.identifier.name;
-    }
-    get symbolName() {
-      return this.identifier.name;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = this.identifier.toJson(options2);
-      return out;
-    }
-  };
-  var TypeInstantiatingTypeExpression = class _TypeInstantiatingTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "TypeInstantiatingTypeExpression");
-    }
-    typeConstructor;
-    typeArgs;
-    constructor(typeConstructor, typeArgs) {
-      super(typeConstructor.parseTreeNode);
-      this.typeConstructor = typeConstructor;
-      this.typeArgs = typeArgs;
-    }
-    get identifier() {
-      return this.typeConstructor.identifier;
-    }
-    toString() {
-      return `${this.typeConstructor.toString()}<${this.typeArgs.map((t) => t.toString())}>`;
-    }
-    equals(other) {
-      if (this === other) {
-        return true;
-      }
-      if (!(other instanceof _TypeInstantiatingTypeExpression)) {
-        return false;
-      }
-      if (!other.typeConstructor.equals(this.typeConstructor)) {
-        return false;
-      }
-      if (this.typeArgs.length != other.typeArgs.length) {
-        return false;
-      }
-      for (let i = 0; i < this.typeArgs.length; i++) {
-        const a = this.typeArgs[i];
-        const b = other.typeArgs[i];
-        if (!a.equals(b)) {
-          return false;
-        }
-      }
-      return true;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type_constructor"] = this.typeConstructor.toJson(options2);
-      out["type_arguments"] = this.typeArgs.map((t) => t.toJson(options2));
-      return out;
-    }
-  };
-  var PointerTypeExpression = class _PointerTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "PointerTypeExpression");
-    }
-    internal;
-    constructor(node, internal) {
-      super(node);
-      this.internal = internal;
-    }
-    toString() {
-      return `*${this.internal.toString()}`;
-    }
-    equals(other) {
-      if (!(other instanceof _PointerTypeExpression)) {
-        return false;
-      }
-      if (this.internal instanceof NamedTypeExpression && (this.internal.symbolName == "null" || this.internal.symbolName == "unknown")) {
-        return true;
-      }
-      return this.internal.equals(other.internal);
-    }
-    get symbolName() {
-      return void 0;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    dereference() {
-      return this.internal;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["referenced_type"] = this.internal.toJson(options2);
-      return out;
-    }
-  };
-  var ArrayTypeExpression = class _ArrayTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "ArrayTypeExpression");
-    }
-    internalType;
-    length;
-    constructor(node, internalType, length) {
-      super(node);
-      this.internalType = internalType;
-      this.length = length;
-    }
-    toString() {
-      return `[${this.internalType.toString()}, ${this.length == void 0 ? "*" : this.length}]`;
-    }
-    equals(other) {
-      if (!(other instanceof _ArrayTypeExpression)) {
-        return false;
-      }
-      return this.length == other.length && this.internalType.equals(other.internalType);
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["type"] = this.internalType.toJson(options2);
-      out["length"] = this.length;
-      return out;
-    }
-  };
-  var TupleTypeExpression = class _TupleTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "TupleTypeExpression");
-    }
-    types;
-    constructor(node, types) {
-      super(node);
-      this.types = types;
-    }
-    toString() {
-      return `( ${this.types.map((t) => t.toString()).join(", ")})`;
-    }
-    equals(other) {
-      if (!(other instanceof _TupleTypeExpression)) {
-        return false;
-      }
-      if (this.types.length != other.types.length) {
-        return false;
-      }
-      for (let i = 0; i < this.types.length; i++) {
-        if (this.types[i] != other.types[i]) {
-          return false;
-        }
-      }
-      return true;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["types"] = this.types.map((t) => t.toJson(options2));
-      return out;
-    }
-  };
-  var FunctionTypeExpression = class _FunctionTypeExpression extends AstTypeExpression {
-    static {
-      __name(this, "FunctionTypeExpression");
-    }
-    parameterTypes;
-    returnType;
-    constructor(node, parameterTypes, returnType) {
-      super(node);
-      this.parameterTypes = parameterTypes;
-      this.returnType = returnType;
-    }
-    toString() {
-      const paramTypeStr = `${this.parameterTypes.map((p) => p.toString())}`;
-      const returnTypeStr = `${this.returnType == void 0 ? new AstUnitTypeExpression(this.parseTreeNode).toString() : this.returnType.toString()}`;
-      return `(${paramTypeStr}) => ${returnTypeStr}`;
-    }
-    equals(other) {
-      if (!(other instanceof _FunctionTypeExpression)) {
-        return false;
-      }
-      if (this.parameterTypes.length != other.parameterTypes.length) {
-        return false;
-      }
-      if (this.parameterTypes.length != other.parameterTypes.length) {
-        return false;
-      }
-      for (let i = 0; i < this.parameterTypes.length; i++) {
-        if (!this.parameterTypes[i].equals(other.parameterTypes[i])) {
-          return false;
-        }
-      }
-      if (this.returnType != void 0 && other.returnType == void 0 || this.returnType == void 0 && other.returnType != void 0) {
-        return false;
-      }
-      return this.returnType == void 0 && other.returnType == void 0 || this.returnType.equals(other.returnType);
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["function_param_types"] = this.parameterTypes.map((p) => p.toJson(options2));
-      out["return_type"] = this.returnType?.toJson(options2);
-      return out;
-    }
-  };
-  var AstTypeParameter = class _AstTypeParameter extends AstNode {
-    static {
-      __name(this, "AstTypeParameter");
-    }
-    typeParameterIndex;
-    typeBoundExpression;
-    _identifier;
-    constructor(node, identifier3, typeParameterIndex, typeBoundExpression) {
-      super(node);
-      this.typeParameterIndex = typeParameterIndex;
-      this.typeBoundExpression = typeBoundExpression;
-      this._identifier = identifier3;
-    }
-    get identifier() {
-      return this._identifier;
-    }
-    get symbolName() {
-      return this._identifier.symbolName;
-    }
-    toString() {
-      const name = this._identifier.name;
-      const bounds = this.typeBoundExpression ? `: ${this.typeBoundExpression?.toString()}` : "";
-      return name + bounds;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["name"] = this._identifier.name;
-      out["typeParameterIndex"] = this.typeParameterIndex;
-      if (this.typeBoundExpression != void 0) {
-        out["bounds"] = this.typeBoundExpression.toJson(options2);
-      }
-      return out;
-    }
-    equals(other) {
-      if (!(other instanceof _AstTypeParameter)) {
-        return false;
-      }
-      if (other._identifier.name != this._identifier.name) {
-        return false;
-      }
-      if (this.typeBoundExpression != void 0 && other.typeBoundExpression != void 0) {
-        return this.typeBoundExpression.equals(other.typeBoundExpression);
-      } else if (this.typeBoundExpression == void 0 && other.typeBoundExpression == void 0) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  };
-  var AstTypeBoundExpression = class extends AstNode {
-    static {
-      __name(this, "AstTypeBoundExpression");
-    }
-    _identifier;
-    typeArguments;
-    constructor(node, _identifier, typeArguments) {
-      super(node);
-      this._identifier = _identifier;
-      this.typeArguments = typeArguments;
-    }
-    get identifier() {
-      return this._identifier;
-    }
-    toString() {
-      const name = `${this.identifier.name}`;
-      const args = this.typeArguments ? `<${this.typeArguments.map((t) => t.toString()).join(", ")}>` : "";
-      return `${name} ${args}`.trim();
-    }
-    equals(other) {
-      return other.identifier.name == this.identifier.name;
-    }
-    get symbolName() {
-      return this.identifier.name;
-    }
-    get symbolKind() {
-      return "Type";
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["bound_name"] = this.identifier.toJson(options2);
-      if (this.typeArguments != void 0) {
-        out["type_arguments"] = this.typeArguments.map((t) => t.toJson(options2));
-      }
-      return out;
-    }
-  };
-
   // ../compiler/dist/src/compiler/ast/AstDefinitions.js
   var AstDefinitionNode = class extends AstStatementNode {
     static {
@@ -328669,400 +329194,6 @@ ${tagToString(tag)}`;
     }
   };
 
-  // ../compiler/dist/src/compiler/ast/AstExpressions.js
-  var AstValueExpressionNode = class extends AstNode {
-    static {
-      __name(this, "AstValueExpressionNode");
-    }
-  };
-  var AstValueExpressionIdentifier = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstValueExpressionIdentifier");
-    }
-    identifier;
-    constructor(node, identifier3) {
-      super(node);
-      this.identifier = identifier3;
-    }
-    get symbolName() {
-      return this.identifier.symbolName;
-    }
-  };
-  var AstValueExpressionIdentifierWithTypeArguments = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstValueExpressionIdentifierWithTypeArguments");
-    }
-    identifierWithTypeArguments;
-    constructor(node, identifierWithTypeArguments) {
-      super(node);
-      this.identifierWithTypeArguments = identifierWithTypeArguments;
-    }
-    get symbolName() {
-      return this.identifierWithTypeArguments.symbolName;
-    }
-  };
-  var AstAbstractCallExpression = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstAbstractCallExpression");
-    }
-    _resolvedCallableInfo;
-    get resolvedCallableInfo() {
-      return this._resolvedCallableInfo;
-    }
-    set resolvedCallableInfo(value) {
-      this._resolvedCallableInfo = value;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      const resolvedCallInfo = this.resolvedCallableInfo;
-      if (resolvedCallInfo == void 0) {
-        out["resolvedCallInfo"] = void 0;
-      } else {
-        if (resolvedCallInfo.functionCallType == "direct") {
-          out["resolveCallInfo"] = {
-            dispatchType: resolvedCallInfo.functionCallType,
-            typeArguments: resolvedCallInfo.typeArguments?.map((t) => t.toString()),
-            overload: resolvedCallInfo.overload.typeExpression.toString(),
-            functionDefinitionNode_Loc: resolvedCallInfo.overload.definitionNode.firstToken.createTokenSourceString(),
-            functionTypeAfterSubstitution: resolvedCallInfo.functionTypeAfterTypeSubstitution.toString()
-          };
-        } else if (resolvedCallInfo.functionCallType = "indirect") {
-          out["resolveCallInfo"] = {
-            dispatchType: resolvedCallInfo.functionCallType,
-            functioNtype: resolvedCallInfo.functionType.toString(),
-            internalExpression: resolvedCallInfo.internalExpression.toJson(options2)
-          };
-        }
-      }
-      return out;
-    }
-  };
-  var AstOperationNode = class extends AstAbstractCallExpression {
-    static {
-      __name(this, "AstOperationNode");
-    }
-  };
-  var AstUnaryOperation = class extends AstOperationNode {
-    static {
-      __name(this, "AstUnaryOperation");
-    }
-    operator;
-    operand;
-    constructor(node, operator, operand) {
-      super(node);
-      this.operator = operator;
-      this.operand = operand;
-    }
-    get symbolName() {
-      return `Unary(${this.operator})`;
-    }
-    get symbolKind() {
-      return "Operator";
-    }
-    toJson(options2) {
-      const operatorStr = `${this.operator}`;
-      const out = super.toJson(options2);
-      out["operator"] = operatorStr;
-      out["operand"] = this.operand.toJson(options2);
-      return out;
-    }
-  };
-  var AstBinaryOperation = class extends AstOperationNode {
-    static {
-      __name(this, "AstBinaryOperation");
-    }
-    lhs;
-    operator;
-    rhs;
-    constructor(node, lhs, operator, rhs) {
-      super(node);
-      this.lhs = lhs;
-      this.operator = operator;
-      this.rhs = rhs;
-    }
-    get symbolName() {
-      return `Binary(${this.operator})`;
-    }
-    get symbolKind() {
-      return "Operator";
-    }
-    toJson(options2) {
-      const operatorStr = `${this.operator}`;
-      const out = super.toJson(options2);
-      out["lhs"] = this.lhs.toJson(options2);
-      out["operator"] = operatorStr;
-      out["rhs"] = this.rhs.toJson(options2);
-      return out;
-    }
-  };
-  var AstBuiltInFunctionCallExpression = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstBuiltInFunctionCallExpression");
-    }
-    builtInFunction;
-    identifier;
-    args;
-    constructor(node, builtInFunction, identifier3, args) {
-      super(node);
-      this.builtInFunction = builtInFunction;
-      this.identifier = identifier3;
-      this.args = args;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["builtin"] = this.identifier.toJson(options2);
-      out["args"] = this.args.map((a) => a.toJson(options2));
-      return out;
-    }
-  };
-  var AstCallExpression = class extends AstAbstractCallExpression {
-    static {
-      __name(this, "AstCallExpression");
-    }
-    internal;
-    callArguments;
-    constructor(node, internal, callArguments) {
-      super(node);
-      this.internal = internal;
-      this.callArguments = callArguments;
-    }
-    get symbolName() {
-      return this.internal.symbolName;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["call_internal"] = this.internal.toJson(options2);
-      out["call_arguments"] = this.callArguments.toJson(options2);
-      return out;
-    }
-  };
-  var AstTypeCastingExpression = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstTypeCastingExpression");
-    }
-    expression;
-    type;
-    constructor(node, expression, type) {
-      super(node);
-      this.expression = expression;
-      this.type = type;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["expression"] = this.expression.toJson(options2);
-      out["as"] = this.type.toJson(options2);
-      return out;
-    }
-  };
-  var AstFieldAccessExpression = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstFieldAccessExpression");
-    }
-    expression;
-    field;
-    constructor(node, expression, field) {
-      super(node);
-      this.expression = expression;
-      this.field = field;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["expression"] = this.expression.toJson(options2);
-      out["field"] = this.field.toJson(options2);
-      return out;
-    }
-  };
-
-  // ../compiler/dist/src/compiler/ast/AstLiterals.js
-  var AstAbstractLiteralAtom = class extends AstValueExpressionNode {
-    static {
-      __name(this, "AstAbstractLiteralAtom");
-    }
-  };
-  var AstBooleanLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstBooleanLiteral");
-    }
-    // encodes the constants true, false, null
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get value() {
-      if (this.firstToken.lexeme == "true") {
-        return true;
-      } else if (this.firstToken.lexeme == "false") {
-        return false;
-      }
-      throw new Error("Not able to convert lexeme to value");
-    }
-    getLiteralTypeString() {
-      return void 0;
-    }
-    toJson(options2) {
-      const json = super.toJson(options2);
-      json["bool_literal"] = this.value;
-      return json;
-    }
-  };
-  var AstNullPtrLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstNullPtrLiteral");
-    }
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get value() {
-      return null;
-    }
-    getLiteralTypeString() {
-      return void 0;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["null_literal"] = "null";
-      return out;
-    }
-  };
-  var AstNumberLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstNumberLiteral");
-    }
-    // encodes a number
-    get lexeme() {
-      return this.firstToken.lexeme;
-    }
-    get isInt() {
-      return this.firstToken.lexeme.indexOf(".") == -1;
-    }
-    get isFloat() {
-      return this.firstToken.lexeme.indexOf(".") != -1;
-    }
-    get isPositive() {
-      return this.value > 0;
-    }
-    get isNegative() {
-      return this.value < 0;
-    }
-    get value() {
-      return this.firstToken.literalValue;
-    }
-    getLiteralTypeString() {
-      return this.firstToken.literalType;
-    }
-  };
-  var AstIntLiteral = class extends AstNumberLiteral {
-    static {
-      __name(this, "AstIntLiteral");
-    }
-    get isInt() {
-      return true;
-    }
-    get isFloat() {
-      return false;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["int_literal"] = this.value;
-      return out;
-    }
-  };
-  var AstFloatLiteral = class extends AstNumberLiteral {
-    static {
-      __name(this, "AstFloatLiteral");
-    }
-    get isInt() {
-      return false;
-    }
-    get isFloat() {
-      return true;
-    }
-    get isNan() {
-      return Number.isNaN(this.value);
-    }
-    get isInfinite() {
-      const isStrRepr = typeof this.value == "string";
-      return !isStrRepr && !this.isNan && !Number.isFinite(this.value);
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["float_literal"] = this.value;
-      return out;
-    }
-  };
-  var AstTupleLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstTupleLiteral");
-    }
-    values;
-    constructor(node, values) {
-      super(node);
-      this.values = values;
-    }
-    getLiteralTypeString() {
-      return void 0;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["tuple_literal"] = this.values.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-  var AstArrayLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstArrayLiteral");
-    }
-    values;
-    constructor(node, values) {
-      super(node);
-      this.values = values;
-    }
-    getLiteralTypeString() {
-      return void 0;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["array_literal"] = this.values.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-  var AstCompositeLiteral = class extends AstAbstractLiteralAtom {
-    static {
-      __name(this, "AstCompositeLiteral");
-    }
-    typeExpression;
-    assignments;
-    fieldMap = /* @__PURE__ */ new Map();
-    constructor(node, typeExpression, assignments) {
-      super(node);
-      this.typeExpression = typeExpression;
-      this.assignments = assignments;
-      for (const assignment of assignments) {
-        this.fieldMap.set(assignment.lhs.name, assignment.rhs);
-      }
-    }
-    get identifier() {
-      return this.typeExpression.identifier;
-    }
-    get typeArguments() {
-      if (this.typeExpression instanceof TypeInstantiatingTypeExpression) {
-        return this.typeExpression.typeArgs;
-      }
-      return void 0;
-    }
-    get compositeSymbolName() {
-      return this.identifier?.name;
-    }
-    getLiteralTypeString() {
-      return void 0;
-    }
-    toJson(options2) {
-      const out = super.toJson(options2);
-      out["composite"] = this.typeExpression.toJson(options2);
-      out["assignments"] = this.assignments.map((n) => n.toJson(options2));
-      return out;
-    }
-  };
-
   // ../compiler/dist/src/compiler/ast/AstVariableAccess.js
   var AbstractVariableNode = class extends AstValueExpressionNode {
     static {
@@ -329210,6 +329341,10 @@ ${tagToString(tag)}`;
         return this.traverseCompositeLiteral(node, context);
       } else if (node instanceof AstNullPtrLiteral) {
         return this.traverseNullLiteral(node, context);
+      } else if (node instanceof AstFunctionLiteral) {
+        return this.traverseFunctionLiteral(node, context);
+      } else if (node instanceof AstUnitValueLiteral) {
+        return this.traverseUnitValueLiteral(node, context);
       } else if (node instanceof AstValueExpressionIdentifier) {
         return this.traverseValueExprIdentifier(node, context);
       } else if (node instanceof AstValueExpressionIdentifierWithTypeArguments) {
@@ -329226,6 +329361,8 @@ ${tagToString(tag)}`;
         return this.traverseBuiltInFunction(node, context);
       } else if (node instanceof AstTypeCastingExpression) {
         return this.traverseTypeCastingExpression(node, context);
+      } else if (node instanceof AstRightPipeValueExpression) {
+        return this.traverseRightPipeExpression(node, context);
       } else if (node instanceof AstUnitTypeExpression) {
         return this.traverseUnitTypeExpression(node, context);
       } else if (node instanceof AstNeverTypeExpression) {
@@ -330445,6 +330582,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     lessThan: "LESS",
     fatRightArrow: "FAT_RIGHT_ARROW",
     // symbol is =>
+    rightPipe: "RIGHT_PIPE",
+    // symbol is |>
+    notFatRightArrow: "NOT_FAT_RIGHT_ARROW",
     leftShift: "LEFT_SHIFT",
     rightShift: "RIGHT_SHIFT",
     pipe: "PIPE",
@@ -330492,9 +330632,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     nullLiteral: "NULL_LITERAL",
     integerLiteral: "INTEGER_LITERAL",
     floatLiteral: "FLOAT_LITERAL",
+    parameterizedListMatcher: "parameterizedListMatcher",
     tupleLiteral: "tupleLiteral",
+    tupleNoArrow: "tupleNoArrow",
     arrayLiteral: "arrayLiteral",
     compositeLiteral: "compositeLiteral",
+    functionLiteral: "functionLiteral",
+    blockFunctionLiteral: "blockFunctionLiteral",
+    expressionFunctionLiteral: "expressionFunctionLiteral",
     literal: "literal",
     operatorSymbols: "operatorSymbols",
     assignmentVariableAccess: "assignmentVariableAccess",
@@ -330538,8 +330683,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     logicalOperators: "logicalOperators",
     multiMatchComparison: "zeroOrMoreComparison",
     comparisonTail: "_comparison",
-    multiMatchLogical: "booleanExpression*",
+    multiMatchLogical: "logicalExpression*",
+    multiMatchRightPipeExpression: "multiMatchRightPipeExpression*",
+    rightPipeExpressionLhs: "rightPipeExpressionLhs",
     logicalTail: "logicalTail",
+    pipeOperators: "pipeOperators",
     zeroOrMoreAsterisk: "zeroOrMoreAsterisk",
     dereferencingExpression: "dereferencingExpression",
     fieldAccessExpression: "fieldAccessExpression",
@@ -330560,6 +330708,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     callExpressionTail: "callExpressionTail",
     indexingExpressionMultiMatch: "indexingExpressionMultiMatch",
     indexingExpressionTail: "indexingExpressionTail",
+    rightPipeExpression: "rightPipeExpression",
     valueExpression: "valueExpression",
     optionalValueExpression: "optionalValueExpression",
     expressionTerms: "expressionTerms",
@@ -330587,13 +330736,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     watFunctionDefinition: "watFunctionDefinition",
     watOperatorDefinition: "watOperatorDefinition",
     typeboundDefinition: "typeboundDefinition",
-    functionDefinitionParameters: "functionParameterList",
-    functionParameterList: "functionParameterList",
-    paramWithType: "paramWithType",
+    variableListWithType: "variableListWithType",
+    variableListWithOptType: "variableListWithOptType",
+    variableWithType: "variableWithType",
     typeboundRequirement: "typeboundRequirement",
     typeboundRequirementType: "typeboundRequirementType",
     typeboundRequirementIdentifier: "typeboundRequirementIdentifier",
-    paramWithOptionalType: "paramWithOptionalType",
+    variableWithOptionalType: "variableWithOptionalType",
     compositeTypeKeyword: "compositeTypeKeyword",
     compositeDefinition: "compositeDefinition",
     compositeFields: "compositeFields",
@@ -330663,6 +330812,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   BINARY_OPERATORS[PARSER_RULE_NAMES.lessThan] = "<";
   BINARY_OPERATORS[PARSER_RULE_NAMES.andAnd] = "&&";
   BINARY_OPERATORS[PARSER_RULE_NAMES.pipePipe] = "||";
+  BINARY_OPERATORS[PARSER_RULE_NAMES.rightPipe] = "|>";
   var ASSIGNMENT_OPERATORS = {};
   ASSIGNMENT_OPERATORS[PARSER_RULE_NAMES.equals] = "=";
 
@@ -333434,6 +333584,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       });
       this.setSymbol(node.symbolName, symbol);
       node.augmentedProperties.symbolInfo = symbol;
+      node.augmentedProperties.scope = this;
       return void 0;
     }
     declareType(node, bindingPath, isBuiltIn = false) {
@@ -333893,7 +334044,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             const functionDefinition_Type = specializedType.paramTypes[i];
             const functionCall_Type = functionArgumentsTypes[i];
             if (functionCall_Type == void 0 || functionDefinition_Type == void 0) {
-              console.warn("figure out what went wrong here in resolvingCallableOverload");
               continue;
             }
             const ans = areTypesAssignable(functionDefinition_Type, functionCall_Type);
@@ -334878,6 +335028,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return context;
     }
+    traverseUnitValueLiteral(node, context) {
+      return context;
+    }
     traverseArrayLiteral(node, context) {
       for (const e of node.values) {
         this.traverse(e, context);
@@ -334888,6 +335041,61 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.traverse(node.typeExpression, context);
       for (const field of node.assignments) {
         this.traverse(field.rhs, context);
+      }
+      return context;
+    }
+    traverseFunctionLiteral(node, context) {
+      const simulatedName = `[${node.literalCounter}](${node.params.map((p) => p.identifier.name).join(",")})=>`;
+      const outerScope = context.table;
+      const definitionScope = new SymbolTable(`${simulatedName}.definition`, outerScope, node);
+      const nonGlobalVariablesInParent = definitionScope.findAllSymbolsInThisAndParents().filter((t) => {
+        const resolved = t.symbolDefinition.resolveSymbol();
+        return resolved instanceof VariableSymbolDefinition && resolved.scopeType != "Global";
+      });
+      nonGlobalVariablesInParent.forEach((v) => {
+        definitionScope.maskSymbolInOuterScope(v.symbolName, true);
+      });
+      const bodyScope = new SymbolTable(`${simulatedName}.body`, definitionScope, node);
+      node.definitionScope = definitionScope;
+      node.bodyScope = bodyScope;
+      const definitionContext = {
+        worklist: context.worklist,
+        table: definitionScope,
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: context.additionalContext
+        // I think this is correct - the function signature is not yet in the function, only the body is
+      };
+      const bodyContext = {
+        worklist: context.worklist,
+        table: bodyScope,
+        violations: context.violations,
+        currentNamespacePath: context.currentNamespacePath,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: { state: "definitionBody", currentFunctionBody: node }
+      };
+      node.params.forEach((param) => {
+        if (param.typeExpression != void 0) {
+          this.traverse(param.typeExpression, definitionContext);
+        }
+        const error = bodyScope.declareVariable(
+          param,
+          context.currentNamespacePath,
+          "Param"
+          /* ScopeType.Param */
+        );
+        if (error != void 0) {
+          context.violations.push(error);
+        }
+      });
+      if (node.returnTypeExpression != void 0) {
+        this.traverse(node.returnTypeExpression, definitionContext);
+      }
+      if (node instanceof AstExpressionFunctionLiteral) {
+        this.traverse(node.expression, bodyContext);
+      } else if (node instanceof AstBlockFunctionLiteral) {
+        this.traverse(node.block, bodyContext);
       }
       return context;
     }
@@ -334965,6 +335173,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.args.forEach((arg) => {
         this.traverse(arg, context);
       });
+      return context;
+    }
+    traverseRightPipeExpression(node, context) {
+      this.traverse(node.lhs, context);
+      const rhsScope = new SymbolTable(`_rightPipe.${node.firstToken.createTokenSourceString()}`, context.table, node);
+      node.rhsScope = rhsScope;
+      const fakeAstVariableWithOptType = new AstVariableWithOptType(node.rhs.parseTreeNode, true, new AstSimpleVariableAccess(node.rhs.parseTreeNode, new AstIdentifierNode(node.rhs.parseTreeNode, "_")), void 0);
+      rhsScope.declareVariable(fakeAstVariableWithOptType, void 0, "Local", false);
+      const rhsContext = {
+        ...context,
+        table: rhsScope
+      };
+      this.traverse(node.rhs, rhsContext);
       return context;
     }
     // type expressions
@@ -335226,13 +335447,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         context.violations.push(error);
         return context;
-      }
-      let parent = node.parentNode;
-      while (parent != void 0) {
-        if (parent instanceof AstAbstractCallableDefinition) {
-          break;
-        }
-        parent = parent.parentNode;
       }
       if (node.expression != void 0) {
         this.traverse(node.expression, context);
@@ -335866,6 +336080,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return new TupleTypeDefinition(context.table, resolvedTypes);
     }
+    traverseUnitValueLiteral(node, context) {
+      return new UnitTypeDefinition(context.table);
+    }
     traverseArrayLiteral(node, context) {
       const arrayTypes = node.values.map((v) => {
         const typesForNode = this.traverse(v, context).resolveType();
@@ -336055,6 +336272,83 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }
       }
       return typeDefinition;
+    }
+    traverseFunctionLiteral(node, context) {
+      const bodyContext = {
+        typeMismatches: context.typeMismatches,
+        table: node.bodyScope
+        // TODO: Add the contextual type for disambiguation if I have it
+      };
+      let returnTypeDef = void 0;
+      const annotatedReturnTypeDefResp = node.returnTypeExpression != void 0 ? context.table.resolveTypeDefinition(node.returnTypeExpression) : void 0;
+      const annotatedReturnType = annotatedReturnTypeDefResp?.success ? annotatedReturnTypeDefResp.type : void 0;
+      let computedReturnTypeDef;
+      if (node instanceof AstExpressionFunctionLiteral) {
+        computedReturnTypeDef = this.traverse(node.expression, bodyContext);
+        if (annotatedReturnType != void 0 && !computedReturnTypeDef.equals(annotatedReturnType)) {
+          const err = {
+            firstToken: node.firstToken,
+            type: "TypeMismatch",
+            message: formatErrorMessage(`
+            Function literal was annotated with type: ${annotatedReturnType.toShortString()} but expression resolved to type
+            ${computedReturnTypeDef.toShortString()}
+            Error on: ${node.firstToken.createTokenSourceString()}
+            `)
+          };
+          context.typeMismatches.push(err);
+          return UndeterminedTypeTypeDefinition.instance;
+        }
+        returnTypeDef = computedReturnTypeDef;
+      } else if (node instanceof AstBlockFunctionLiteral) {
+        if (annotatedReturnType == void 0) {
+          const err = {
+            firstToken: node.firstToken,
+            type: "CascadingError",
+            message: formatErrorMessage(`
+            Function literal was not annotated with a return type and I don't yet support type inference for lambdas
+            with statement-blocks
+            Error on: ${node.firstToken.createTokenSourceString()}
+            `)
+          };
+          context.typeMismatches.push(err);
+          return UndeterminedTypeTypeDefinition.instance;
+        }
+        returnTypeDef = annotatedReturnType;
+      }
+      if (returnTypeDef == void 0) {
+        throw new Error(`ReturnTypeDef should have been bound in one of the paths, and this is just to fix TS type inference`);
+      }
+      const paramTypes = [];
+      for (const param of node.params) {
+        if (param.typeExpression == void 0) {
+          const err = {
+            firstToken: node.firstToken,
+            type: "CascadingError",
+            message: formatErrorMessage(`
+            Function literal with param with name: ${param.symbolName} was not annotated with a type and I don't yet support type inference for parameters in 
+            function literals
+            Error on: ${node.firstToken.createTokenSourceString()}
+            `)
+          };
+          context.typeMismatches.push(err);
+          return UndeterminedTypeTypeDefinition.instance;
+        }
+        const paramTypeResp = context.table.resolveTypeDefinition(param.typeExpression);
+        if (!paramTypeResp.success) {
+          throw new Error(`TODO`);
+        }
+        const paramType = paramTypeResp.type;
+        bodyContext.table.bindVariableType(param.symbolName, paramType);
+        paramTypes.push(paramType);
+      }
+      const functionTypeDef = new FunctionTypeDefinition(context.table, paramTypes, returnTypeDef);
+      node.resolvedType = functionTypeDef;
+      if (node instanceof AstExpressionFunctionLiteral) {
+        this.traverse(node.expression, bodyContext);
+      } else if (node instanceof AstBlockFunctionLiteral) {
+        this.traverse(node.block, bodyContext);
+      }
+      return functionTypeDef;
     }
     // expressions
     traverseValueExprIdentifier(node, context) {
@@ -336386,7 +336680,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           type: "MultipleMatchingFunctionSignatures",
           message: `Multiple matching signatures could be found for ${errorMsgTypeStr} named: '${node.symbolName}'
         For inputs with types: (${argumentTypes.map((p) => p.toString())}).
-        Found: ${applicableOverloads.map((p) => p.overload.definitionNode.params.map((t) => t.typeExpression.toString()))}
+        Found: ${applicableOverloads.map((p) => p.overload.definitionNode.params.map((t) => t.typeExpression?.toString()))}
         Call on: ${node.firstToken.createTokenSourceString()}
         `
         };
@@ -336443,6 +336737,30 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       } else {
         throw new Error(`Checker not yet implemented for built-in function: ${node.builtInFunction}`);
       }
+    }
+    traverseRightPipeExpression(node, context) {
+      const lhsType = this.traverse(node.lhs, context);
+      const rhsScope = node.rhsScope;
+      if (rhsScope == void 0) {
+        throw new Error(`This should have been bound in the binder`);
+      }
+      if (lhsType instanceof InstantiableTypeDefinition) {
+        rhsScope.bindVariableType("_", lhsType);
+      } else {
+        const err = {
+          firstToken: node.rhs.firstToken,
+          type: "CascadingError",
+          message: formatErrorMessage(`Unable to resolve LHS type for pipe expression.
+          Referenced on: ${node.firstToken.createTokenSourceString()}`)
+        };
+        context.typeMismatches.push(err);
+        return UndeterminedTypeTypeDefinition.instance;
+      }
+      const rhsContext = {
+        ...context,
+        table: rhsScope
+      };
+      return this.traverse(node.rhs, rhsContext);
     }
     // type expressions
     traverseUnitTypeExpression(node, context) {
@@ -336853,10 +337171,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseReturnStatement(node, context) {
       const parentFunction = node.getParentBlock();
-      if (!(parentFunction instanceof AstAbstractCallableDefinition)) {
+      if (!(parentFunction instanceof AstAbstractCallableDefinition || parentFunction instanceof AstFunctionLiteral)) {
         throw new Error("Return in non-function call");
       }
-      const functionReturnTypeExpr = parentFunction.returnTypeExpression;
+      let parentFuncToString;
+      let functionReturnTypeExpr;
+      if (parentFunction instanceof AstAbstractCallableDefinition) {
+        functionReturnTypeExpr = parentFunction.returnTypeExpression;
+        parentFuncToString = parentFunction.identifier.name;
+      } else if (parentFunction instanceof AstFunctionLiteral) {
+        functionReturnTypeExpr = parentFunction.resolvedType?.returnType.expression;
+        parentFuncToString = `Func Literal: ${node.firstToken.createTokenSourceString()}`;
+      } else {
+        throw new Error(`Unhandled`);
+      }
       if (node.expression != void 0) {
         const returnResp = context.table.resolveTypeDefinition(functionReturnTypeExpr);
         if (returnResp.success == false) {
@@ -336874,7 +337202,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: ans.errorType ?? "TypeMismatch",
-            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
+            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFuncToString}'. 
         Function signature return type: ${returnType.toString()}, but returning type: ${expressionType.toString()}.
         Function declared on ${parentFunction.firstToken.createTokenSourceString()}
         Return on ${node.firstToken.createTokenSourceString()}`)
@@ -336889,8 +337217,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "TypeMismatch",
-            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFunction.identifier.name}'. 
-          Function expects: ${parentFunction.returnTypeExpression.toString()} but the return statement has no expression.
+            message: formatErrorMessage(`Type of return expression does not match function return type in function: '${parentFuncToString}'. 
+          Function expects: ${functionReturnTypeExpr.toString()} but the return statement has no expression.
           Function declared on ${parentFunction.firstToken.createTokenSourceString()}
           Return on ${node.firstToken.createTokenSourceString()}`)
           };
@@ -337442,17 +337770,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const callback = /* @__PURE__ */ __name((node) => {
         return this.parseParamWithType(node);
       }, "callback");
-      return this.parseCommaList(root, [PARSER_RULE_NAMES.functionParameterList], callback);
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.variableListWithType], callback);
+    }
+    parseVariablesWithOptionalTypeAnnotations(root) {
+      const callback = /* @__PURE__ */ __name((node) => {
+        return this.parseParamWithOptionalType(node);
+      }, "callback");
+      return this.parseCommaList(root, [PARSER_RULE_NAMES.variableListWithOptType], callback);
     }
     parseParamWithType(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.paramWithType);
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.variableWithType);
       const iden = this.parseIdentifier(root.children[0]);
       const variable = new AstSimpleVariableAccess(root, iden);
       const type = this.parseTypeExpression(root.children[1].children[1]);
       return new AstVariableWithRequiredType(root, false, variable, type);
     }
     parseParamWithOptionalType(root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.paramWithOptionalType);
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.variableWithOptionalType);
       const iden = this.parseIdentifier(root.children[0]);
       const variable = new AstSimpleVariableAccess(root, iden);
       const type = this.parseOptionalTypeAnnotation(root.children[1]);
@@ -337676,8 +338010,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // I tried to build it bottom-up, but it was a big mess and all my previous tests would break when I'd move up 1 level.
     parseValueExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.valueExpression, PARSER_RULE_NAMES.bracketedExpression);
-      if (root.children.length == 1 && root.children[0].matchedRule?.name == PARSER_RULE_NAMES.logicalExpression) {
-        return this.parseLogicalExpression(root.children[0]);
+      if (root.children.length == 1 && root.children[0].matchedRule?.name == PARSER_RULE_NAMES.rightPipeExpression) {
+        return this.parseRightPipeExpression(root.children[0]);
       } else if (root.children.length == 3) {
         return this.parseValueExpression(root.children[1]);
       }
@@ -337714,12 +338048,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return expressions;
     }
-    parseMultiMatchedBinaryExpression(lhsExpressionNode, root) {
-      this.expectParseRuleName(root, PARSER_RULE_NAMES.multiMatchUnary, PARSER_RULE_NAMES.multiMatchProduct, PARSER_RULE_NAMES.multiMatchSum, PARSER_RULE_NAMES.multiMatchBitwise, PARSER_RULE_NAMES.multiMatchComparison, PARSER_RULE_NAMES.multiMatchLogical);
+    parseMultiMatchedBinaryExpression(lhsExpressionNode, root, parentRuleName = "binaryOperator") {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.multiMatchUnary, PARSER_RULE_NAMES.multiMatchProduct, PARSER_RULE_NAMES.multiMatchSum, PARSER_RULE_NAMES.multiMatchBitwise, PARSER_RULE_NAMES.multiMatchComparison, PARSER_RULE_NAMES.multiMatchLogical, PARSER_RULE_NAMES.multiMatchRightPipeExpression);
       if (root.children.length == 0) {
         return lhsExpressionNode;
       }
-      let res = lhsExpressionNode;
       for (let i = 0; i < root.children.length; i++) {
         const underscore = root.children[i];
         const opName = underscore.children[0].children[0].matchedRule?.name ?? "";
@@ -337741,12 +338074,31 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           rhsAst = this.parseUnaryOrTypecasting(rhsNode);
         } else if (rhsNode.matchedRule?.name == PARSER_RULE_NAMES.bracketedExpression) {
           rhsAst = this.parseValueExpression(rhsNode);
+        } else if (rhsNode.matchedRule?.name == PARSER_RULE_NAMES.logicalExpression) {
+          rhsAst = this.parseLogicalExpression(rhsNode);
+        } else if (rhsNode.matchedRule?.name == PARSER_RULE_NAMES.rightPipeExpression) {
+          rhsAst = this.parseRightPipeExpression(rhsNode);
         } else {
           throw new Error(`Failed to parse RHS. Received rulename was: ${rhsNode.matchedRule?.name}`);
         }
-        res = new AstBinaryOperation(root, res, operator, rhsAst);
+        if (parentRuleName == "binaryOperator") {
+          lhsExpressionNode = new AstBinaryOperation(root, lhsExpressionNode, operator, rhsAst);
+        } else if (parentRuleName == "rightAstPipeExpression") {
+          lhsExpressionNode = new AstRightPipeValueExpression(root, lhsExpressionNode, rhsAst);
+        }
       }
-      return res;
+      return lhsExpressionNode;
+    }
+    parseRightPipeExpression(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.rightPipeExpression);
+      this.expectNumberOfChildren(root, 2);
+      const lhs = this.parseLogicalExpression(root.children[0]);
+      if (root.children.length > 1 && root.children[1].children.length > 1) {
+        const rhs = this.parseMultiMatchedBinaryExpression(lhs, root.children[1], "rightAstPipeExpression");
+        return new AstRightPipeValueExpression(root, lhs, rhs);
+      } else {
+        return lhs;
+      }
     }
     parseLogicalExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.logicalExpression);
@@ -338023,8 +338375,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const child = root.children[0];
       if (child.matchedRule?.name == PARSER_RULE_NAMES.compositeLiteral) {
         return this.parseCompositeLiteral(child);
-      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.tupleLiteral) {
-        return this.parseTupleLiteral(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.parameterizedListMatcher) {
+        return this.parseParameterizedListMatcher(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.arrayLiteral) {
         return this.parseArrayLiteral(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.numberMatcher || child.matchedRule?.name == PARSER_RULE_NAMES.integerLiteral || child.matchedRule?.name == PARSER_RULE_NAMES.floatLiteral) {
@@ -338033,8 +338385,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return new AstBooleanLiteral(child);
       } else if (child.matchedRule?.name == PARSER_RULE_NAMES.nullLiteral) {
         return new AstNullPtrLiteral(child);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.unitKeyword) {
+        return new AstUnitValueLiteral(child);
       }
       throw new Error(`Parsing literal for ${child.matchedRule?.name} is not defined`);
+    }
+    parseParameterizedListMatcher(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.parameterizedListMatcher);
+      this.expectNumberOfChildren(root, 1);
+      const child = root.children[0];
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.tupleNoArrow) {
+        const tupleMatcher = child.children[0];
+        return this.parseTupleLiteral(tupleMatcher);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.functionLiteral) {
+        return this.parseFunctionLiteral(child);
+      } else {
+        throw new Error(`Parsing parameterized list is not handling ${child.matchedRule?.name}`);
+      }
     }
     parseNumberLiteral(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.numberMatcher, PARSER_RULE_NAMES.integerLiteral, PARSER_RULE_NAMES.floatLiteral);
@@ -338052,6 +338419,24 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const typeExpression = this.parseTypeExpression(root.children[0]);
       const assignments = this.parseStructAssignments(root.children[2]);
       return new AstCompositeLiteral(root, typeExpression, assignments);
+    }
+    parseFunctionLiteral(root) {
+      this.expectParseRuleName(root, PARSER_RULE_NAMES.functionLiteral);
+      this.expectNumberOfChildren(root, 1);
+      const child = root.children[0];
+      if (child.matchedRule?.name == PARSER_RULE_NAMES.expressionFunctionLiteral) {
+        const params = this.parseVariablesWithOptionalTypeAnnotations(child.children[1]);
+        const returnType = this.parseOptionalTypeAnnotation(child.children[3]);
+        const expression = this.parseValueExpression(child.children[5]);
+        return new AstExpressionFunctionLiteral(child, params, returnType, expression);
+      } else if (child.matchedRule?.name == PARSER_RULE_NAMES.blockFunctionLiteral) {
+        const params = this.parseVariablesWithOptionalTypeAnnotations(child.children[1]);
+        const returnType = this.parseOptionalTypeAnnotation(child.children[3]);
+        const block = this.parseBlock(child.children[5]);
+        return new AstBlockFunctionLiteral(child, params, returnType, block);
+      } else {
+        throw new Error(`Parsing function literal is not defined for rule: ${child.matchedRule?.name}`);
+      }
     }
     parseOptionalTypeArguments(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.optionalTypeArguments);
@@ -338208,6 +338593,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       PARSER_RULE_NAMES.fatRightArrow,
       "=>"
       /* TokenType.FatRightArrow */
+    );
+    const rightPipe = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.rightPipe,
+      "|>"
+      /* TokenType.RightPipe */
     );
     const leftParen = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.leftParen,
@@ -338480,15 +338870,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       "variant"
       /* TokenType.Variant */
     );
-    const unitKeyword = parser2.createTokenMatcher(
-      PARSER_RULE_NAMES.unitKeyword,
-      "unit"
-      /* TokenType.Unit */
-    );
     const neverKeyword = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.neverKeyword,
       "never"
       /* TokenType.Never */
+    );
+    const unitKeyword = parser2.createTokenMatcher(
+      PARSER_RULE_NAMES.unitKeyword,
+      "unit"
+      /* TokenType.Unit */
     );
     const identifier3 = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.identifier,
@@ -338527,6 +338917,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return out;
     }
     __name(optionalCommaList, "optionalCommaList");
+    const notFatRightArrow = parser2.createNot(PARSER_RULE_NAMES.notFatRightArrow, fatRightArrow);
+    const block = parser2.createSequence(PARSER_RULE_NAMES.block);
     const pathComponent = parser2.createOrderedChoice(PARSER_RULE_NAMES.pathComponent, dotDot, identifier3, dotMatcher);
     const pathTail = parser2.createZeroOrMore(PARSER_RULE_NAMES.pathTail, parser2.createSequence(PARSER_RULE_NAMES.pathSegment, colonColon, pathComponent));
     const pathExpression = parser2.createSequence(PARSER_RULE_NAMES.pathExpression, pathComponent, pathTail);
@@ -338538,17 +338930,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       typeExpression
     );
     const optionalTypeAnnotation = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalTypeAnnotation, typeAnnotation);
-    const arraySizeMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.arraySizeMatcher, integerLiteral, asterisk);
-    const arrayTypeExpression = parser2.createSequence(
-      PARSER_RULE_NAMES.arrayTypeExpression,
-      // e.g. [T, 5], [T, *]
-      leftSquare,
-      typeExpression,
-      commaMatcher,
-      arraySizeMatcher,
-      rightSquare
-    );
-    const pointerTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.pointerTypeExpression, asterisk, typeExpression);
     const typeCommaList = optionalCommaList(PARSER_RULE_NAMES.typeCommaList, typeExpression);
     const unitTupleTypeExpression = parser2.createSequence(PARSER_RULE_NAMES.unitTupleTypeExpression, leftParen, rightParen);
     const itemTupleTypeExpression = parser2.createSequence(
@@ -338564,7 +338945,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const tupleTypeExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.tupleTypeExpression, unitTupleTypeExpression, itemTupleTypeExpression);
     const oldStyleFunctionTypeExpression = parser2.createSequence(
       // function(types): type?
-      // TODO: I eventually want to change this to (args) => returnType?
       PARSER_RULE_NAMES.oldStyleFunctionTypeExpression,
       functionKeyword,
       leftParen,
@@ -338598,21 +338978,26 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // (some_expression) // used to support higher precedence. In cases like functions, this helps resolve the ambiguity
       oldStyleFunctionTypeExpression,
       // function(i32, i32): i32
-      pointerTypeExpression,
-      // **i32
-      arrayTypeExpression,
-      // [i32, 5], [i32, *]
       unitKeyword,
       // matches "unit" - which is an alias for ()
       neverKeyword,
       // matches "never"
       identifierWithTypeArguments,
+      // e.g. some_type<i32>
       identifier3
     );
+    const variableWithType = parser2.createSequence(PARSER_RULE_NAMES.variableWithType, identifier3, typeAnnotation);
+    const variableWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.variableWithOptionalType, identifier3, optionalTypeAnnotation);
+    const variablesWithTypes = optionalCommaList(PARSER_RULE_NAMES.variableListWithType, variableWithType);
+    const variablesWithOptionalTypes = optionalCommaList(PARSER_RULE_NAMES.variableListWithOptType, variableWithOptionalType);
     const tupleLiteral = parser2.createSequence(PARSER_RULE_NAMES.tupleLiteral);
     const arrayLiteral = parser2.createSequence(PARSER_RULE_NAMES.arrayLiteral);
     const compositeLiteral = parser2.createSequence(PARSER_RULE_NAMES.compositeLiteral);
-    const literal = parser2.createOrderedChoice(PARSER_RULE_NAMES.literal, compositeLiteral, tupleLiteral, arrayLiteral, numberMatcher, trueLiteral, falseLiteral, nullLiteral, floatLiteral, integerLiteral);
+    const blockFunctionLiteral = parser2.createSequence(PARSER_RULE_NAMES.blockFunctionLiteral);
+    const expressionFunctionLiteral = parser2.createSequence(PARSER_RULE_NAMES.expressionFunctionLiteral);
+    const functionLiteral = parser2.createOrderedChoice(PARSER_RULE_NAMES.functionLiteral, blockFunctionLiteral, expressionFunctionLiteral);
+    const parameterizedListMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.parameterizedListMatcher, functionLiteral, parser2.createSequence(PARSER_RULE_NAMES.tupleNoArrow, tupleLiteral, notFatRightArrow));
+    const literal = parser2.createOrderedChoice(PARSER_RULE_NAMES.literal, parameterizedListMatcher, compositeLiteral, arrayLiteral, numberMatcher, trueLiteral, falseLiteral, nullLiteral, unitKeyword, floatLiteral, integerLiteral);
     const watBlob = parser2.createTokenMatcher(
       PARSER_RULE_NAMES.watBlob,
       "BlockWatText"
@@ -338659,12 +339044,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const comparisonExpression = parser2.createSequence(PARSER_RULE_NAMES.comparisonExpression, bitwiseExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.multiMatchComparison, parser2.createSequence(PARSER_RULE_NAMES.bitwiseTail, comparisonOperators, bitwiseExpression)));
     const logicalOperators = parser2.createOrderedChoice(PARSER_RULE_NAMES.logicalOperators, logicalAnd, logicalOr);
     const logicalExpression = parser2.createSequence(PARSER_RULE_NAMES.logicalExpression, comparisonExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.multiMatchLogical, parser2.createSequence(PARSER_RULE_NAMES.comparisonTail, logicalOperators, comparisonExpression)));
-    const valueExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.valueExpression, logicalExpression);
+    const pipeOperators = parser2.createSequence(PARSER_RULE_NAMES.pipeOperators, rightPipe);
+    const rightPipeExpression = parser2.createSequence(PARSER_RULE_NAMES.rightPipeExpression, logicalExpression, parser2.createZeroOrMore(PARSER_RULE_NAMES.multiMatchRightPipeExpression, parser2.createSequence(PARSER_RULE_NAMES.rightPipeExpressionLhs, pipeOperators, logicalExpression)));
+    const valueExpression = parser2.createOrderedChoice(PARSER_RULE_NAMES.valueExpression, rightPipeExpression);
     const optionalExpression = parser2.createZeroOrOne(PARSER_RULE_NAMES.optionalValueExpression, valueExpression);
     const expressionTerms = optionalCommaList(PARSER_RULE_NAMES.expressionTerms, valueExpression);
     tupleLiteral.symbols.push(leftParen, expressionTerms, rightParen);
     arrayLiteral.symbols.push(leftSquare, expressionTerms, rightSquare);
     const bracketedExpression = parser2.createSequence(PARSER_RULE_NAMES.bracketedExpression, leftParen, valueExpression, rightParen);
+    blockFunctionLiteral.symbols.push(leftParen, variablesWithOptionalTypes, rightParen, optionalTypeAnnotation, fatRightArrow, block);
+    expressionFunctionLiteral.symbols.push(leftParen, variablesWithOptionalTypes, rightParen, optionalTypeAnnotation, fatRightArrow, valueExpression);
     const compilerBuiltInFunctionNames = parser2.createOrderedChoice(PARSER_RULE_NAMES.compilerBuiltInFunctionNames, sizeOfKeyword);
     compilerBuiltInFunction.symbols.push(compilerBuiltInFunctionNames, leftParen, optionalCommaList(PARSER_RULE_NAMES.builtInFunctionArgumentList, identifier3), rightParen);
     indexingExpression.symbols.push(
@@ -338713,9 +339102,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     );
     const typeAliasDefinitionStatement = parser2.createSequence(PARSER_RULE_NAMES.typeAliasingStatement, typeAliasKeyword, identifier3, equalsAssignment, typeExpression);
     const importStatement = parser2.createSequence(PARSER_RULE_NAMES.importStatement, importKeyword, pathExpression);
-    const paramWithType = parser2.createSequence(PARSER_RULE_NAMES.paramWithType, identifier3, typeAnnotation);
-    const paramWithOptionalType = parser2.createSequence(PARSER_RULE_NAMES.paramWithOptionalType, identifier3, optionalTypeAnnotation);
-    const functionDefinitionParameters = optionalCommaList(PARSER_RULE_NAMES.functionDefinitionParameters, paramWithType);
     const declareFunctionStatement = parser2.createSequence(
       PARSER_RULE_NAMES.declareFunctionStatement,
       declareKeyword,
@@ -338725,7 +339111,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       // Grammatically I allow this, but I don't know how to use this
       leftParen,
       // its maybe slightly weird having the parens at this level and not in the functionDefinitionParameters rule
-      functionDefinitionParameters,
+      variablesWithTypes,
       rightParen,
       optionalTypeAnnotation
     );
@@ -338736,12 +339122,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const typeboundRequirementType = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementType, functionKeyword, operatorKeyword);
     const typeboundIdentifierMatcher = parser2.createOrderedChoice(PARSER_RULE_NAMES.typeboundRequirementIdentifier, operatorSymbols, identifier3);
     const typeboundRequirement = parser2.createSequence(PARSER_RULE_NAMES.typeboundRequirement, typeboundRequirementType, typeboundIdentifierMatcher, typeAnnotation);
-    const block = parser2.createSequence(PARSER_RULE_NAMES.block, leftCurly, statements, rightCurly);
+    block.symbols.push(leftCurly, statements, rightCurly);
     const elseBlock = parser2.createSequence(PARSER_RULE_NAMES.elseBlock, elseKeyword, block);
     const optElse = parser2.createZeroOrOne("else?", elseBlock);
     const ifStatement = parser2.createSequence(PARSER_RULE_NAMES.ifStatement, ifKeyword, leftParen, valueExpression, rightParen, block, optElse);
     const whileStatement = parser2.createSequence(PARSER_RULE_NAMES.whileStatement, whileKeyword, leftParen, valueExpression, rightParen, block);
-    const caseStatement = parser2.createSequence(PARSER_RULE_NAMES.caseStatement, caseKeyword, leftParen, paramWithOptionalType, rightParen, block);
+    const caseStatement = parser2.createSequence(PARSER_RULE_NAMES.caseStatement, caseKeyword, leftParen, variableWithOptionalType, rightParen, block);
     const zeroOrMoreCaseStatements = parser2.createZeroOrMore(PARSER_RULE_NAMES.caseStatements, caseStatement);
     const switchStatement = parser2.createSequence(PARSER_RULE_NAMES.switchStatement, switchKeyword, leftParen, valueExpression, rightParen, leftCurly, zeroOrMoreCaseStatements, optElse, rightCurly);
     const forInitialization = parser2.createZeroOrOne("forInitialization?", parser2.createOrderedChoice("forInitialization", variableDeclaration, assignmentStatement));
@@ -338755,7 +339141,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       optionalTypeParameters,
       leftParen,
       // its maybe slightly weird having the parens at this level and not in the functionDefinitionParameters rule
-      functionDefinitionParameters,
+      variablesWithTypes,
       rightParen,
       optionalTypeAnnotation,
       // this is the return type, its optional and should be inferrable?
@@ -338767,15 +339153,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       identifier3,
       // optionalTypeParameters, // I'm not supporting generics for watfunctions - I don't have a way to monomorphize the body, so its meaningless.
       leftParen,
-      functionDefinitionParameters,
+      variablesWithTypes,
       rightParen,
       optionalTypeAnnotation,
       leftCurly,
       watBlob,
       rightCurly
     );
-    const operatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.operatorDefinition, operatorKeyword, operatorSymbols, leftParen, functionDefinitionParameters, rightParen, optionalTypeAnnotation, block);
-    const watOperatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.watOperatorDefinition, watOperatorKeyword, operatorSymbols, leftParen, functionDefinitionParameters, rightParen, optionalTypeAnnotation, leftCurly, watBlob, rightCurly);
+    const operatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.operatorDefinition, operatorKeyword, operatorSymbols, leftParen, variablesWithTypes, rightParen, optionalTypeAnnotation, block);
+    const watOperatorOverloadDefinition = parser2.createSequence(PARSER_RULE_NAMES.watOperatorDefinition, watOperatorKeyword, operatorSymbols, leftParen, variablesWithTypes, rightParen, optionalTypeAnnotation, leftCurly, watBlob, rightCurly);
     const compositeTypeKeywords = parser2.createOrderedChoice(PARSER_RULE_NAMES.compositeTypeKeyword, structKeyword, unionKeyword, variantKeyword);
     const compositeDefinition = parser2.createSequence(
       PARSER_RULE_NAMES.compositeDefinition,
@@ -338783,7 +339169,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       identifier3,
       optionalTypeParameters,
       leftCurly,
-      optionalCommaList(PARSER_RULE_NAMES.compositeFields, paramWithType),
+      optionalCommaList(PARSER_RULE_NAMES.compositeFields, variableWithType),
       // the parser will allow an empty list and then I'll throw a semantic error on an empty list (or duplicate fields)
       rightCurly
     );
@@ -338983,6 +339369,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       matcher: /^=>/,
       tokenType: "=>"
       /* TokenType.FatRightArrow */
+    },
+    {
+      matcher: /^\|>/,
+      tokenType: "|>"
+      /* TokenType.RightPipe */
     },
     // simple math
     {
@@ -340081,6 +340472,139 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
+  // ../compiler/dist/src/compiler/ir/instructions/IRControl.js
+  var IRControlStatement = class {
+    static {
+      __name(this, "IRControlStatement");
+    }
+    astNode;
+    comment = "";
+    constructor(astNode) {
+      this.astNode = astNode;
+    }
+  };
+  var IRReturn = class extends IRControlStatement {
+    static {
+      __name(this, "IRReturn");
+    }
+    astNode;
+    expression;
+    constructor(astNode, expression) {
+      super(astNode);
+      this.astNode = astNode;
+      this.expression = expression;
+    }
+    toJson(options2) {
+      const expJson = this.expression != void 0 ? this.expression.toJson(options2) : "";
+      return ["return", expJson];
+    }
+  };
+  var blockCounter = 0;
+  var IRBlock = class extends IRControlStatement {
+    static {
+      __name(this, "IRBlock");
+    }
+    astNode;
+    branchBehavior;
+    instructions;
+    additionalIdentifier;
+    blockId = blockCounter++;
+    constructor(astNode, branchBehavior, instructions, additionalIdentifier = "") {
+      super(astNode);
+      this.astNode = astNode;
+      this.branchBehavior = branchBehavior;
+      this.instructions = instructions;
+      this.additionalIdentifier = additionalIdentifier;
+    }
+    toJson(options2) {
+      let idStr = "";
+      if (this.additionalIdentifier) {
+        idStr = `:${this.additionalIdentifier}`;
+      }
+      return [
+        "block",
+        `block_id${idStr}:${this.blockId}`,
+        this.branchBehavior,
+        this.instructions.map((i) => i.toJson(options2))
+      ];
+    }
+  };
+  var IRBranchUnconditional = class extends IRControlStatement {
+    static {
+      __name(this, "IRBranchUnconditional");
+    }
+    astNode;
+    block;
+    constructor(astNode, block) {
+      super(astNode);
+      this.astNode = astNode;
+      this.block = block;
+    }
+    toJson(options2) {
+      return ["branch", `block_id:${this.block.blockId}`];
+    }
+  };
+  var IRBranchIf = class extends IRControlStatement {
+    static {
+      __name(this, "IRBranchIf");
+    }
+    astNode;
+    block;
+    invertExpression;
+    expression;
+    constructor(astNode, block, invertExpression, expression) {
+      super(astNode);
+      this.astNode = astNode;
+      this.block = block;
+      this.invertExpression = invertExpression;
+      this.expression = expression;
+    }
+    toJson(options2) {
+      return ["branch_if", `block_id:${this.block.blockId}`, this.invertExpression, this.expression.toJson(options2)];
+    }
+  };
+  var IRIfStatement = class extends IRControlStatement {
+    static {
+      __name(this, "IRIfStatement");
+    }
+    astNode;
+    condition;
+    thenInstructions;
+    elseInstructions;
+    constructor(astNode, condition, thenInstructions, elseInstructions) {
+      super(astNode);
+      this.astNode = astNode;
+      this.condition = condition;
+      this.thenInstructions = thenInstructions;
+      this.elseInstructions = elseInstructions;
+    }
+    toJson(options2) {
+      if (this.elseInstructions != void 0) {
+        return [
+          "if",
+          this.condition.toJson(options2),
+          ["then", this.thenInstructions.map((i) => i.toJson(options2))],
+          ["else", this.elseInstructions?.map((i) => i.toJson(options2))]
+        ];
+      } else {
+        return ["if", this.condition.toJson(options2), ["then", this.thenInstructions.map((i) => i.toJson(options2))]];
+      }
+    }
+  };
+  var IRUnreachable = class extends IRControlStatement {
+    static {
+      __name(this, "IRUnreachable");
+    }
+    astNode;
+    constructor(astNode) {
+      super(astNode);
+      this.astNode = astNode;
+    }
+    toJson(options2) {
+      return ["unreachable"];
+    }
+  };
+
   // ../compiler/dist/src/compiler/ir/instructions/IRVariables.js
   var IRVariableInstruction = class {
     static {
@@ -340125,19 +340649,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     astNode;
     irVariable;
-    rhsExpression;
+    instructions;
     comment = "";
-    constructor(astNode, irVariable, rhsExpression) {
+    constructor(astNode, irVariable, instructions) {
       this.astNode = astNode;
       this.irVariable = irVariable;
-      this.rhsExpression = rhsExpression;
+      this.instructions = instructions;
     }
     toJson(options2) {
       return [
         "set",
         this.irVariable.identifier.name,
         `:${this.irVariable.type.expression.toString()}`,
-        this.rhsExpression.toJson({})
+        this.instructions.map((i) => i.toJson({}))
       ];
     }
   };
@@ -340148,13 +340672,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     astNode;
     irVariable;
     fields;
-    rhsExpression;
+    instructions;
     comment = "";
-    constructor(astNode, irVariable, fields, rhsExpression) {
+    constructor(astNode, irVariable, fields, instructions) {
       this.astNode = astNode;
       this.irVariable = irVariable;
       this.fields = fields;
-      this.rhsExpression = rhsExpression;
+      this.instructions = instructions;
     }
     toJson(options2) {
       return [
@@ -340163,7 +340687,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         ".",
         this.fields.join("."),
         `:${this.irVariable.type.expression.toString()}`,
-        this.rhsExpression.toJson({})
+        this.instructions.map((i) => i.toJson({}))
       ];
     }
   };
@@ -340194,7 +340718,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.astNode = astNode;
       this.expressions = instructions;
       for (const e of this.expressions) {
-        if (!(e instanceof IRExpression || e instanceof IRVariableExpression)) {
+        if (!(e instanceof IRExpression || e instanceof IRVariableExpression || e instanceof IRUnreachable)) {
           throw new Error(`Expecting expressions in the IR Expression group. ${e.toJson({})}`);
         }
       }
@@ -340705,139 +341229,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/instructions/IRControl.js
-  var IRControlStatement = class {
-    static {
-      __name(this, "IRControlStatement");
-    }
-    astNode;
-    comment = "";
-    constructor(astNode) {
-      this.astNode = astNode;
-    }
-  };
-  var IRReturn = class extends IRControlStatement {
-    static {
-      __name(this, "IRReturn");
-    }
-    astNode;
-    expression;
-    constructor(astNode, expression) {
-      super(astNode);
-      this.astNode = astNode;
-      this.expression = expression;
-    }
-    toJson(options2) {
-      const expJson = this.expression != void 0 ? this.expression.toJson(options2) : "";
-      return ["return", expJson];
-    }
-  };
-  var blockCounter = 0;
-  var IRBlock = class extends IRControlStatement {
-    static {
-      __name(this, "IRBlock");
-    }
-    astNode;
-    branchBehavior;
-    instructions;
-    additionalIdentifier;
-    blockId = blockCounter++;
-    constructor(astNode, branchBehavior, instructions, additionalIdentifier = "") {
-      super(astNode);
-      this.astNode = astNode;
-      this.branchBehavior = branchBehavior;
-      this.instructions = instructions;
-      this.additionalIdentifier = additionalIdentifier;
-    }
-    toJson(options2) {
-      let idStr = "";
-      if (this.additionalIdentifier) {
-        idStr = `:${this.additionalIdentifier}`;
-      }
-      return [
-        "block",
-        `block_id${idStr}:${this.blockId}`,
-        this.branchBehavior,
-        this.instructions.map((i) => i.toJson(options2))
-      ];
-    }
-  };
-  var IRBranchUnconditional = class extends IRControlStatement {
-    static {
-      __name(this, "IRBranchUnconditional");
-    }
-    astNode;
-    block;
-    constructor(astNode, block) {
-      super(astNode);
-      this.astNode = astNode;
-      this.block = block;
-    }
-    toJson(options2) {
-      return ["branch", `block_id:${this.block.blockId}`];
-    }
-  };
-  var IRBranchIf = class extends IRControlStatement {
-    static {
-      __name(this, "IRBranchIf");
-    }
-    astNode;
-    block;
-    invertExpression;
-    expression;
-    constructor(astNode, block, invertExpression, expression) {
-      super(astNode);
-      this.astNode = astNode;
-      this.block = block;
-      this.invertExpression = invertExpression;
-      this.expression = expression;
-    }
-    toJson(options2) {
-      return ["branch_if", `block_id:${this.block.blockId}`, this.invertExpression, this.expression.toJson(options2)];
-    }
-  };
-  var IRIfStatement = class extends IRControlStatement {
-    static {
-      __name(this, "IRIfStatement");
-    }
-    astNode;
-    condition;
-    thenInstructions;
-    elseInstructions;
-    constructor(astNode, condition, thenInstructions, elseInstructions) {
-      super(astNode);
-      this.astNode = astNode;
-      this.condition = condition;
-      this.thenInstructions = thenInstructions;
-      this.elseInstructions = elseInstructions;
-    }
-    toJson(options2) {
-      if (this.elseInstructions != void 0) {
-        return [
-          "if",
-          this.condition.toJson(options2),
-          ["then", this.thenInstructions.map((i) => i.toJson(options2))],
-          ["else", this.elseInstructions?.map((i) => i.toJson(options2))]
-        ];
-      } else {
-        return ["if", this.condition.toJson(options2), ["then", this.thenInstructions.map((i) => i.toJson(options2))]];
-      }
-    }
-  };
-  var IRUnreachable = class extends IRControlStatement {
-    static {
-      __name(this, "IRUnreachable");
-    }
-    astNode;
-    constructor(astNode) {
-      super(astNode);
-      this.astNode = astNode;
-    }
-    toJson(options2) {
-      return ["unreachable"];
-    }
-  };
-
   // ../compiler/dist/src/compiler/ir/instructions/IROperations.js
   var IROperation = class extends IRExpression {
     static {
@@ -340935,6 +341326,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             watBody = watBody.replaceAll(`{${param.variable.name}}`, `${this.nameMapper.hackyMapWasmFunctionVarName(param.variable.name, def.bodyScope)}`);
           }
           body = [new WasmStringInstruction(def, watBody)];
+        } else if (def instanceof AstFunctionLiteral) {
+          body = instructionEmitter.convertInstructions(irFunction.instructions());
         } else {
           throw new Error(`Unable to convert callable of type ${def.constructor.name}`);
         }
@@ -341112,7 +341505,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     getEntry(irFunction) {
       const out = this.funcIdentifierToElemIndex.get(irFunction.identifier);
       if (out == void 0) {
-        throw new Error(`Not entry in map for ${irFunction.identifier.toShortString()}`);
+        throw new Error(`No entry in map for ${irFunction.identifier.toShortString()}`);
       }
       return out;
     }
@@ -341180,12 +341573,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return this.convertConstInstruction(irInstruction);
       } else if (irInstruction instanceof IRExpression) {
         return this.convertExpression(irInstruction);
+      } else if (irInstruction instanceof IRVariableGet) {
+        return this.convertExpression(irInstruction);
       } else if (irInstruction instanceof IRControlStatement) {
         return this.convertControlStatement(irInstruction);
       } else if (irInstruction instanceof IRVariableSet || irInstruction instanceof IRVariableFieldSet) {
         return this.convertSetInstruction(irInstruction);
       }
-      throw new Error(`Unable to convert instruction ${irInstruction.toJson({})}`);
+      throw new Error(`Unable to convert instruction ${irInstruction.constructor.name} ${irInstruction.toJson({})}`);
     }
     convertExpression(irExpression) {
       if (irExpression instanceof IRExpressionGroup) {
@@ -341244,6 +341639,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           /* WasmAnyComparisonInstruction.Equals */
         );
         return [...exp, constantValue, compare2];
+      } else if (irExpression instanceof IRUnreachable) {
+        const inst = new WatControlInstruction(irExpression.astNode, "unreachable", void 0);
+        return [inst];
       }
       throw new Error(`Not yet implemented expression conversion for expression type: ${irExpression.constructor.name}`);
     }
@@ -341321,7 +341719,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const setInstrunction = variable.symbolInfo?.symbolDefinition.scopeType == "Global" ? "global.set" : "local.set";
       const assignments = filteredMappedTypes.map((t) => new WatVariableInstruction(void 0, setInstrunction, WatNameMapper.joinMappedName(t.name))).reverse();
-      const expression = this.convertExpression(irInstruction.rhsExpression);
+      const expression = this.convertInstructions(irInstruction.instructions);
       return [...expression, ...assignments];
     }
     convertControlStatement(irInstruction) {
@@ -341443,6 +341841,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   };
 
   // ../compiler/dist/src/compiler/IRConverter.js
+  var IR_MAX_MONOMORPHIZATION_DEPTH = 512;
   var FunctionMonomorphizationStack = class {
     static {
       __name(this, "FunctionMonomorphizationStack");
@@ -341468,6 +341867,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     static {
       __name(this, "IRModuleConverter");
     }
+    maxMonomorphizationDepth;
+    constructor(maxMonomorphizationDepth = IR_MAX_MONOMORPHIZATION_DEPTH) {
+      this.maxMonomorphizationDepth = maxMonomorphizationDepth;
+    }
     toIRModule(root, context) {
       const globalScope = context.table.getGlobalScope();
       const module2 = new IRModule();
@@ -341475,21 +341878,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const callables = globalScope.findAllSymbolsInThisAndChildren().filter((s) => s.symbolDefinition instanceof CallableSymbolDefinition).map((s) => s);
       this.bindCallableDefinitions(module2, callables);
       const instructionConverter = new IRInstructionConverter();
-      const converterContext = {
+      const converterContextForGlobalBinds = {
         module: module2,
         lateInstantiatedFunctionsToProcess: new FunctionMonomorphizationStack(),
         func: {
           definition: void 0,
-          // this is hacky, but hopefully not used when binding the global variables
+          // definition as any is hacky, but hopefully not used when binding the global variables
           genericsToTypeArgs: void 0
         },
-        scope: globalScope
+        scope: globalScope,
+        stackDepth: 0
       };
       const globalVariables = globalScope.findAllSymbolsInThisAndChildren().filter((s) => s.symbolDefinition instanceof VariableSymbolDefinition).map((v) => v).filter(
         (v) => v.symbolDefinition.scopeType == "Global"
         /* ScopeType.Global */
       );
-      this.bindGlobalVariables(module2, globalVariables, instructionConverter, converterContext);
+      this.bindGlobalVariables(module2, globalVariables, instructionConverter, converterContextForGlobalBinds);
       const functionsToInstantiate = new FunctionMonomorphizationStack();
       [...module2.functions.values()].forEach((functionDefinition) => {
         const functionTypeParameters = functionDefinition.identifier.typeParameters;
@@ -341516,12 +341920,17 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             definition: functionDefinition,
             genericsToTypeArgs: mapArgs
           },
-          scope: functionDefinition.callableOverload.definitionNode.bodyScope
+          scope: functionDefinition.callableOverload.definitionNode.bodyScope,
+          stackDepth: 0
+          // the initially populated functions start at stack depth of 0
         };
         functionsToInstantiate.push(context2);
       });
       while (!functionsToInstantiate.isEmpty()) {
         const context2 = functionsToInstantiate.pop();
+        if (context2.stackDepth > this.maxMonomorphizationDepth) {
+          throw new Error(`Max monomorphization recursion reached when expanding function: ${context2.func.definition.identifier.toShortString()}`);
+        }
         const irFunctionDefinition = context2.func.definition;
         try {
           const astFunctionDefintion = irFunctionDefinition.callableOverload.definitionNode;
@@ -341531,6 +341940,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             instructions = instructionConverter.traverse(body, context2);
           } else if (astFunctionDefintion instanceof AstWatFunctionDefinition || astFunctionDefintion instanceof AstWatOperatorDefinition || astFunctionDefintion instanceof AstDeclareFunctionStatement) {
             instructions = [];
+          } else if (astFunctionDefintion instanceof AstFunctionLiteral) {
+            if (astFunctionDefintion instanceof AstExpressionFunctionLiteral) {
+              const body = astFunctionDefintion.expression;
+              instructions = instructionConverter.traverse(body, context2);
+            } else if (astFunctionDefintion instanceof AstBlockFunctionLiteral) {
+              const body = astFunctionDefintion.block;
+              instructions = instructionConverter.traverse(body, context2);
+            } else {
+              throw new Error(`Unhandled code path for callable node of type ${astFunctionDefintion.constructor.name}`);
+            }
           } else {
             throw new Error(`Unhandled code path for callable node of type ${astFunctionDefintion.constructor.name}`);
           }
@@ -341732,8 +342151,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           definition: monomorphizedFunction,
           genericsToTypeArgs: typeArgumentMap
         },
-        scope: irFunctionLookupArgs.overload.definitionNode.bodyScope
+        scope: irFunctionLookupArgs.overload.definitionNode.bodyScope,
         // I'm not sure about this scope
+        stackDepth: context.stackDepth + 1
       };
       context.lateInstantiatedFunctionsToProcess.push(newContext);
       return {
@@ -341794,6 +342214,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const out = new IRConstTuple(node, irType, values);
       return [out];
     }
+    traverseUnitValueLiteral(node, context) {
+      const type = node.augmentedProperties.typeDefinition?.resolveType();
+      const irType = this.lookupIrType(type, context);
+      const out = new IRConstTuple(node, irType, []);
+      return [out];
+    }
     traverseArrayLiteral(node, context) {
       throw new Error("Method not implemented.");
     }
@@ -341828,6 +342254,76 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Mapping to IRConstComposite not defined for type: ${type.toString()}`);
       }
       return [out];
+    }
+    traverseFunctionLiteral(node, context) {
+      const type = context.module.types.internTypeDefinition(context.module, node.resolvedType);
+      const anonFunctionName = `.anon_func.${node.literalCounter}`;
+      const iden = new IRFunctionIdentifier(context.scope, anonFunctionName, void 0, type, void 0);
+      const overloadInfo = {
+        definitionNode: node,
+        bindingPath: void 0,
+        declaringScope: context.scope,
+        typeParametersExpression: void 0,
+        typeParameterDefinitions: void 0,
+        typeExpression: node.resolvedType?.expression,
+        typeDefinition: node.resolvedType,
+        specializations: [],
+        typeBoundSource: void 0,
+        isBuiltIn: false,
+        isWatNative: false,
+        isExternallyDefined: false
+      };
+      const symbolDef = new CallableSymbolDefinition(anonFunctionName, "Function", [
+        overloadInfo
+      ]);
+      const symbolInfo = SymbolInformation4.create({
+        symbolName: anonFunctionName,
+        bindingPath: void 0,
+        declaringScope: context.scope,
+        symbolDefinition: symbolDef,
+        shadow: void 0,
+        isBuiltIn: false,
+        isShadowable: true,
+        isExternallyDefined: false
+      });
+      const paramVariableDefs = new IRVariableDefinitions();
+      node.params.forEach((p) => {
+        const symbolInfo2 = p.symbolDefinition;
+        if (!(symbolInfo2.symbolDefinition instanceof VariableSymbolDefinition)) {
+          throw new Error(`This is buggy for variable: ${p.symbolName}`);
+        }
+        paramVariableDefs.internVariableSymbol(context.module, symbolInfo2);
+      });
+      const localVariableDefs = new IRVariableDefinitions();
+      node.bodyScope.findAllSymbolsInThisAndChildren().filter(
+        (v) => v.symbolDefinition.symbolType == "Variable"
+        /* SymbolType.Variable */
+      ).forEach((l) => {
+        if (!(l.symbolDefinition instanceof VariableSymbolDefinition)) {
+          throw new Error(`This is buggy for variable: ${l.symbolName}`);
+        }
+        if (l.symbolDefinition.scopeType == "Local") {
+          localVariableDefs.internVariableSymbol(context.module, l);
+        }
+      });
+      const irFunction = new IRFunction(context.module, iden, symbolInfo, overloadInfo, node.resolvedType, paramVariableDefs, localVariableDefs, void 0);
+      if (context.module.functions.has(iden)) {
+        throw new Error(`I'm double creating this. Its kind of a concern`);
+      }
+      context.module.functions.getOrInit(iden, () => irFunction);
+      const conversionContext = {
+        module: context.module,
+        lateInstantiatedFunctionsToProcess: context.lateInstantiatedFunctionsToProcess,
+        func: {
+          definition: irFunction,
+          genericsToTypeArgs: void 0
+        },
+        scope: node.bodyScope,
+        stackDepth: context.stackDepth + 1
+      };
+      context.lateInstantiatedFunctionsToProcess.push(conversionContext);
+      const reference = new IRConstFunctionReference(node, irFunction);
+      return [reference];
     }
     traverseValueExprIdentifier(node, context) {
       const symbolBinding = node.identifier.getSymbolBinding();
@@ -341980,6 +342476,21 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseBuiltInFunction(node, context) {
       throw new Error("Method not implemented.");
     }
+    traverseRightPipeExpression(node, context) {
+      let lhsInstructions = this.traverse(node.lhs, context);
+      const rhsScope = node.rhsScope;
+      if (rhsScope == void 0) {
+        throw new Error(`The RHS scope for the pipe expression should have been bound in the binder`);
+      }
+      const rhsContext = {
+        ...context,
+        scope: rhsScope
+      };
+      const pipeUnderscore = this.lookupIrVariable("_", rhsScope, rhsContext);
+      const assignment = new IRVariableSet(node.rhs, pipeUnderscore, lhsInstructions);
+      const rhsInstructions = this.traverse(node.rhs, rhsContext);
+      return [assignment, ...rhsInstructions];
+    }
     traverseTypeCastingExpression(node, context) {
       return [];
     }
@@ -342034,17 +342545,16 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseVariableDeclaration(node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
-      const exp = new IRExpressionGroup(node.expression, this.traverse(node.expression, context));
-      return [new IRVariableSet(node, irVariable, exp)];
+      return [new IRVariableSet(node, irVariable, this.traverse(node.expression, context))];
     }
     handleSimpleVariableAccess(exp, node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
-      return [new IRVariableSet(node, irVariable, exp)];
+      return [new IRVariableSet(node, irVariable, [exp])];
     }
     handleFieldAssignment(exp, node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
       return [
-        new IRVariableFieldSet(node, irVariable, node.fieldNames.map((f) => f.name), exp)
+        new IRVariableFieldSet(node, irVariable, node.fieldNames.map((f) => f.name), [exp])
       ];
     }
     traverseAstSimpleVariableAccess(node, context) {
@@ -342135,7 +342645,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const variantExpressionTempStore = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, "variant_expression_temp", expType.typeDefinition, context.func.genericsToTypeArgs);
       const backingTagValue = new IRVariantTagGetExpression(node.expression, expType, exp, variantExpressionTempStore, variantExpressionTempStore.irType);
       const backingTagTempVariable = context.func.definition.createTemporaryVariable(context.module, node.augmentedProperties.scope, ".backing_field_temp_store", variantType.backingTagType, context.func.genericsToTypeArgs);
-      switchInstructions.push(new IRVariableSet(node.expression, backingTagTempVariable, backingTagValue));
+      switchInstructions.push(new IRVariableSet(node.expression, backingTagTempVariable, [backingTagValue]));
       for (const c of node.caseStatements) {
         const newContext = {
           ...context,
@@ -342144,7 +342654,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const internalInstructions = this.traverse(c.body, newContext);
         const caseVariable = this.lookupIrVariable(c.condition.symbolName, c.augmentedProperties.scope, context);
         const fieldGet = IRFieldGetExpression.create(context.module, void 0, expType, exp, c.condition.symbolName, variantExpressionTempStore);
-        const setInstruction = new IRVariableSet(c.condition, caseVariable, fieldGet);
+        const setInstruction = new IRVariableSet(c.condition, caseVariable, [fieldGet]);
         const brOutOfSwitch = new IRBranchUnconditional(c, switchBlock);
         const instructions = [setInstruction, ...internalInstructions, brOutOfSwitch];
         const getTempStoredBackingValue = new IRVariableGet(void 0, backingTagTempVariable);
@@ -342364,7 +342874,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var import_wabt = __toESM(require_wabt(), 1);
 
   // build-info.js
-  var buildDateStr = "4/28/2026 11:09:00 AM";
+  var buildDateStr = "5/9/2026 4:38:08 PM";
   console.log("build date:", buildDateStr);
   var build_info_default = {};
 
