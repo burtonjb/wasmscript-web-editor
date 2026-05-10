@@ -336744,8 +336744,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (rhsScope == void 0) {
         throw new Error(`This should have been bound in the binder`);
       }
-      if (lhsType instanceof InstantiableTypeDefinition) {
-        rhsScope.bindVariableType("_", lhsType);
+      const resolvedLhsTypes = areTypesAssignable(lhsType, lhsType).resolvedLhsType;
+      if (resolvedLhsTypes instanceof InstantiableTypeDefinition) {
+        rhsScope.bindVariableType("_", resolvedLhsTypes);
       } else {
         const err = {
           firstToken: node.rhs.firstToken,
@@ -338048,7 +338049,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return expressions;
     }
-    parseMultiMatchedBinaryExpression(lhsExpressionNode, root, parentRuleName = "binaryOperator") {
+    parseMultiMatchedBinaryExpression(lhsExpressionNode, root, parent, parentRuleName = "binaryOperator") {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.multiMatchUnary, PARSER_RULE_NAMES.multiMatchProduct, PARSER_RULE_NAMES.multiMatchSum, PARSER_RULE_NAMES.multiMatchBitwise, PARSER_RULE_NAMES.multiMatchComparison, PARSER_RULE_NAMES.multiMatchLogical, PARSER_RULE_NAMES.multiMatchRightPipeExpression);
       if (root.children.length == 0) {
         return lhsExpressionNode;
@@ -338082,9 +338083,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           throw new Error(`Failed to parse RHS. Received rulename was: ${rhsNode.matchedRule?.name}`);
         }
         if (parentRuleName == "binaryOperator") {
-          lhsExpressionNode = new AstBinaryOperation(root, lhsExpressionNode, operator, rhsAst);
+          lhsExpressionNode = new AstBinaryOperation(parent, lhsExpressionNode, operator, rhsAst);
         } else if (parentRuleName == "rightAstPipeExpression") {
-          lhsExpressionNode = new AstRightPipeValueExpression(root, lhsExpressionNode, rhsAst);
+          lhsExpressionNode = new AstRightPipeValueExpression(parent, lhsExpressionNode, rhsAst);
         }
       }
       return lhsExpressionNode;
@@ -338093,9 +338094,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectParseRuleName(root, PARSER_RULE_NAMES.rightPipeExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseLogicalExpression(root.children[0]);
-      if (root.children.length > 1 && root.children[1].children.length > 1) {
-        const rhs = this.parseMultiMatchedBinaryExpression(lhs, root.children[1], "rightAstPipeExpression");
-        return new AstRightPipeValueExpression(root, lhs, rhs);
+      if (root.children.length > 1 && root.children[1].children.length >= 1) {
+        const rhs = this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root, "rightAstPipeExpression");
+        return rhs;
       } else {
         return lhs;
       }
@@ -338104,31 +338105,31 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.expectParseRuleName(root, PARSER_RULE_NAMES.logicalExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseComparisonExpression(root.children[0]);
-      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root);
     }
     parseComparisonExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.comparisonExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseBitwiseExpression(root.children[0]);
-      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root);
     }
     parseBitwiseExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.bitwiseExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseSumExpression(root.children[0]);
-      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root);
     }
     parseSumExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.sumExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseProductExpression(root.children[0]);
-      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root);
     }
     parseProductExpression(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.productExpression);
       this.expectNumberOfChildren(root, 2);
       const lhs = this.parseUnaryOrTypecasting(root.children[0]);
-      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1]);
+      return this.parseMultiMatchedBinaryExpression(lhs, root.children[1], root);
     }
     parseUnaryOrTypecasting(root) {
       this.expectParseRuleName(root, PARSER_RULE_NAMES.unaryExpressionOrPrimary);
@@ -338195,7 +338196,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const fieldAccessNode = root.children[0];
       const fieldAccess = this.parseFieldAccessExpression(fieldAccessNode);
       const chainedArgs = this.parseCallExpressionMultiMatch(root.children[1]);
-      let current = new AstCallExpression(chainedArgs[0].parseTreeNode, fieldAccess, chainedArgs[0]);
+      let current = new AstCallExpression(root, fieldAccess, chainedArgs[0]);
       for (let i = 1; i < chainedArgs.length; i++) {
         const nextArgs = chainedArgs[i];
         const next = new AstCallExpression(nextArgs.parseTreeNode, current, nextArgs);
@@ -340081,22 +340082,46 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   };
 
   // ../compiler/dist/src/compiler/ir/instructions/IRInstructions.js
-  var IRPlaceholderInstruction = class {
+  var IRInstruction = class {
+    static {
+      __name(this, "IRInstruction");
+    }
+    node;
+    comment = void 0;
+    constructor(node) {
+      this.node = node;
+    }
+  };
+  var IRPlaceholderInstruction = class extends IRInstruction {
     static {
       __name(this, "IRPlaceholderInstruction");
     }
-    comment = "";
+    constructor(node) {
+      super(node);
+    }
     toJson(options2) {
       return ["PLACEHOLDER INSTRUCTION"];
     }
+    // placeholder instructions don't consume or produce ir types
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
+    }
   };
-  var IRTypeBoundCreatedFunctionInstruction = class {
+  var IRTypeBoundCreatedFunctionInstruction = class extends IRInstruction {
     static {
       __name(this, "IRTypeBoundCreatedFunctionInstruction");
     }
-    comment = "";
     toJson(options2) {
       return ["type bound created - do nothing"];
+    }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
     }
   };
 
@@ -340219,7 +340244,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     instructions() {
       if (this._instructions == void 0) {
-        return [new IRPlaceholderInstruction()];
+        return [new IRPlaceholderInstruction(this.callableOverload.definitionNode)];
       }
       return this._instructions.slice();
     }
@@ -340472,49 +340497,341 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/instructions/IRControl.js
-  var IRControlStatement = class {
+  // ../compiler/dist/src/compiler/ir/instructions/IRConsts.js
+  initProtos();
+  var IRConst = class extends IRInstruction {
     static {
-      __name(this, "IRControlStatement");
+      __name(this, "IRConst");
     }
-    astNode;
+    outputType;
+    _values;
     comment = "";
-    constructor(astNode) {
-      this.astNode = astNode;
+    constructor(node, outputType, _values) {
+      super(node);
+      this.outputType = outputType;
+      this._values = _values;
+    }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
+    }
+    toJson(options2) {
+      return ["const", this.outputType.typeDefinition.expression.toString(), JSON.stringify(this._values)];
     }
   };
-  var IRReturn = class extends IRControlStatement {
+  var IRConstScalar = class extends IRConst {
+    static {
+      __name(this, "IRConstScalar");
+    }
+    outputType;
+    _values;
+    type;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.outputType = outputType;
+      this._values = _values;
+      if (!(outputType.typeDefinition instanceof ScalarTypeDefinition)) {
+        const errorMessage = `Expecting a scalar type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+  };
+  var IRConstInt = class extends IRConstScalar {
+    static {
+      __name(this, "IRConstInt");
+    }
+    node;
+    outputType;
+    _values;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+    }
+  };
+  var IRConstFloat = class extends IRConstScalar {
+    static {
+      __name(this, "IRConstFloat");
+    }
+    node;
+    outputType;
+    _values;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+    }
+  };
+  var IRConstBool = class extends IRConstScalar {
+    static {
+      __name(this, "IRConstBool");
+    }
+    node;
+    outputType;
+    _values;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+    }
+  };
+  var IRConstComposite = class extends IRConst {
+    static {
+      __name(this, "IRConstComposite");
+    }
+    node;
+    outputType;
+    _values;
+    type;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+      const components = outputType.typeDefinition.components();
+      if (components == void 0) {
+        const errorMessage = `Expecting a composite type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+    toJson(options2) {
+      const objectJsonValue = [...this._values.entries()].reduce((prev, current) => {
+        prev[current[0]] = current[1].map((i) => i.toJson(options2));
+        return prev;
+      }, {});
+      return ["const", this.outputType.typeDefinition.toShortString(), objectJsonValue];
+    }
+    /**
+     * Returns the associated fields and the expressions in the literal in the order that the
+     * fields were defined in for the type definition
+     *
+     * Structs should have all fields populated, but unions and variants will only have 1
+     * field populated
+     */
+    typeDeclarationOrderedValues() {
+      const components = this.type.components();
+      if (components == void 0) {
+        throw new Error(`Failed in IRConst for type: ${this.type.toString()}`);
+      }
+      const orderedFields = [...components.keys()];
+      const out = /* @__PURE__ */ new Map();
+      for (const f of orderedFields) {
+        let exp = this._values.get(f);
+        if (exp == void 0) {
+          const fieldType = components.get(f);
+          if (fieldType == void 0) {
+            throw new Error(`Type for field with name: ${f} for type: ${this.type} is undefined`);
+          }
+          const iden = new IRTypeIdentifier(fieldType);
+          const irType = new IRType(iden, fieldType, fieldType.symbolInformation);
+          exp = [new IRZeroValue(this.node, irType, fieldType)];
+        }
+        out.set(f, exp);
+      }
+      return out;
+    }
+  };
+  var IRConstStruct = class extends IRConstComposite {
+    static {
+      __name(this, "IRConstStruct");
+    }
+    node;
+    outputType;
+    _values;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+      if (outputType.typeDefinition.fields() == void 0) {
+        const errorMessage = `Expecting a struct type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+  };
+  var IRConstTuple = class extends IRConstComposite {
+    static {
+      __name(this, "IRConstTuple");
+    }
+    node;
+    outputType;
+    values;
+    constructor(node, outputType, values) {
+      const _v = values.map((value, i) => [`_${i}`, value]);
+      const valueMap = new Map(_v);
+      super(node, outputType, valueMap);
+      this.node = node;
+      this.outputType = outputType;
+      this.values = values;
+      if (!(outputType.typeDefinition instanceof TupleTypeDefinition)) {
+        const errorMessage = `Expecting a tuple type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+  };
+  var IRConstUnion = class extends IRConstComposite {
+    static {
+      __name(this, "IRConstUnion");
+    }
+    node;
+    outputType;
+    _values;
+    constructor(node, outputType, _values) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+      if (!(outputType.typeDefinition instanceof UnionTypeDefinition)) {
+        const errorMessage = `Expecting a union type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+  };
+  var IRConstVariant = class extends IRConstComposite {
+    static {
+      __name(this, "IRConstVariant");
+    }
+    node;
+    outputType;
+    _values;
+    backingTagType;
+    constructor(node, outputType, _values, backingTagType) {
+      super(node, outputType, _values);
+      this.node = node;
+      this.outputType = outputType;
+      this._values = _values;
+      this.backingTagType = backingTagType;
+      if (outputType.typeDefinition.cases() == void 0) {
+        const errorMessage = `Expecting a variant type but instead received type: ${outputType.typeDefinition.toString()}. `;
+        const location = node != void 0 ? node.firstToken.createTokenSourceString() : "";
+        throw new Error(errorMessage + location);
+      }
+      this.type = outputType.typeDefinition;
+    }
+    /**
+     * For the variant literal - will return the index for the selected backing field.
+     * For example, if the type is Variant Example (f1, f2, f3)
+     * and the literal is Example { f2 }, then the backingFieldIndex would be 1 (starting from 0)
+     */
+    backingFieldIndex() {
+      const components = this.type.components();
+      const orderedFields = [...components.keys()];
+      const keys = [...this._values.keys()];
+      if (keys.length != 1) {
+        throw new Error(`Either too many or not enough fields set for variant. Type: ${this.type.toShortString()}, fields set: ${keys}`);
+      }
+      const key = keys[0];
+      const out = orderedFields.indexOf(key);
+      if (out == -1) {
+        throw new Error(`Failed to resolve variant backing field for key: ${key}`);
+      }
+      return out;
+    }
+  };
+  var IRConstFunctionReference = class extends IRConst {
+    static {
+      __name(this, "IRConstFunctionReference");
+    }
+    irFunction;
+    constructor(node, irFunction) {
+      super(node, irFunction.identifier.irFunctionType, irFunction);
+      this.irFunction = irFunction;
+    }
+    toJson(options2) {
+      return ["const_function_reference", this.irFunction.identifier.toShortString()];
+    }
+  };
+  var IRZeroValue = class _IRZeroValue extends IRConst {
+    static {
+      __name(this, "IRZeroValue");
+    }
+    node;
+    outputType;
+    type;
+    constructor(node, outputType, type) {
+      super(node, outputType, void 0);
+      this.node = node;
+      this.outputType = outputType;
+      this.type = type;
+    }
+    static createFromTypeDef(module2, node, typeDef) {
+      const irType = module2.types.internTypeDefinition(module2, typeDef);
+      return new _IRZeroValue(node, irType, typeDef);
+    }
+    toJson(options2) {
+      return ["zero_value", `:${this.type.expression.toString()}`];
+    }
+  };
+
+  // ../compiler/dist/src/compiler/ir/instructions/IRControl.js
+  var IRControlInstruction = class extends IRInstruction {
+    static {
+      __name(this, "IRControlInstruction");
+    }
+    node;
+    comment = "";
+    constructor(node) {
+      super(node);
+      this.node = node;
+    }
+  };
+  var IRReturn = class extends IRControlInstruction {
     static {
       __name(this, "IRReturn");
     }
-    astNode;
     expression;
-    constructor(astNode, expression) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, expression) {
+      super(node);
       this.expression = expression;
     }
+    // Technically return expressions consume what the function type is and produce nothing,
+    // and additionally, turn off validation for instructions after the return statement
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
+    }
     toJson(options2) {
-      const expJson = this.expression != void 0 ? this.expression.toJson(options2) : "";
+      const expJson = this.expression != void 0 ? this.expression.map((i) => i.toJson(options2)) : "";
       return ["return", expJson];
     }
   };
   var blockCounter = 0;
-  var IRBlock = class extends IRControlStatement {
+  var IRBlock = class extends IRControlInstruction {
     static {
       __name(this, "IRBlock");
     }
-    astNode;
     branchBehavior;
     instructions;
     additionalIdentifier;
     blockId = blockCounter++;
-    constructor(astNode, branchBehavior, instructions, additionalIdentifier = "") {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, branchBehavior, instructions, additionalIdentifier = "") {
+      super(node);
       this.branchBehavior = branchBehavior;
       this.instructions = instructions;
       this.additionalIdentifier = additionalIdentifier;
+    }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
     }
     toJson(options2) {
       let idStr = "";
@@ -340529,22 +340846,28 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       ];
     }
   };
-  var IRBranchUnconditional = class extends IRControlStatement {
+  var IRBranchUnconditional = class extends IRControlInstruction {
     static {
       __name(this, "IRBranchUnconditional");
     }
-    astNode;
+    node;
     block;
-    constructor(astNode, block) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, block) {
+      super(node);
+      this.node = node;
       this.block = block;
+    }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
     }
     toJson(options2) {
       return ["branch", `block_id:${this.block.blockId}`];
     }
   };
-  var IRBranchIf = class extends IRControlStatement {
+  var IRBranchIf = class extends IRControlInstruction {
     static {
       __name(this, "IRBranchIf");
     }
@@ -340559,39 +340882,61 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.invertExpression = invertExpression;
       this.expression = expression;
     }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
+    }
     toJson(options2) {
-      return ["branch_if", `block_id:${this.block.blockId}`, this.invertExpression, this.expression.toJson(options2)];
+      return [
+        "branch_if",
+        `block_id:${this.block.blockId}`,
+        this.invertExpression,
+        this.expression.map((i) => i.toJson(options2))
+      ];
     }
   };
-  var IRIfStatement = class extends IRControlStatement {
+  var IRIfStatement = class extends IRControlInstruction {
     static {
       __name(this, "IRIfStatement");
     }
-    astNode;
+    node;
     condition;
     thenInstructions;
     elseInstructions;
-    constructor(astNode, condition, thenInstructions, elseInstructions) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, condition, thenInstructions, elseInstructions) {
+      super(node);
+      this.node = node;
       this.condition = condition;
       this.thenInstructions = thenInstructions;
       this.elseInstructions = elseInstructions;
+    }
+    // For validation, there's one more thing - I need to make sure that the IRExpression returns a bool type
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
     }
     toJson(options2) {
       if (this.elseInstructions != void 0) {
         return [
           "if",
-          this.condition.toJson(options2),
+          this.condition.map((i) => i.toJson(options2)),
           ["then", this.thenInstructions.map((i) => i.toJson(options2))],
           ["else", this.elseInstructions?.map((i) => i.toJson(options2))]
         ];
       } else {
-        return ["if", this.condition.toJson(options2), ["then", this.thenInstructions.map((i) => i.toJson(options2))]];
+        return [
+          "if",
+          this.condition.map((i) => i.toJson(options2)),
+          ["then", this.thenInstructions.map((i) => i.toJson(options2))]
+        ];
       }
     }
   };
-  var IRUnreachable = class extends IRControlStatement {
+  var IRUnreachable = class extends IRControlInstruction {
     static {
       __name(this, "IRUnreachable");
     }
@@ -340600,157 +340945,44 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       super(astNode);
       this.astNode = astNode;
     }
+    // I think unreachable actually produces nothing and consumes anything
+    // and turns off validation after its reached.
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
+    }
     toJson(options2) {
       return ["unreachable"];
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/instructions/IRVariables.js
-  var IRVariableInstruction = class {
-    static {
-      __name(this, "IRVariableInstruction");
-    }
-    astNode;
-    irVariable;
-    comment = "";
-    constructor(astNode, irVariable) {
-      this.astNode = astNode;
-      this.irVariable = irVariable;
-    }
-    toJson(instructionSerializationOptions) {
-      throw new Error(`Not yet implemented`);
-    }
-  };
-  var IRVariableExpression = class extends IRVariableInstruction {
-    static {
-      __name(this, "IRVariableExpression");
-    }
-  };
-  var IRVariableGet = class extends IRVariableExpression {
-    static {
-      __name(this, "IRVariableGet");
-    }
-    astNode;
-    irVariable;
-    outputType;
-    constructor(astNode, irVariable) {
-      super(astNode, irVariable);
-      this.astNode = astNode;
-      this.irVariable = irVariable;
-      this.outputType = irVariable.irType;
-    }
-    toJson(options2) {
-      return ["get", this.irVariable.identifier.name, `:${this.irVariable.type.expression.toString()}`];
-    }
-  };
-  var IRVariableSet = class {
-    static {
-      __name(this, "IRVariableSet");
-    }
-    astNode;
-    irVariable;
-    instructions;
-    comment = "";
-    constructor(astNode, irVariable, instructions) {
-      this.astNode = astNode;
-      this.irVariable = irVariable;
-      this.instructions = instructions;
-    }
-    toJson(options2) {
-      return [
-        "set",
-        this.irVariable.identifier.name,
-        `:${this.irVariable.type.expression.toString()}`,
-        this.instructions.map((i) => i.toJson({}))
-      ];
-    }
-  };
-  var IRVariableFieldSet = class {
-    static {
-      __name(this, "IRVariableFieldSet");
-    }
-    astNode;
-    irVariable;
-    fields;
-    instructions;
-    comment = "";
-    constructor(astNode, irVariable, fields, instructions) {
-      this.astNode = astNode;
-      this.irVariable = irVariable;
-      this.fields = fields;
-      this.instructions = instructions;
-    }
-    toJson(options2) {
-      return [
-        "setField",
-        this.irVariable.identifier.name,
-        ".",
-        this.fields.join("."),
-        `:${this.irVariable.type.expression.toString()}`,
-        this.instructions.map((i) => i.toJson({}))
-      ];
-    }
-  };
-
   // ../compiler/dist/src/compiler/ir/instructions/IRExpression.js
   var VARIANT_BACKING_FIELD_NAME = ".backing_field";
-  var IRExpression = class {
-    static {
-      __name(this, "IRExpression");
-    }
-    astNode;
-    comment = "";
-    // Keep the IRExpression very light-weight since there are a lot of subclasses for it
-    constructor(astNode) {
-      this.astNode = astNode;
-    }
-  };
-  var IRExpressionGroup = class extends IRExpression {
-    static {
-      __name(this, "IRExpressionGroup");
-    }
-    astNode;
-    expressions;
-    outputType;
-    // it can be undefined if there's no expressions in the group, which can come up when there's no expressions (e.g. no args, or an empty block)
-    constructor(astNode, instructions) {
-      super(astNode);
-      this.astNode = astNode;
-      this.expressions = instructions;
-      for (const e of this.expressions) {
-        if (!(e instanceof IRExpression || e instanceof IRVariableExpression || e instanceof IRUnreachable)) {
-          throw new Error(`Expecting expressions in the IR Expression group. ${e.toJson({})}`);
-        }
-      }
-      if (this.expressions.length > 0) {
-        this.outputType = this.expressions[this.expressions.length - 1].outputType;
-      } else {
-        this.outputType = void 0;
-      }
-    }
-    toJson(options2) {
-      return [...this.expressions.map((e) => e.toJson(options2))];
-    }
-  };
-  var IRInlinedWatOperator = class extends IRExpression {
+  var IRInlinedWatOperator = class extends IRInstruction {
     static {
       __name(this, "IRInlinedWatOperator");
     }
-    astNode;
     operator;
     outputType;
     args;
     content;
-    constructor(astNode, operator, outputType, args, content2) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, operator, outputType, args, content2) {
+      super(node);
       this.operator = operator;
       this.outputType = outputType;
       this.args = args;
       this.content = content2;
     }
+    producesType() {
+      throw new Error("Method not implemented.");
+    }
+    consumesType() {
+      throw new Error("Method not implemented.");
+    }
     toJson(options2) {
-      return ["inlined_wat", this.operator, this.args.expressions.map((a) => a.toJson(options2)), this.content];
+      return ["inlined_wat", this.operator, this.args.map((a) => a.toJson(options2)), this.content];
     }
   };
   var IRCallExpressionDebugInfo = class {
@@ -340767,45 +340999,44 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return ["debug", this.debugType, this.originalIdentifier?.toShortString()];
     }
   };
-  var IRDirectCallExpression = class extends IRExpression {
+  var IRDirectCallExpression = class extends IRInstruction {
     static {
       __name(this, "IRDirectCallExpression");
     }
-    astNode;
     irFunction;
     callArguments;
     debugInfo;
-    outputType;
-    constructor(astNode, irFunction, callArguments, debugInfo) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, irFunction, callArguments, debugInfo) {
+      super(node);
       this.irFunction = irFunction;
       this.callArguments = callArguments;
       this.debugInfo = debugInfo;
-      this.outputType = irFunction.irReturnType;
+    }
+    producesType() {
+      return [this.irFunction.irReturnType];
+    }
+    consumesType() {
+      throw new Error("Method not implemented.");
     }
     toJson(options2) {
       return [
         "call",
         this.irFunction.identifier.toShortString(),
-        this.callArguments.toJson(options2),
+        this.callArguments.map((a) => a.toJson(options2)),
         this.debugInfo?.toJson()
       ];
     }
   };
-  var IRIndirectCallExpression = class extends IRExpression {
+  var IRIndirectCallExpression = class extends IRInstruction {
     static {
       __name(this, "IRIndirectCallExpression");
     }
-    astNode;
     irType;
     callArguments;
     functionIndexExpression;
-    outputType;
     functionType;
-    constructor(astNode, irType, callArguments, functionIndexExpression) {
-      super(astNode);
-      this.astNode = astNode;
+    constructor(node, irType, callArguments, functionIndexExpression) {
+      super(node);
       this.irType = irType;
       this.callArguments = callArguments;
       this.functionIndexExpression = functionIndexExpression;
@@ -340814,16 +341045,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       this.functionType = irType.typeDefinition;
     }
+    producesType() {
+      throw new Error("Method not implemented.");
+    }
+    consumesType() {
+      throw new Error("Method not implemented.");
+    }
     toJson(options2) {
       return [
         "call_indirect",
         ["type", this.functionType.toShortString()],
-        this.callArguments.toJson(options2),
-        this.functionIndexExpression.toJson(options2)
+        this.callArguments.map((a) => a.toJson(options2)),
+        this.functionIndexExpression.map((a) => a.toJson(options2))
       ];
     }
   };
-  var IRFieldGetExpression = class _IRFieldGetExpression extends IRExpression {
+  var IRFieldGetExpression = class _IRFieldGetExpression extends IRInstruction {
     static {
       __name(this, "IRFieldGetExpression");
     }
@@ -340874,8 +341111,14 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return new _IRFieldGetExpression(astNode, lhsCompositeType, lhsExpression, field, lhsTempStore, outputType);
     }
+    producesType() {
+      throw new Error("Method not implemented.");
+    }
+    consumesType() {
+      throw new Error("Method not implemented.");
+    }
     toJson(options2) {
-      return ["get_field", this.lhsExpression.toJson(options2), ".", this.field];
+      return ["get_field", this.lhsExpression.map((a) => a.toJson(options2)), ".", this.field];
     }
   };
   var IRVariantTagGetExpression = class extends IRFieldGetExpression {
@@ -340900,343 +341143,105 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
     }
     toJson(options2) {
-      return ["get_tag", this.lhsExpression.toJson(options2)];
-    }
-  };
-  var IRLoadExpression = class _IRLoadExpression extends IRExpression {
-    static {
-      __name(this, "IRLoadExpression");
-    }
-    astNode;
-    lhsPointerType;
-    lhsExpression;
-    outputType;
-    type;
-    constructor(astNode, lhsPointerType, lhsExpression, outputType) {
-      super(astNode);
-      this.astNode = astNode;
-      this.lhsPointerType = lhsPointerType;
-      this.lhsExpression = lhsExpression;
-      this.outputType = outputType;
-      if (!(lhsPointerType.typeDefinition instanceof PointerTypeDefinition)) {
-        throw new Error(`IR Load Operation needs to have a pointer type passed as its type argument`);
-      }
-      this.type = lhsPointerType.typeDefinition;
-    }
-    static create(module2, astNode, lhsPointerType, lhsExpression) {
-      if (!(lhsPointerType instanceof PointerTypeDefinition)) {
-        throw new Error(`IR Load Operation needs to have a pointer type passed as its type argument`);
-      }
-      const irPointerType = module2.types.internTypeDefinition(module2, lhsPointerType);
-      const outputType = module2.types.internTypeDefinition(module2, lhsPointerType.dereferencedType());
-      return new _IRLoadExpression(astNode, irPointerType, lhsExpression, outputType);
-    }
-    toJson(options2) {
-      return ["load", this.lhsExpression.toJson(options2)];
+      return ["get_tag", this.lhsExpression.map((a) => a.toJson(options2))];
     }
   };
 
-  // ../compiler/dist/src/compiler/ir/instructions/IRConsts.js
-  initProtos();
-  var IRConst = class extends IRExpression {
+  // ../compiler/dist/src/compiler/ir/instructions/IRVariables.js
+  var IRVariableInstruction = class extends IRInstruction {
     static {
-      __name(this, "IRConst");
+      __name(this, "IRVariableInstruction");
     }
-    astNode;
-    outputType;
-    _values;
+    irVariable;
     comment = "";
-    constructor(astNode, outputType, _values) {
-      super(astNode);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
+    constructor(node, irVariable) {
+      super(node);
+      this.irVariable = irVariable;
+    }
+    toJson(instructionSerializationOptions) {
+      throw new Error(`Not yet implemented`);
+    }
+  };
+  var IRVariableGet = class extends IRVariableInstruction {
+    static {
+      __name(this, "IRVariableGet");
+    }
+    constructor(node, irVariable) {
+      super(node, irVariable);
+    }
+    producesType() {
+      return [this.irVariable.irType];
+    }
+    consumesType() {
+      return [];
     }
     toJson(options2) {
-      return ["const", this.outputType.typeDefinition.expression.toString(), JSON.stringify(this._values)];
+      return ["get", this.irVariable.identifier.name, `:${this.irVariable.type.expression.toString()}`];
     }
   };
-  var IRConstScalar = class extends IRConst {
+  var IRVariableSet = class extends IRVariableInstruction {
     static {
-      __name(this, "IRConstScalar");
+      __name(this, "IRVariableSet");
     }
-    astNode;
-    outputType;
-    _values;
-    type;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-      if (!(outputType.typeDefinition instanceof ScalarTypeDefinition)) {
-        const errorMessage = `Expecting a scalar type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
+    expression;
+    comment = "";
+    constructor(node, irVariable, expression) {
+      super(node, irVariable);
+      this.expression = expression;
     }
-  };
-  var IRConstInt = class extends IRConstScalar {
-    static {
-      __name(this, "IRConstInt");
+    producesType() {
+      return [];
     }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-    }
-  };
-  var IRConstFloat = class extends IRConstScalar {
-    static {
-      __name(this, "IRConstFloat");
-    }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-    }
-  };
-  var IRConstBool = class extends IRConstScalar {
-    static {
-      __name(this, "IRConstBool");
-    }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-    }
-  };
-  var IRConstPointer = class extends IRConst {
-    static {
-      __name(this, "IRConstPointer");
-    }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-    }
-  };
-  var IRConstComposite = class extends IRConst {
-    static {
-      __name(this, "IRConstComposite");
-    }
-    astNode;
-    outputType;
-    _values;
-    type;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-      const components = outputType.typeDefinition.components();
-      if (components == void 0) {
-        const errorMessage = `Expecting a composite type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
+    consumesType() {
+      return [];
     }
     toJson(options2) {
-      const objectJsonValue = [...this._values.entries()].reduce((prev, current) => {
-        prev[current[0]] = current[1].toJson({});
-        return prev;
-      }, {});
-      return ["const", this.outputType.typeDefinition.toShortString(), objectJsonValue];
-    }
-    /**
-     * Returns the associated fields and the expressions in the literal in the order that the
-     * fields were defined in for the type definition
-     *
-     * Structs should have all fields populated, but unions and variants will only have 1
-     * field populated
-     */
-    typeDeclarationOrderedValues() {
-      const components = this.type.components();
-      if (components == void 0) {
-        throw new Error(`Failed in IRConst for type: ${this.type.toString()}`);
-      }
-      const orderedFields = [...components.keys()];
-      const out = /* @__PURE__ */ new Map();
-      for (const f of orderedFields) {
-        let exp = this._values.get(f);
-        if (exp == void 0) {
-          const fieldType = components.get(f);
-          if (fieldType == void 0) {
-            throw new Error(`Type for field with name: ${f} for type: ${this.type} is undefined`);
-          }
-          const iden = new IRTypeIdentifier(fieldType);
-          const irType = new IRType(iden, fieldType, fieldType.symbolInformation);
-          exp = new IRZeroValue(this.astNode, irType, fieldType);
-        }
-        out.set(f, exp);
-      }
-      return out;
+      return [
+        "set",
+        this.irVariable.identifier.name,
+        `:${this.irVariable.type.expression.toString()}`,
+        this.expression.map((i) => i.toJson({}))
+      ];
     }
   };
-  var IRConstStruct = class extends IRConstComposite {
+  var IRVariableFieldSet = class extends IRVariableInstruction {
     static {
-      __name(this, "IRConstStruct");
+      __name(this, "IRVariableFieldSet");
     }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-      if (outputType.typeDefinition.fields() == void 0) {
-        const errorMessage = `Expecting a struct type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
+    fields;
+    expression;
+    comment = "";
+    constructor(node, irVariable, fields, expression) {
+      super(node, irVariable);
+      this.fields = fields;
+      this.expression = expression;
     }
-  };
-  var IRConstTuple = class extends IRConstComposite {
-    static {
-      __name(this, "IRConstTuple");
+    producesType() {
+      throw new Error("Method not implemented.");
     }
-    astNode;
-    outputType;
-    values;
-    constructor(astNode, outputType, values) {
-      const _v = values.map((value, i) => [`_${i}`, value]);
-      const valueMap = new Map(_v);
-      super(astNode, outputType, valueMap);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this.values = values;
-      if (!(outputType.typeDefinition instanceof TupleTypeDefinition)) {
-        const errorMessage = `Expecting a tuple type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
-    }
-  };
-  var IRConstUnion = class extends IRConstComposite {
-    static {
-      __name(this, "IRConstUnion");
-    }
-    astNode;
-    outputType;
-    _values;
-    constructor(astNode, outputType, _values) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-      if (!(outputType.typeDefinition instanceof UnionTypeDefinition)) {
-        const errorMessage = `Expecting a union type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
-    }
-  };
-  var IRConstVariant = class extends IRConstComposite {
-    static {
-      __name(this, "IRConstVariant");
-    }
-    astNode;
-    outputType;
-    _values;
-    backingTagType;
-    constructor(astNode, outputType, _values, backingTagType) {
-      super(astNode, outputType, _values);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this._values = _values;
-      this.backingTagType = backingTagType;
-      if (outputType.typeDefinition.cases() == void 0) {
-        const errorMessage = `Expecting a variant type but instead received type: ${outputType.typeDefinition.toString()}. `;
-        const location = astNode != void 0 ? astNode.firstToken.createTokenSourceString() : "";
-        throw new Error(errorMessage + location);
-      }
-      this.type = outputType.typeDefinition;
-    }
-    /**
-     * For the variant literal - will return the index for the selected backing field.
-     * For example, if the type is Variant Example (f1, f2, f3)
-     * and the literal is Example { f2 }, then the backingFieldIndex would be 1 (starting from 0)
-     */
-    backingFieldIndex() {
-      const components = this.type.components();
-      const orderedFields = [...components.keys()];
-      const keys = [...this._values.keys()];
-      if (keys.length != 1) {
-        throw new Error(`Either too many or not enough fields set for variant. Type: ${this.type.toShortString()}, fields set: ${keys}`);
-      }
-      const key = keys[0];
-      const out = orderedFields.indexOf(key);
-      if (out == -1) {
-        throw new Error(`Failed to resolve variant backing field for key: ${key}`);
-      }
-      return out;
-    }
-  };
-  var IRConstFunctionReference = class extends IRConst {
-    static {
-      __name(this, "IRConstFunctionReference");
-    }
-    irFunction;
-    constructor(astNode, irFunction) {
-      super(astNode, irFunction.identifier.irFunctionType, irFunction);
-      this.irFunction = irFunction;
+    consumesType() {
+      throw new Error("Method not implemented.");
     }
     toJson(options2) {
-      return ["const_function_reference", this.irFunction.identifier.toShortString()];
-    }
-  };
-  var IRZeroValue = class _IRZeroValue extends IRConst {
-    static {
-      __name(this, "IRZeroValue");
-    }
-    astNode;
-    outputType;
-    type;
-    constructor(astNode, outputType, type) {
-      super(astNode, outputType, void 0);
-      this.astNode = astNode;
-      this.outputType = outputType;
-      this.type = type;
-    }
-    static createFromTypeDef(module2, node, typeDef) {
-      const irType = module2.types.internTypeDefinition(module2, typeDef);
-      return new _IRZeroValue(node, irType, typeDef);
-    }
-    toJson(options2) {
-      return ["zero_value", `:${this.type.expression.toString()}`];
+      return [
+        "setField",
+        this.irVariable.identifier.name,
+        ".",
+        this.fields.join("."),
+        `:${this.irVariable.type.expression.toString()}`,
+        this.expression.map((i) => i.toJson({}))
+      ];
     }
   };
 
   // ../compiler/dist/src/compiler/ir/instructions/IROperations.js
-  var IROperation = class extends IRExpression {
+  var IROperation = class extends IRInstruction {
     static {
       __name(this, "IROperation");
     }
     comment = "";
-    constructor(astNode) {
-      super(astNode);
+    constructor(node) {
+      super(node);
     }
   };
   var IREqualsConst = class extends IROperation {
@@ -341246,16 +341251,20 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     astNode;
     expression;
     value;
-    outputType;
     constructor(astNode, expression, value) {
       super(astNode);
       this.astNode = astNode;
       this.expression = expression;
       this.value = value;
-      this.outputType = void 0;
+    }
+    producesType() {
+      return [];
+    }
+    consumesType() {
+      return [];
     }
     toJson(options2) {
-      return [this.expression.toJson(options2), "==", this.value];
+      return [this.expression.map((i) => i.toJson(options2)), "==", this.value];
     }
   };
 
@@ -341571,34 +341580,30 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     convertInstruction(irInstruction) {
       if (irInstruction instanceof IRConst) {
         return this.convertConstInstruction(irInstruction);
-      } else if (irInstruction instanceof IRExpression) {
-        return this.convertExpression(irInstruction);
-      } else if (irInstruction instanceof IRVariableGet) {
-        return this.convertExpression(irInstruction);
-      } else if (irInstruction instanceof IRControlStatement) {
-        return this.convertControlStatement(irInstruction);
+      } else if (irInstruction instanceof IRVariableInstruction) {
+        return this.convertVariableInstruction(irInstruction);
+      } else if (irInstruction instanceof IRControlInstruction) {
+        return this.convertControlInstruction(irInstruction);
       } else if (irInstruction instanceof IRVariableSet || irInstruction instanceof IRVariableFieldSet) {
         return this.convertSetInstruction(irInstruction);
       }
-      throw new Error(`Unable to convert instruction ${irInstruction.constructor.name} ${irInstruction.toJson({})}`);
+      return this.convertExpression(irInstruction);
     }
     convertExpression(irExpression) {
-      if (irExpression instanceof IRExpressionGroup) {
-        return irExpression.expressions.map((e) => this.convertExpression(e)).flat();
-      } else if (irExpression instanceof IRConst) {
+      if (irExpression instanceof IRConst) {
         return this.convertConstInstruction(irExpression);
       } else if (irExpression instanceof IRDirectCallExpression) {
-        const mappedArgs = this.convertExpression(irExpression.callArguments);
+        const mappedArgs = this.convertInstructions(irExpression.callArguments);
         const functionLabel = this.nameMapper.mapIrFunctionName(irExpression.irFunction);
-        const call = new WasmFunctionCall(irExpression.astNode, functionLabel);
+        const call = new WasmFunctionCall(irExpression.node, functionLabel);
         return [...mappedArgs, call];
       } else if (irExpression instanceof IRIndirectCallExpression) {
-        const mappedArgs = this.convertExpression(irExpression.callArguments);
-        const functionIndex = this.convertExpression(irExpression.functionIndexExpression);
+        const mappedArgs = this.convertInstructions(irExpression.callArguments);
+        const functionIndex = this.convertInstructions(irExpression.functionIndexExpression);
         const mappedFunctionType = this.typeMapper.mapFunctionTypeForIndirectCall(irExpression.functionType);
         const params = mappedFunctionType.params.map((p) => new WasmFuncParam(void 0, void 0, p));
         const results = mappedFunctionType.results.map((p) => new WasmFuncReturn(void 0, p));
-        const call = new WatIndirectFunctionCall(irExpression.astNode, params, results);
+        const call = new WatIndirectFunctionCall(irExpression.node, params, results);
         return [
           ...mappedArgs,
           // push the arguments to the function call first - e.g. (a, b)
@@ -341608,16 +341613,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           // then push the call instruction
         ];
       } else if (irExpression instanceof IRInlinedWatOperator) {
-        const args = this.convertExpression(irExpression.args);
-        return [...args, new WasmStringInstruction(irExpression.astNode, irExpression.content)];
-      } else if (irExpression instanceof IRVariableGet) {
-        const variable = irExpression.irVariable;
-        const mappedName = this.nameMapper.mapIrVarName(variable);
-        const mappedTypes = this.typeMapper.mapNameAndType([mappedName], variable.type);
-        const getInstruction = variable.symbolInfo?.symbolDefinition.scopeType == "Global" ? "global.get" : "local.get";
-        return mappedTypes.map((t) => new WatVariableInstruction(void 0, getInstruction, WatNameMapper.joinMappedName(t.name)));
+        const args = this.convertInstructions(irExpression.args);
+        return [...args, new WasmStringInstruction(irExpression.node, irExpression.content)];
       } else if (irExpression instanceof IRFieldGetExpression) {
-        const lhsExpression = this.convertExpression(irExpression.lhsExpression);
+        const lhsExpression = this.convertInstructions(irExpression.lhsExpression);
         const mappedName = this.nameMapper.mapIrVarName(irExpression.lhsTempStore);
         const mappedTypes = this.typeMapper.mapNameAndType([mappedName], irExpression.lhsTempStore.type);
         const storeInstructions = mappedTypes.slice().reverse().map((t) => new WatVariableInstruction(void 0, "local.set", WatNameMapper.joinMappedName(t.name)));
@@ -341629,7 +341628,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         }).map((t) => new WatVariableInstruction(void 0, "local.get", WatNameMapper.joinMappedName(t.name)));
         return [...lhsExpression, ...storeInstructions, ...filteredGetInstructions];
       } else if (irExpression instanceof IREqualsConst) {
-        const exp = this.convertExpression(irExpression.expression);
+        const exp = this.convertInstructions(irExpression.expression);
         const mappedType = "i32";
         const constantValue = new WasmConst(irExpression.astNode, mappedType, irExpression.value);
         const compare2 = new WasmTypedStackInstruction(
@@ -341657,9 +341656,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (irConst instanceof IRConstInt) {
           value = irConst._values;
         } else if (irConst instanceof IRConstFloat) {
-          if (irConst.astNode?.isNan) {
+          if (irConst.node?.isNan) {
             value = "nan";
-          } else if (irConst.astNode?.isInfinite) {
+          } else if (irConst.node?.isInfinite) {
             value = irConst._values > 0 ? "inf" : "-inf";
           } else {
             value = irConst._values;
@@ -341667,10 +341666,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else {
           throw new Error("I haven't mapped this const type to wasm type conversion");
         }
-        return [new WasmConst(irConst.astNode, wasmType[0], value, { comment: irConst.comment })];
+        return [new WasmConst(irConst.node, wasmType[0], value, { comment: irConst.comment })];
       } else if (irConst instanceof IRConstComposite) {
         const expressions = irConst.typeDeclarationOrderedValues();
-        const values = [...expressions.values()].map((exp) => this.convertExpression(exp)).flat();
+        const values = [...expressions.values()].map((exp) => this.convertInstructions(exp)).flat();
         if (irConst instanceof IRConstStruct || irConst instanceof IRConstTuple) {
           return values;
         } else if (irConst instanceof IRConstVariant) {
@@ -341679,7 +341678,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           if (wasmType == void 0) {
             throw new Error(`Failed to convert backing tag type of ${irConst.backingTagType.name} to a wasm type`);
           }
-          const backingField = new WasmConst(irConst.astNode, wasmType, value, {
+          const backingField = new WasmConst(irConst.node, wasmType, value, {
             comment: "backing field. " + irConst.comment
           });
           values.unshift(backingField);
@@ -341687,15 +341686,28 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return values;
       } else if (irConst instanceof IRConstFunctionReference) {
         const entry = this.watTableAndElemMapper.getEntry(irConst.irFunction);
-        const wasmConst = new WasmConst(irConst.astNode, "i32", entry.index, {
+        const wasmConst = new WasmConst(irConst.node, "i32", entry.index, {
           comment: `index: ${entry.wasmFuncName}`
         });
         return [wasmConst];
       } else if (irConst instanceof IRZeroValue) {
         const values = this.typeMapper.flattenType(irConst.type);
-        return values.map((v) => new WasmConst(irConst.astNode, v, 0));
+        return values.map((v) => new WasmConst(irConst.node, v, 0));
       }
       throw new Error(`Creating a const of type: ${irConst.outputType.typeDefinition.toString()} is not yet defined`);
+    }
+    convertVariableInstruction(irVariableInstruction) {
+      if (irVariableInstruction instanceof IRVariableSet || irVariableInstruction instanceof IRVariableFieldSet) {
+        return this.convertSetInstruction(irVariableInstruction);
+      } else if (irVariableInstruction instanceof IRVariableGet) {
+        const variable = irVariableInstruction.irVariable;
+        const mappedName = this.nameMapper.mapIrVarName(variable);
+        const mappedTypes = this.typeMapper.mapNameAndType([mappedName], variable.type);
+        const getInstruction = variable.symbolInfo?.symbolDefinition.scopeType == "Global" ? "global.get" : "local.get";
+        return mappedTypes.map((t) => new WatVariableInstruction(void 0, getInstruction, WatNameMapper.joinMappedName(t.name)));
+      } else {
+        throw new Error(`Variable instruction handling for type: ${irVariableInstruction.constructor.name} is not yet implemnted`);
+      }
     }
     convertSetInstruction(irInstruction) {
       const variable = irInstruction.irVariable;
@@ -341719,22 +341731,22 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       const setInstrunction = variable.symbolInfo?.symbolDefinition.scopeType == "Global" ? "global.set" : "local.set";
       const assignments = filteredMappedTypes.map((t) => new WatVariableInstruction(void 0, setInstrunction, WatNameMapper.joinMappedName(t.name))).reverse();
-      const expression = this.convertInstructions(irInstruction.instructions);
+      const expression = this.convertInstructions(irInstruction.expression);
       return [...expression, ...assignments];
     }
-    convertControlStatement(irInstruction) {
+    convertControlInstruction(irInstruction) {
       if (irInstruction instanceof IRReturn) {
-        const returnInst = new WatControlInstruction(irInstruction.astNode, "return", void 0);
+        const returnInst = new WatControlInstruction(irInstruction.node, "return", void 0);
         if (irInstruction.expression != void 0) {
-          const exp = this.convertExpression(irInstruction.expression);
+          const exp = this.convertInstructions(irInstruction.expression);
           return [...exp, returnInst];
         }
         return [returnInst];
       } else if (irInstruction instanceof IRIfStatement) {
-        const cond = this.convertExpression(irInstruction.condition);
+        const cond = this.convertInstructions(irInstruction.condition);
         const ifBody = this.convertInstructions(irInstruction.thenInstructions);
         const elseBody = irInstruction.elseInstructions != void 0 ? this.convertInstructions(irInstruction.elseInstructions) : void 0;
-        return [...cond, new WasmIfInstruction(irInstruction.astNode, ifBody, elseBody)];
+        return [...cond, new WasmIfInstruction(irInstruction.node, ifBody, elseBody)];
       } else if (irInstruction instanceof IRBlock) {
         const body = this.convertInstructions(irInstruction.instructions);
         let branch;
@@ -341743,13 +341755,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else {
           branch = "block";
         }
-        const inst = new WasmBlockInstruction(irInstruction.astNode, branch, this.nameMapper.mapBlockName(irInstruction.blockId), body);
+        const inst = new WasmBlockInstruction(irInstruction.node, branch, this.nameMapper.mapBlockName(irInstruction.blockId), body);
         return [inst];
       } else if (irInstruction instanceof IRBranchUnconditional) {
-        const inst = new WatControlInstruction(irInstruction.astNode, "br", this.nameMapper.mapBlockName(irInstruction.block.blockId));
+        const inst = new WatControlInstruction(irInstruction.node, "br", this.nameMapper.mapBlockName(irInstruction.block.blockId));
         return [inst];
       } else if (irInstruction instanceof IRBranchIf) {
-        const cond = this.convertExpression(irInstruction.expression);
+        const cond = this.convertInstructions(irInstruction.expression);
         if (irInstruction.invertExpression) {
           const invertInstruction = new WasmTypedStackInstruction(
             void 0,
@@ -341819,11 +341831,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     getByName(name) {
       return this._backingMap.get(name);
     }
-    set(name, variable, value) {
-      if (!(value instanceof IRConst) && !(value instanceof IRZeroValue)) {
-        throw new Error(`Only constants are supported for global variables`);
+    set(name, variable, values) {
+      if (values.length != 1) {
+        throw new Error(`Setting global constants needs to have only 1 instruction`);
       }
-      this._backingMap.set(name, [variable, value]);
+      const instruction = values[0];
+      if (!(instruction instanceof IRConst) && !(instruction instanceof IRZeroValue)) {
+        throw new Error(`Only constants are supported for global variables. Received ${instruction.toJson({})}`);
+      }
+      this._backingMap.set(name, [variable, instruction]);
     }
     toJson(options2) {
       const values = [...this._backingMap.values()].map((entry) => {
@@ -341910,7 +341926,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           }
         }
         if (functionDefinition.callableOverload.typeBoundSource) {
-          functionDefinition.setInstructions([new IRTypeBoundCreatedFunctionInstruction()]);
+          functionDefinition.setInstructions([
+            new IRTypeBoundCreatedFunctionInstruction(functionDefinition.callableOverload.definitionNode)
+          ]);
           return;
         }
         const context2 = {
@@ -342030,7 +342048,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         if (initialValue == void 0) {
           initialValue = IRZeroValue.createFromTypeDef(module2, void 0, irVariable.type);
         }
-        module2.addGlobalVariable(irVariable, initialValue);
+        module2.addGlobalVariable(irVariable, [initialValue]);
       }
     }
   };
@@ -342183,7 +342201,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const irType = this.lookupIrType(type, context);
       let out;
       if (node.isInt) {
-        out = new IRConstInt(node, irType, node.value);
+        out = new IRConstInt(node, irType, BigInt(node.value));
       } else {
         if (!(node instanceof AstFloatLiteral)) {
           throw new Error("Expecting a float literal when converting an ast float literal to a ir float literal");
@@ -342199,10 +342217,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return [out];
     }
     traverseNullLiteral(node, context) {
-      const type = node.augmentedProperties.typeDefinition.resolveType();
-      const irType = this.lookupIrType(type, context);
-      const out = new IRConstPointer(node, irType, -1);
-      return [out];
+      throw new Error(`Null literal not implemented`);
     }
     traverseTupleLiteral(node, context) {
       const type = node.augmentedProperties.typeDefinition.resolveType();
@@ -342210,7 +342225,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Attempting to parse a tuple expression when the resolve type is not a tuple. Type is ${type.toString()}`);
       }
       const irType = this.lookupIrType(type, context);
-      const values = node.values.map((value) => new IRExpressionGroup(value, this.traverse(value, context)));
+      const values = node.values.map((value) => this.traverse(value, context));
       const out = new IRConstTuple(node, irType, values);
       return [out];
     }
@@ -342228,7 +342243,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const irType = this.lookupIrType(type, context);
       const values = node.assignments.map((assignmentStatement) => {
         const fieldName = assignmentStatement.lhs.identifier.name;
-        const value = new IRExpressionGroup(assignmentStatement, this.traverse(assignmentStatement.rhs, context));
+        const value = this.traverse(assignmentStatement.rhs, context);
         return [fieldName, value];
       });
       const valuesMap = new Map(values);
@@ -342370,13 +342385,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error(`Traversing identifier: ${node.symbolName} has a symbol type that I haven't implemented handling for (and right now its a never type so I can't print it,  but it might change)`);
     }
     traverseUnaryOperation(node, context) {
-      if (node.operator == "*" && node.augmentedProperties.typeDefinition instanceof PointerTypeDefinition) {
-        const expression = this.traverse(node.operand, context);
-        const exp = new IRExpressionGroup(node.operand, expression);
-        const irType = this.lookupIrType(node.operand.augmentedProperties.typeDefinition, context);
-        const deref = IRLoadExpression.create(context.module, node, irType.typeDefinition, exp);
-        return [deref];
-      }
       return this.handleOperatorExpression(node, context);
     }
     traverseBinaryOperation(node, context) {
@@ -342399,7 +342407,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const funcCallTypes = resolvedCallInfo.functionTypeAfterTypeSubstitution;
         const operatorDef = resolvedCallInfo.overload.definitionNode;
         if (operatorDef instanceof AstWatOperatorDefinition) {
-          const opInstruction = new IRInlinedWatOperator(node, node.operator, context.module.types.internTypeDefinition(context.module, funcCallTypes.returnType), new IRExpressionGroup(node, args), operatorDef.watBody);
+          const opInstruction = new IRInlinedWatOperator(node, node.operator, context.module.types.internTypeDefinition(context.module, funcCallTypes.returnType), args, operatorDef.watBody);
           return [opInstruction];
         }
         if (node.resolvedCallableInfo == void 0) {
@@ -342415,9 +342423,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         } else if (debugInfo.type == "typeBoundFunction") {
           callDebugInfo = new IRCallExpressionDebugInfo(debugInfo.type, debugInfo.typeBoundDefinedFunctionIden);
         }
-        return [
-          new IRDirectCallExpression(node, irFunctionResp.func, new IRExpressionGroup(void 0, args), callDebugInfo)
-        ];
+        return [new IRDirectCallExpression(node, irFunctionResp.func, args, callDebugInfo)];
       } else {
         throw new Error(`I don't support non-direct calls for operators, and I got ${resolvedCallInfo?.functionCallType} as the dispatch type`);
       }
@@ -342430,7 +342436,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error(`Resolved Call info should not be undefined!`);
       }
       const _argInstructions = node.callArguments.astNodes.map((arg) => this.traverse(arg, context));
-      const callArguments = new IRExpressionGroup(void 0, _argInstructions.flat());
+      const callArguments = _argInstructions.flat();
       if (resolvedCallInfo.functionCallType == "direct") {
         const resolvedType = resolvedCallInfo.functionTypeAfterTypeSubstitution;
         if (resolvedType == void 0) {
@@ -342455,14 +342461,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         returnType = f.functionType.returnType;
       } else if (resolvedCallInfo.functionCallType = "indirect") {
         const _functionIndexingExpression = this.traverse(resolvedCallInfo.internalExpression, context);
-        const functionIndexingExpression = new IRExpressionGroup(void 0, _functionIndexingExpression);
-        const type = functionIndexingExpression.outputType;
-        if (!(type?.typeDefinition instanceof FunctionTypeDefinition)) {
-          throw new Error("Handle this better");
-        }
-        const indirectCall = new IRIndirectCallExpression(node, type, callArguments, functionIndexingExpression);
+        const functionIndexingExpression = _functionIndexingExpression.flat();
+        const type = resolvedCallInfo.functionType;
+        const irType = context.module.types.internTypeDefinition(context.module, type);
+        const monomorpizedIrType = irType.monomorphize(context.module, context.func.genericsToTypeArgs ?? []);
+        const indirectCall = new IRIndirectCallExpression(node, monomorpizedIrType, callArguments, functionIndexingExpression);
         out = [indirectCall];
-        returnType = type.typeDefinition.returnType;
+        returnType = type.returnType;
       }
       if (returnType == void 0) {
         throw new Error("Bug in the IR emitter, returnType should be set.");
@@ -342477,7 +342482,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error("Method not implemented.");
     }
     traverseRightPipeExpression(node, context) {
-      let lhsInstructions = this.traverse(node.lhs, context);
+      const lhsInstructions = this.traverse(node.lhs, context);
       const rhsScope = node.rhsScope;
       if (rhsScope == void 0) {
         throw new Error(`The RHS scope for the pipe expression should have been bound in the binder`);
@@ -342498,8 +342503,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const irType = this.lookupIrType(node.expression.augmentedProperties.typeDefinition, context);
       const temp = context.func.definition.createTemporaryVariable(context.module, context.scope, `.temp_store.field.get_${irType.typeDefinition.expression.toString()}`, irType.typeDefinition, context.func.genericsToTypeArgs);
       const expression = this.traverse(node.expression, context);
-      const exp = new IRExpressionGroup(node.expression, expression);
-      const inst = IRFieldGetExpression.create(context.module, node, irType, exp, node.field.name, temp);
+      const inst = IRFieldGetExpression.create(context.module, node, irType, expression, node.field.name, temp);
       return [inst];
     }
     // type expressions aren't needed after the checker is run, so they just return nothing
@@ -342534,7 +342538,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return [];
     }
     traverseAssignmentStatement(node, context) {
-      const exp = new IRExpressionGroup(node.rhs, this.traverse(node.rhs, context));
+      const exp = this.traverse(node.rhs, context);
       const lhs = node.lhs;
       if (lhs instanceof AstSimpleVariableAccess) {
         return this.handleSimpleVariableAccess(exp, lhs, context);
@@ -342549,12 +342553,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     handleSimpleVariableAccess(exp, node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
-      return [new IRVariableSet(node, irVariable, [exp])];
+      return [new IRVariableSet(node, irVariable, exp)];
     }
     handleFieldAssignment(exp, node, context) {
       const irVariable = this.lookupIrVariable(node.identifier.name, node.augmentedProperties.scope, context);
       return [
-        new IRVariableFieldSet(node, irVariable, node.fieldNames.map((f) => f.name), [exp])
+        new IRVariableFieldSet(node, irVariable, node.fieldNames.map((f) => f.name), exp)
       ];
     }
     traverseAstSimpleVariableAccess(node, context) {
@@ -342585,7 +342589,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         throw new Error("If 'else if' statements are not implemented at all in the emitter");
       }
       const conditionExpressions = this.traverse(node.condition, context);
-      const conditionExpInstr = new IRExpressionGroup(node.condition, conditionExpressions);
       const ifBodyContext = {
         ...context,
         scope: node.body.augmentedProperties.scope
@@ -342599,12 +342602,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         };
         elseInstructions = this.traverse(node.elseBody, elseBodyContext);
       }
-      const ifInst = new IRIfStatement(node, conditionExpInstr, bodyInstructions, elseInstructions);
+      const ifInst = new IRIfStatement(node, conditionExpressions, bodyInstructions, elseInstructions);
       return [ifInst];
     }
     traverseWhileStatement(node, context) {
       const conditionExpressions = this.traverse(node.condition, context);
-      const conditionExpInstr = new IRExpressionGroup(node.condition, conditionExpressions);
       const loopBody = [];
       const loop = new IRBlock(node, "branch_to_start", loopBody, "while_loop");
       const block = new IRBlock(node, "branch_to_end", [loop], "while_block");
@@ -342620,7 +342622,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       };
       const internalInstructions = this.traverse(node.body, newContext);
       const branchToStartOfLoop = new IRBranchUnconditional(node, loop);
-      const branch = new IRBranchIf(node, block, true, conditionExpInstr);
+      const branch = new IRBranchIf(node, block, true, conditionExpressions);
       loopBody.push(branch, ...internalInstructions, branchToStartOfLoop);
       return [block];
     }
@@ -342631,7 +342633,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       const switchInstructions = [];
       const switchBlock = new IRBlock(node, "branch_to_end", switchInstructions, "switch_block");
       const expression = this.traverse(node.expression, context);
-      const exp = new IRExpressionGroup(node.expression, expression);
+      const exp = expression;
       const expType = this.lookupIrType(node.expression.augmentedProperties.typeDefinition, context);
       let variantType;
       if (expType.typeDefinition instanceof VariantTypeDefinition) {
@@ -342658,8 +342660,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         const brOutOfSwitch = new IRBranchUnconditional(c, switchBlock);
         const instructions = [setInstruction, ...internalInstructions, brOutOfSwitch];
         const getTempStoredBackingValue = new IRVariableGet(void 0, backingTagTempVariable);
-        const condition = new IREqualsConst(c, getTempStoredBackingValue, variantType.fieldNameToBackingValue.get(c.condition.identifier.name));
-        const ifStatement = new IRIfStatement(c, condition, instructions);
+        const condition = new IREqualsConst(c, [getTempStoredBackingValue], variantType.fieldNameToBackingValue.get(c.condition.identifier.name));
+        const ifStatement = new IRIfStatement(c, [condition], instructions);
         switchInstructions.push(ifStatement);
       }
       if (node.elseStatement != void 0) {
@@ -342676,7 +342678,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     traverseReturnStatement(node, context) {
       let expression;
       if (node.expression != void 0) {
-        expression = new IRExpressionGroup(node.expression, this.traverse(node.expression, context));
+        expression = this.traverse(node.expression, context);
       }
       const returnStatement = new IRReturn(node, expression);
       return [returnStatement];
@@ -342874,7 +342876,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var import_wabt = __toESM(require_wabt(), 1);
 
   // build-info.js
-  var buildDateStr = "5/9/2026 4:38:08 PM";
+  var buildDateStr = "5/11/2026 7:15:43 AM";
   console.log("build date:", buildDateStr);
   var build_info_default = {};
 
