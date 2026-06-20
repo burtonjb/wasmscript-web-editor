@@ -327493,6 +327493,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
+  var rightPipeCounter = 0;
   var AstRightPipeValueExpression = class extends AstValueExpressionNode {
     static {
       __name(this, "AstRightPipeValueExpression");
@@ -327502,6 +327503,7 @@ ${tagToString(tag)}`;
     // Basically what this does is that it creates a mini-scope for the RHS, which binds the result from the LHS
     // to the "_" in the RHS. The LHS doesn't need to be bound, since its captured from the parent env.
     _rhsScope;
+    counter = rightPipeCounter++;
     constructor(node, lhs, rhs) {
       super(node);
       this.lhs = lhs;
@@ -328216,7 +328218,7 @@ ${tagToString(tag)}`;
     getParentBlock() {
       let current = this;
       while (current != void 0) {
-        if (current instanceof AstAbstractCallableDefinition || current instanceof AstFunctionLiteral) {
+        if (current instanceof AstNamedCallableDefinition || current instanceof AstFunctionLiteral) {
           return current;
         }
         current = current.parentNode;
@@ -328770,9 +328772,9 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstAbstractCallableDefinition = class extends AstDefinitionNode {
+  var AstNamedCallableDefinition = class extends AstDefinitionNode {
     static {
-      __name(this, "AstAbstractCallableDefinition");
+      __name(this, "AstNamedCallableDefinition");
     }
     identifier;
     typeParameters;
@@ -328827,7 +328829,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstTypeBoundRequirementFakeCallableNode = class extends AstAbstractCallableDefinition {
+  var AstTypeBoundRequirementFakeCallableNode = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstTypeBoundRequirementFakeCallableNode");
     }
@@ -328843,7 +328845,7 @@ ${tagToString(tag)}`;
       this.returnTypeExpression = returnTypeExpression;
     }
   };
-  var AstFunctionDefinition = class extends AstAbstractCallableDefinition {
+  var AstFunctionDefinition = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstFunctionDefinition");
     }
@@ -328872,7 +328874,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstWatFunctionDefinition = class extends AstAbstractCallableDefinition {
+  var AstWatFunctionDefinition = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstWatFunctionDefinition");
     }
@@ -328899,7 +328901,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstOperatorDefinition = class extends AstAbstractCallableDefinition {
+  var AstOperatorDefinition = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstOperatorDefinition");
     }
@@ -328935,7 +328937,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstWatOperatorDefinition = class extends AstAbstractCallableDefinition {
+  var AstWatOperatorDefinition = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstWatOperatorDefinition");
     }
@@ -329168,7 +329170,7 @@ ${tagToString(tag)}`;
       return out;
     }
   };
-  var AstDeclareFunctionStatement = class extends AstAbstractCallableDefinition {
+  var AstDeclareFunctionStatement = class extends AstNamedCallableDefinition {
     static {
       __name(this, "AstDeclareFunctionStatement");
     }
@@ -329496,6 +329498,34 @@ ${tagToString(tag)}`;
         Referenced on: ${namespaceDefinitionNode.firstToken.createTokenSourceString()}`)
       };
     }, "namespaceDefinitionIsRelative"),
+    namespaceDefinedInFunction: /* @__PURE__ */ __name((node) => {
+      return {
+        firstToken: node.firstToken,
+        type: "NamespaceDefinedInFunctionBody",
+        message: formatErrorMessage(`Namespace ${node.symbolName} is defined in a function body
+          This isn't allowed, namespaces need to either be defined at the top level or in another namespace
+          Defined on: ${node.firstToken.createTokenSourceString()}`)
+      };
+    }, "namespaceDefinedInFunction"),
+    namespaceConflictsWithExistingSymbol: /* @__PURE__ */ __name((astNamespaceNode, symbolName, existingSymbol) => {
+      return {
+        firstToken: astNamespaceNode.firstToken,
+        type: "SymbolNameAlreadyUsed",
+        message: formatErrorMessage(`Cannot register namespace with name '${symbolName}' as this name is already used by a different declaration
+              Namespace defined on: ${astNamespaceNode.firstToken.createTokenSourceString()}, 
+              existing symbol defined on: ${existingSymbol.symbolDefinition.definitionNode?.firstToken.createTokenSourceString()}`)
+      };
+    }, "namespaceConflictsWithExistingSymbol"),
+    unshadowableSymbol: /* @__PURE__ */ __name((node, symbolName) => {
+      const error = {
+        type: "ShadowingDisallowed",
+        message: formatErrorMessage(`Variable '${symbolName}' is shadowing a name that is not shadowable. 
+          Current occurrence: ${node.firstToken.createTokenSourceString()}
+          Referenced on: ${node.firstToken.createTokenSourceString()}.`),
+        firstToken: node.firstToken
+      };
+      return error;
+    }, "unshadowableSymbol"),
     wrongNumberOfArgsToOperatorDefinition: /* @__PURE__ */ __name((node, symbolName, allowedNumArgs, declarationParameters) => {
       return {
         firstToken: node.firstToken,
@@ -329505,227 +329535,6 @@ ${tagToString(tag)}`;
             Referenced starting at: ${node.firstToken.createTokenSourceString()}`
       };
     }, "wrongNumberOfArgsToOperatorDefinition")
-  };
-
-  // ../compiler/dist/src/compiler/NamespaceUtils.js
-  var NamespaceRegistry = class {
-    static {
-      __name(this, "NamespaceRegistry");
-    }
-    // Adds a namespace to the registry. If there are multiple definitions for the namespace, then the
-    // entries in each namespace are merged.
-    _backingMap = new NestedMap();
-    addNamespace(namespace) {
-      const path = namespace.path;
-      if (path.hasRelativeComponent()) {
-        throw new Error("My backing map only supports absolute paths.");
-      }
-      const pathStr = path.components.map((c) => c.toString());
-      const current = this._backingMap.get(pathStr);
-      if (current == void 0) {
-        this._backingMap.set(pathStr, namespace);
-      } else {
-        if (current instanceof Namespace2) {
-          const conflicts = this.findConflicts(namespace, current);
-          if (conflicts.length > 0) {
-            return { success: false, conflicts };
-          }
-          const merged = new MergedNamespace(path, [current, namespace]);
-          this._backingMap.set(pathStr, merged);
-        } else if (current instanceof MergedNamespace) {
-          const conflicts = this.findConflicts(namespace, current);
-          if (conflicts.length > 0) {
-            return { success: false, conflicts };
-          }
-          current.components.push(namespace);
-        } else {
-          throw new Error(`Unsure what to do for class: ${current.constructor.name}`);
-        }
-      }
-      return { success: true };
-    }
-    findConflicts(a, b) {
-      const aSymbols = a.symbolNames();
-      const bSymbols = b.symbolNames();
-      const aSet = new Set(aSymbols);
-      const bSet = new Set(bSymbols);
-      const findMissingEntries = /* @__PURE__ */ __name((arr, s) => {
-        if (arr.length == s.size) {
-          return [];
-        }
-        const clone2 = new Set(s.values());
-        for (const value of arr) {
-          clone2.delete(value);
-        }
-        return [...clone2.values()];
-      }, "findMissingEntries");
-      const aMissing = findMissingEntries(aSymbols, aSet);
-      const bMissing = findMissingEntries(bSymbols, bSet);
-      if (aMissing.length > 0 || bMissing.length > 0) {
-        return [...aMissing, ...bMissing];
-      }
-      const overlap = [...aSet.intersection(bSet)];
-      return overlap;
-    }
-    findNamespace(namespaceQualifier) {
-      if (namespaceQualifier.hasRelativeComponent()) {
-        throw new Error("My backing map only supports absolute paths.");
-      }
-      const pathStr = namespaceQualifier.components.map((c) => c.toString());
-      const out = this._backingMap.get(pathStr);
-      return out;
-    }
-    toMarkdownString() {
-      let out = ``;
-      for (const entry of this._backingMap.entries()) {
-        const path = entry.key.join("::") + "		";
-        const symbols = entry.value.symbolNames().join(", ");
-        out += path + symbols + "\n";
-      }
-      return out;
-    }
-    registeredNamespacePaths() {
-      return this._backingMap.keys().map((k) => k.join("::"));
-    }
-  };
-  var Namespace2 = class {
-    static {
-      __name(this, "Namespace");
-    }
-    path;
-    astNode;
-    symbolTable;
-    symbolInformation;
-    constructor(path, astNode, symbolTable, symbolInformation) {
-      this.path = path;
-      this.astNode = astNode;
-      this.symbolTable = symbolTable;
-      this.symbolInformation = symbolInformation;
-    }
-    findSymbol(symbolName) {
-      return this.symbolTable.findSymbol(symbolName);
-    }
-    symbolNames() {
-      return this.symbolTable.symbolNamesInThis();
-    }
-  };
-  var MergedNamespace = class {
-    static {
-      __name(this, "MergedNamespace");
-    }
-    path;
-    components;
-    constructor(path, components) {
-      this.path = path;
-      this.components = components;
-    }
-    findSymbol(symbolName) {
-      for (const ns of this.components) {
-        const c = ns.findSymbol(symbolName);
-        if (c != void 0) {
-          return c;
-        }
-      }
-      return void 0;
-    }
-    symbolNames() {
-      const out = [];
-      for (const ns of this.components) {
-        out.push(...ns.symbolNames());
-      }
-      return out;
-    }
-  };
-  var NestedMap = class _NestedMap {
-    static {
-      __name(this, "NestedMap");
-    }
-    _backingMap = /* @__PURE__ */ new Map();
-    get(key) {
-      if (key.length == 0) {
-        return void 0;
-      }
-      const [current, ...rest] = key;
-      const entry = this._backingMap.get(current);
-      if (entry == void 0) {
-        return void 0;
-      }
-      if (rest.length == 0) {
-        return entry.value;
-      }
-      return entry.nested?.get(rest);
-    }
-    set(key, value) {
-      if (key.length == 0) {
-        return this;
-      }
-      const [current, ...rest] = key;
-      if (rest.length == 0) {
-        const currentValue = this._backingMap.get(current);
-        this._backingMap.set(current, { value, nested: currentValue?.nested });
-        return this;
-      } else {
-        let entry = this._backingMap.get(current);
-        if (entry == void 0 || entry.nested == void 0) {
-          entry = { value: entry?.value, nested: entry?.nested ?? new _NestedMap() };
-          this._backingMap.set(current, entry);
-        }
-        entry.nested?.set(rest, value);
-      }
-      return this;
-    }
-    has(key) {
-      return this.get(key) != void 0;
-    }
-    delete(key) {
-      if (key.length == 0) {
-        return false;
-      }
-      const [current, ...rest] = key;
-      const entry = this._backingMap.get(current);
-      if (rest.length == 0) {
-        return this._backingMap.delete(current);
-      }
-      if (entry?.nested != void 0) {
-        const isDeleted = entry.nested.delete(rest);
-        if (entry.value == void 0 && (entry.nested == void 0 || entry.nested.size == 0)) {
-          this._backingMap.delete(current);
-        }
-        return isDeleted;
-      }
-      return false;
-    }
-    clear() {
-      this._backingMap.clear();
-    }
-    entries() {
-      const out = [];
-      const entries2 = [...this._backingMap.entries()];
-      for (const entry of entries2) {
-        const entryKey = entry[0];
-        const entryValue = entry[1];
-        if (entryValue.value != void 0) {
-          out.push({ key: [entryKey], value: entryValue.value });
-        }
-        if (entryValue.nested != void 0) {
-          const internal = [...entryValue.nested.entries()];
-          const mapped = internal.map((pair) => {
-            return { key: [entryKey, ...pair.key], value: pair.value };
-          });
-          out.push(...mapped);
-        }
-      }
-      return out;
-    }
-    keys() {
-      return this.entries().map((e) => e.key);
-    }
-    values() {
-      return this.entries().map((v) => v.value);
-    }
-    get size() {
-      return this.entries().length;
-    }
   };
 
   // ../compiler/dist/src/compiler/PEGParser.js
@@ -332739,6 +332548,427 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
+  // ../compiler/dist/src/compiler/symbol/SymbolTableToMarkdownTable.js
+  function toMarkdownString4(table, includeBuiltIn = false, includeHeader = true, automaticPadToLength = true) {
+    const IDENTIFIER_PADDING = 20;
+    const KIND_PADDING = 15;
+    const PATH_EXPRESSION_PADDING = 5;
+    const TYPE_EXPRESSION_PADDING = 25;
+    const SCOPE_PADDING = 35;
+    const TYPE_DEF_PADDING = 35;
+    const SOURCE_LOCATION_PADDING = 10;
+    const paddingConfig = {
+      identifierPadding: IDENTIFIER_PADDING,
+      kindPadding: KIND_PADDING,
+      pathExpressionPadding: PATH_EXPRESSION_PADDING,
+      typeExpressionPadding: TYPE_EXPRESSION_PADDING,
+      scopePadding: SCOPE_PADDING,
+      typeDefPadding: TYPE_DEF_PADDING,
+      sourceLocationPadding: SOURCE_LOCATION_PADDING
+    };
+    let rows = [];
+    getRowsForMarkdownString(table, rows, includeBuiltIn);
+    rows = rows.filter((r) => r.definitionData.skip != true);
+    let content2 = "";
+    if (automaticPadToLength) {
+      const getNextMultiple = /* @__PURE__ */ __name((n, multiple) => {
+        return n + n % multiple;
+      }, "getNextMultiple");
+      const TEXT_BUFFER = 2;
+      for (const row of rows) {
+        paddingConfig.identifierPadding = Math.max(paddingConfig.identifierPadding, row.identifier.length + TEXT_BUFFER);
+        paddingConfig.kindPadding = Math.max(paddingConfig.kindPadding, row.symbolType.length + TEXT_BUFFER);
+        paddingConfig.pathExpressionPadding = Math.max(paddingConfig.pathExpressionPadding, row.pathExpression.length + TEXT_BUFFER);
+        paddingConfig.typeExpressionPadding = Math.max(paddingConfig.typeExpressionPadding, row.definitionData.binderResolvedInfo.length + TEXT_BUFFER);
+        paddingConfig.scopePadding = Math.max(paddingConfig.scopePadding, row.scope.length + TEXT_BUFFER);
+        paddingConfig.typeDefPadding = Math.max(paddingConfig.typeDefPadding, row.definitionData.checkerResolvedInfo.length + TEXT_BUFFER);
+        paddingConfig.sourceLocationPadding = Math.max(paddingConfig.sourceLocationPadding, row.definitionData.source.length + TEXT_BUFFER);
+      }
+      let key;
+      for (key in paddingConfig) {
+        paddingConfig[key] = getNextMultiple(paddingConfig[key], 4);
+      }
+    }
+    rows = rows.map((r) => {
+      const out = {
+        identifier: r.identifier.padEnd(paddingConfig.identifierPadding),
+        symbolType: r.symbolType.padEnd(paddingConfig.kindPadding),
+        pathExpression: r.pathExpression.padEnd(paddingConfig.pathExpressionPadding),
+        scope: r.scope.padEnd(paddingConfig.scopePadding),
+        definitionData: {
+          binderResolvedInfo: r.definitionData.binderResolvedInfo.padEnd(paddingConfig.typeExpressionPadding),
+          checkerResolvedInfo: r.definitionData.checkerResolvedInfo.padEnd(paddingConfig.typeDefPadding),
+          source: r.definitionData.source.padEnd(paddingConfig.sourceLocationPadding)
+        }
+      };
+      return out;
+    });
+    let header = "";
+    if (includeHeader) {
+      header = `|${"identifier".padEnd(paddingConfig.identifierPadding)} |${"kind".padEnd(paddingConfig.kindPadding)} |${"path".padEnd(paddingConfig.pathExpressionPadding)} |${"declaring scope".padEnd(paddingConfig.scopePadding)} |${"binder info".padEnd(paddingConfig.typeExpressionPadding)} |${"checker info".padEnd(paddingConfig.typeDefPadding)} |${"source".padEnd(paddingConfig.sourceLocationPadding)} |
+`;
+      header += `|${"-".repeat(paddingConfig.identifierPadding + 1)}|${"-".repeat(paddingConfig.kindPadding + 1)}|${"-".repeat(paddingConfig.pathExpressionPadding + 1)}|${"-".repeat(paddingConfig.scopePadding + 1)}|${"-".repeat(paddingConfig.typeExpressionPadding + 1)}|${"-".repeat(paddingConfig.typeDefPadding + 1)}|${"-".repeat(paddingConfig.sourceLocationPadding + 1)}|
+`;
+    }
+    content2 += header;
+    for (const row of rows) {
+      content2 += `|${row.identifier} |${row.symbolType} |${row.pathExpression} |${row.scope} |${row.definitionData.binderResolvedInfo} |${row.definitionData.checkerResolvedInfo} |${row.definitionData.source} |
+`;
+    }
+    return content2;
+  }
+  __name(toMarkdownString4, "toMarkdownString");
+  function formatTypeString(t) {
+    return t?.toString() ?? "inferred";
+  }
+  __name(formatTypeString, "formatTypeString");
+  function getRowsForMarkdownString(table, outParamRows, includeBuiltIn = false) {
+    for (const [key, symbol] of table._backingMap.entries()) {
+      const isBuiltIn = symbol.symbolDefinition instanceof CallableSymbolDefinition ? false : symbol.isBuiltIn;
+      if (isBuiltIn && !includeBuiltIn) {
+        continue;
+      }
+      const markdownInfo = symbol.markdownInfo();
+      outParamRows.push(markdownInfo);
+      if (markdownInfo.definitionData.childDefinitions != void 0) {
+        const copiedRows = markdownInfo.definitionData.childDefinitions.map((c) => {
+          const copy = { ...markdownInfo };
+          copy.definitionData = c;
+          return copy;
+        });
+        outParamRows.push(...copiedRows);
+      }
+    }
+    for (const child of table.childContexts) {
+      getRowsForMarkdownString(child, outParamRows, includeBuiltIn);
+    }
+  }
+  __name(getRowsForMarkdownString, "getRowsForMarkdownString");
+
+  // ../compiler/dist/src/compiler/symbol/SymbolDefinition.js
+  var SymbolInformation4 = class _SymbolInformation {
+    static {
+      __name(this, "SymbolInformation");
+    }
+    symbolName;
+    bindingPath;
+    declaringScope;
+    symbolDefinition;
+    shadow;
+    isBuiltIn;
+    isShadowable;
+    isExternallyDefined;
+    // Mostly just hacked in so that I don't have to change too much code in the symbol table, but I prefer keyword arguments
+    // for functions that take in a large number of parameters
+    static create(args) {
+      return new _SymbolInformation(args.symbolName, args.bindingPath, args.declaringScope, args.symbolDefinition, args.shadow, args.isBuiltIn, args.isShadowable, args.isExternallyDefined);
+    }
+    // Used to track the order that the symbols are created. I think I added this in for debugging binding during namespace scanning, since
+    // it can be somewhat sensitive to proper symbol order expansion.
+    internalCounter = getAndIncSymbolDefCounter();
+    constructor(symbolName, bindingPath, declaringScope, symbolDefinition, shadow, isBuiltIn, isShadowable, isExternallyDefined) {
+      this.symbolName = symbolName;
+      this.bindingPath = bindingPath;
+      this.declaringScope = declaringScope;
+      this.symbolDefinition = symbolDefinition;
+      this.shadow = shadow;
+      this.isBuiltIn = isBuiltIn;
+      this.isShadowable = isShadowable;
+      this.isExternallyDefined = isExternallyDefined;
+    }
+    markdownInfo() {
+      const internal = this.symbolDefinition.markdownInfo();
+      const out = {
+        identifier: `${this.symbolName} (${this.internalCounter})`,
+        pathExpression: this.bindingPath?.toString() ?? "",
+        symbolType: this.symbolDefinition.symbolType,
+        scope: `${this.declaringScope.scopeName}(${this.declaringScope.id})`,
+        definitionData: internal
+      };
+      return out;
+    }
+  };
+  var AbstractSymbolDefinition = class {
+    static {
+      __name(this, "AbstractSymbolDefinition");
+    }
+    symbolType;
+    definitionNode;
+    constructor(symbolType, definitionNode) {
+      this.symbolType = symbolType;
+      this.definitionNode = definitionNode;
+    }
+    // Used to resolve any indirect symbols (symbol references) to their root symbol definition
+    resolveSymbol() {
+      return this;
+    }
+  };
+  var VariableSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "VariableSymbolDefinition");
+    }
+    name;
+    declaredType;
+    scopeType;
+    isConst;
+    // Resolved Type is set in the checker
+    _resolvedType = void 0;
+    constructor(definitionNode, name, declaredType, scopeType, isConst) {
+      super("Variable", definitionNode);
+      this.name = name;
+      this.declaredType = declaredType;
+      this.scopeType = scopeType;
+      this.isConst = isConst;
+    }
+    set resolvedType(value) {
+      if (this._resolvedType == void 0) {
+        this._resolvedType = value;
+      } else {
+        if (!value.equals(this._resolvedType)) {
+          throw new Error(`Type resolution conflicts. For variable: ${this.name} Original type is ${this._resolvedType.toShortString()}, new type is ${value.toShortString()}`);
+        }
+      }
+    }
+    get resolvedType() {
+      return this._resolvedType;
+    }
+    markdownInfo() {
+      const typeExpressionString = formatTypeString(this.declaredType);
+      const typeDefinitionString = this.resolvedType?.toShortString() ?? "unknown?";
+      const isConstString = this.isConst ? "C" : "V";
+      const scopeType = this.scopeType;
+      const row = {
+        binderResolvedInfo: `(${isConstString}) (${scopeType}) ` + typeExpressionString,
+        checkerResolvedInfo: typeDefinitionString,
+        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
+      };
+      return row;
+    }
+  };
+  var ErasedSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "ErasedSymbolDefinition");
+    }
+    constructor() {
+      super("ErasedSymbol", void 0);
+    }
+    markdownInfo() {
+      const row = {
+        binderResolvedInfo: `--erased--`,
+        checkerResolvedInfo: `--erased--`,
+        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
+      };
+      return row;
+    }
+  };
+  var TypeSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "TypeSymbolDefinition");
+    }
+    typeExpression;
+    _typeDefinition;
+    _genericTypeParamInfo;
+    _genericTypeParamInfoSet = false;
+    // will be undefined if the parameter is not a generic type param
+    // I think its set in the checker?
+    constructor(definitionNode, typeExpression) {
+      super("Type", definitionNode);
+      this.typeExpression = typeExpression;
+    }
+    // TODO: clean up this interface a bit
+    get compositeDefinitionNode() {
+      if (this.definitionNode instanceof AstCompositeDefinition) {
+        return this.definitionNode;
+      }
+      return void 0;
+    }
+    set typeDefinition(value) {
+      if (this._typeDefinition == void 0) {
+        this._typeDefinition = value;
+      } else {
+        if (!this._typeDefinition.equals(value)) {
+          throw new Error(`Double type definition binding. Original type is ${this._typeDefinition.toShortString()}, new type is ${value.toShortString()}`);
+        }
+      }
+    }
+    get typeDefinition() {
+      return this._typeDefinition;
+    }
+    set genericTypeParamInfo(value) {
+      if (this._genericTypeParamInfoSet) {
+        throw new Error("Double binding!");
+      }
+      this._genericTypeParamInfo = value;
+      this._genericTypeParamInfoSet = true;
+    }
+    get genericTypeParamInfo() {
+      return this._genericTypeParamInfo;
+    }
+    markdownInfo() {
+      const out = {
+        binderResolvedInfo: this.typeExpression.toString(),
+        checkerResolvedInfo: this._typeDefinition?.toString() ?? "unresolved",
+        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
+      };
+      if (this._typeDefinition instanceof AlgebraicDataTypeDefinition && this._typeDefinition.typeInstantiations != void 0) {
+        const formattedTypeInstantiations = this._typeDefinition.typeInstantiations.map((instance) => {
+          const out2 = {
+            binderResolvedInfo: instance.expression.toString(),
+            checkerResolvedInfo: instance.toString(),
+            source: ""
+            // no source for instantiated types
+          };
+          return out2;
+        });
+        out.childDefinitions = formattedTypeInstantiations;
+      }
+      return out;
+    }
+  };
+  var TypeBoundSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "TypeBoundSymbolDefinition");
+    }
+    definitionNode;
+    // Should be set in the checker
+    _typeBoundDefinition;
+    constructor(definitionNode) {
+      super("TypeBound", definitionNode);
+      this.definitionNode = definitionNode;
+    }
+    set typeBoundDefinition(value) {
+      if (this._typeBoundDefinition != void 0) {
+        throw new Error("Redef!");
+      }
+      this._typeBoundDefinition = value;
+    }
+    get typeBoundDefinition() {
+      return this._typeBoundDefinition;
+    }
+    get name() {
+      return this.definitionNode.identifier.symbolName;
+    }
+    markdownInfo() {
+      const typeParameters = this.definitionNode.typeParameters?.map((t) => t.identifier.name) ?? [];
+      const requirementDefString = this.typeBoundDefinition?.toString() ?? "UNBOUND";
+      const out = {
+        binderResolvedInfo: `${this.definitionNode.identifier.name}<${typeParameters.join(",")}>`,
+        checkerResolvedInfo: requirementDefString,
+        source: this.definitionNode.firstToken.createTokenSourceString()
+      };
+      return out;
+    }
+  };
+  var CallableSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "CallableSymbolDefinition");
+    }
+    name;
+    symbolType;
+    overloads;
+    constructor(name, symbolType, overloads) {
+      super(symbolType, void 0);
+      this.name = name;
+      this.symbolType = symbolType;
+      this.overloads = overloads;
+    }
+    markdownInfo() {
+      const mainOut = {
+        skip: true,
+        binderResolvedInfo: "",
+        checkerResolvedInfo: "",
+        source: "",
+        childDefinitions: []
+      };
+      for (const overload of this.overloads) {
+        if (overload.isBuiltIn) {
+          continue;
+        }
+        const genericParams = overload.typeParametersExpression ? `<${overload.typeParametersExpression.map((t) => t.toString()).join(", ")}> ` : "";
+        const typeParameterString = overload.typeParameterDefinitions == void 0 ? "" : `<${overload.typeParameterDefinitions.map((t) => t.name).join(",")}>`;
+        const typeDefinitionString = overload.typeDefinition?.toString() ?? "ERROR";
+        let typeBoundExpressionInfo = "";
+        let typeBoundDefinitionInfo = "";
+        if (overload.typeBoundSource != void 0) {
+          const tbSymbol = overload.typeBoundSource.typeBoundSymbol;
+          const tbParamExpression = overload.typeBoundSource.typeParameterExpression._identifier.name;
+          typeBoundExpressionInfo = ` [Type Bound: ${tbSymbol?.typeBoundDefinition?.name} (from: ${tbParamExpression})]`;
+          if (overload.typeBoundSource.resolvedTypeBoundInfo != void 0) {
+            const resolved = overload.typeBoundSource.resolvedTypeBoundInfo;
+            const args = resolved.arguments.map((t) => t.toShortString());
+            const def = resolved.definition.toShortString();
+            typeBoundDefinitionInfo = ` [Type Bound: ${def} (from: ${args})]`;
+          }
+        }
+        const overloadInfo = {
+          binderResolvedInfo: `${genericParams}${overload.typeExpression.toString()}${typeBoundExpressionInfo}`,
+          checkerResolvedInfo: `${typeParameterString}${typeDefinitionString}${typeBoundDefinitionInfo}`,
+          source: overload.definitionNode.firstToken.createTokenSourceString()
+        };
+        mainOut.childDefinitions?.push(overloadInfo);
+        for (const specialization of overload.specializations ?? []) {
+          const specializationInfo = {
+            binderResolvedInfo: specialization.instantiatedType.expression.toString(),
+            checkerResolvedInfo: specialization.instantiatedType.toString(),
+            source: ""
+            // specializations don't have a source. They have a first instantiation, but that's not really a concrete value
+          };
+          mainOut.childDefinitions?.push(specializationInfo);
+        }
+      }
+      return mainOut;
+    }
+  };
+  var NamespaceSymbolDefinition = class extends AbstractSymbolDefinition {
+    static {
+      __name(this, "NamespaceSymbolDefinition");
+    }
+    definitionNode;
+    // I support merging multiple namespaces into a single symbol
+    definitionNodes = [];
+    constructor(definitionNode) {
+      super("Namespace", definitionNode);
+      this.definitionNode = definitionNode;
+      this.definitionNodes.push(definitionNode);
+    }
+    markdownInfo() {
+      const out = {
+        binderResolvedInfo: "",
+        checkerResolvedInfo: "",
+        source: `${this.definitionNode.firstToken.createTokenSourceString()}`
+      };
+      return out;
+    }
+  };
+  var SymbolReferenceDefinition = class _SymbolReferenceDefinition extends AbstractSymbolDefinition {
+    static {
+      __name(this, "SymbolReferenceDefinition");
+    }
+    originalSymbol;
+    constructor(definitionNode, originalSymbol) {
+      super("SymbolReference", definitionNode);
+      this.originalSymbol = originalSymbol;
+    }
+    resolveOriginalScope() {
+      if (this.originalSymbol instanceof _SymbolReferenceDefinition) {
+        return this.originalSymbol.resolveOriginalScope();
+      }
+      return this.originalSymbol.declaringScope;
+    }
+    resolveSymbol() {
+      return this.originalSymbol.symbolDefinition.resolveSymbol();
+    }
+    markdownInfo() {
+      const referencedData = this.originalSymbol.markdownInfo();
+      const out = {
+        binderResolvedInfo: `(Ref) -> (${this.originalSymbol.internalCounter}) ${referencedData.definitionData.binderResolvedInfo}`,
+        checkerResolvedInfo: `(Ref) -> ${referencedData.definitionData.checkerResolvedInfo}`,
+        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
+      };
+      return out;
+    }
+  };
+
   // ../compiler/dist/src/compiler/TypeDefinition.js
   var TypeBoundDefinition = class {
     static {
@@ -333318,103 +333548,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/symbol/SymbolTableToMarkdownTable.js
-  function toMarkdownString4(table, includeBuiltIn = false, includeHeader = true, automaticPadToLength = true) {
-    const IDENTIFIER_PADDING = 20;
-    const KIND_PADDING = 15;
-    const PATH_EXPRESSION_PADDING = 5;
-    const TYPE_EXPRESSION_PADDING = 25;
-    const SCOPE_PADDING = 35;
-    const TYPE_DEF_PADDING = 35;
-    const SOURCE_LOCATION_PADDING = 10;
-    const paddingConfig = {
-      identifierPadding: IDENTIFIER_PADDING,
-      kindPadding: KIND_PADDING,
-      pathExpressionPadding: PATH_EXPRESSION_PADDING,
-      typeExpressionPadding: TYPE_EXPRESSION_PADDING,
-      scopePadding: SCOPE_PADDING,
-      typeDefPadding: TYPE_DEF_PADDING,
-      sourceLocationPadding: SOURCE_LOCATION_PADDING
-    };
-    let rows = [];
-    getRowsForMarkdownString(table, rows, includeBuiltIn);
-    rows = rows.filter((r) => r.definitionData.skip != true);
-    let content2 = "";
-    if (automaticPadToLength) {
-      const getNextMultiple = /* @__PURE__ */ __name((n, multiple) => {
-        return n + n % multiple;
-      }, "getNextMultiple");
-      const TEXT_BUFFER = 2;
-      for (const row of rows) {
-        paddingConfig.identifierPadding = Math.max(paddingConfig.identifierPadding, row.identifier.length + TEXT_BUFFER);
-        paddingConfig.kindPadding = Math.max(paddingConfig.kindPadding, row.symbolType.length + TEXT_BUFFER);
-        paddingConfig.pathExpressionPadding = Math.max(paddingConfig.pathExpressionPadding, row.pathExpression.length + TEXT_BUFFER);
-        paddingConfig.typeExpressionPadding = Math.max(paddingConfig.typeExpressionPadding, row.definitionData.binderResolvedInfo.length + TEXT_BUFFER);
-        paddingConfig.scopePadding = Math.max(paddingConfig.scopePadding, row.scope.length + TEXT_BUFFER);
-        paddingConfig.typeDefPadding = Math.max(paddingConfig.typeDefPadding, row.definitionData.checkerResolvedInfo.length + TEXT_BUFFER);
-        paddingConfig.sourceLocationPadding = Math.max(paddingConfig.sourceLocationPadding, row.definitionData.source.length + TEXT_BUFFER);
-      }
-      let key;
-      for (key in paddingConfig) {
-        paddingConfig[key] = getNextMultiple(paddingConfig[key], 4);
-      }
-    }
-    rows = rows.map((r) => {
-      const out = {
-        identifier: r.identifier.padEnd(paddingConfig.identifierPadding),
-        symbolType: r.symbolType.padEnd(paddingConfig.kindPadding),
-        pathExpression: r.pathExpression.padEnd(paddingConfig.pathExpressionPadding),
-        scope: r.scope.padEnd(paddingConfig.scopePadding),
-        definitionData: {
-          binderResolvedInfo: r.definitionData.binderResolvedInfo.padEnd(paddingConfig.typeExpressionPadding),
-          checkerResolvedInfo: r.definitionData.checkerResolvedInfo.padEnd(paddingConfig.typeDefPadding),
-          source: r.definitionData.source.padEnd(paddingConfig.sourceLocationPadding)
-        }
-      };
-      return out;
-    });
-    let header = "";
-    if (includeHeader) {
-      header = `|${"identifier".padEnd(paddingConfig.identifierPadding)} |${"kind".padEnd(paddingConfig.kindPadding)} |${"path".padEnd(paddingConfig.pathExpressionPadding)} |${"declaring scope".padEnd(paddingConfig.scopePadding)} |${"binder info".padEnd(paddingConfig.typeExpressionPadding)} |${"checker info".padEnd(paddingConfig.typeDefPadding)} |${"source".padEnd(paddingConfig.sourceLocationPadding)} |
-`;
-      header += `|${"-".repeat(paddingConfig.identifierPadding + 1)}|${"-".repeat(paddingConfig.kindPadding + 1)}|${"-".repeat(paddingConfig.pathExpressionPadding + 1)}|${"-".repeat(paddingConfig.scopePadding + 1)}|${"-".repeat(paddingConfig.typeExpressionPadding + 1)}|${"-".repeat(paddingConfig.typeDefPadding + 1)}|${"-".repeat(paddingConfig.sourceLocationPadding + 1)}|
-`;
-    }
-    content2 += header;
-    for (const row of rows) {
-      content2 += `|${row.identifier} |${row.symbolType} |${row.pathExpression} |${row.scope} |${row.definitionData.binderResolvedInfo} |${row.definitionData.checkerResolvedInfo} |${row.definitionData.source} |
-`;
-    }
-    return content2;
-  }
-  __name(toMarkdownString4, "toMarkdownString");
-  function formatTypeString(t) {
-    return t?.toString() ?? "inferred";
-  }
-  __name(formatTypeString, "formatTypeString");
-  function getRowsForMarkdownString(table, outParamRows, includeBuiltIn = false) {
-    for (const [key, symbol] of table._backingMap.entries()) {
-      const isBuiltIn = symbol.symbolDefinition instanceof CallableSymbolDefinition ? false : symbol.isBuiltIn;
-      if (isBuiltIn && !includeBuiltIn) {
-        continue;
-      }
-      const markdownInfo = symbol.markdownInfo();
-      outParamRows.push(markdownInfo);
-      if (markdownInfo.definitionData.childDefinitions != void 0) {
-        const copiedRows = markdownInfo.definitionData.childDefinitions.map((c) => {
-          const copy = { ...markdownInfo };
-          copy.definitionData = c;
-          return copy;
-        });
-        outParamRows.push(...copiedRows);
-      }
-    }
-    for (const child of table.childContexts) {
-      getRowsForMarkdownString(child, outParamRows, includeBuiltIn);
-    }
-  }
-  __name(getRowsForMarkdownString, "getRowsForMarkdownString");
-
   // ../compiler/dist/src/compiler/symbol/SymbolTable.js
   var symbolTableId = 0;
   var symbolDefCounter = 0;
@@ -333429,13 +333562,15 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     scopeName;
     parent;
     sourceNode;
+    scopeAccessType;
     id;
     _childrenContexts = [];
-    constructor(scopeName, parent, sourceNode) {
+    constructor(scopeName, parent, sourceNode, scopeAccessType = "Lexical") {
       super(scopeName, parent);
       this.scopeName = scopeName;
       this.parent = parent;
       this.sourceNode = sourceNode;
+      this.scopeAccessType = scopeAccessType;
       parent?._childrenContexts.push(this);
       this.id = symbolTableId++;
     }
@@ -333496,8 +333631,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     get childContexts() {
       return this._childrenContexts;
     }
-    get isGlobal() {
-      return this.parent == void 0;
+    get isGloballyAccessible() {
+      return this.parent == void 0 || this.scopeAccessType == "Global" || this.scopeAccessType == "Namespace";
     }
     /**
      * Returns the global (root) scope.
@@ -333533,13 +333668,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         return { success: false, error };
       }
       if (hasExisting?.isShadowable == false) {
-        const error = {
-          type: "ShadowingDisallowed",
-          message: formatErrorMessage(`Variable '${symbolName}' is shadowing a name that is not shadowable. 
-          Current occurrence: ${node.firstToken.createTokenSourceString()}
-          Referenced on: ${node.firstToken.createTokenSourceString()}.`),
-          firstToken: node.firstToken
-        };
+        const error = BINDER_ERROR_MESSAGES.unshadowableSymbol(node, symbolName);
         return { success: false, error };
       }
       return { success: true, shadow: hasExisting };
@@ -333565,7 +333694,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       let scopeType;
       if (inputScopeType == void 0) {
-        scopeType = this.isGlobal ? "Global" : "Local";
+        scopeType = this.isGloballyAccessible ? "Global" : "Local";
       } else {
         scopeType = inputScopeType;
       }
@@ -333587,7 +333716,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.augmentedProperties.scope = this;
       return void 0;
     }
-    declareType(node, bindingPath, isBuiltIn = false) {
+    registerTypeDefinition(node, bindingPath, isBuiltIn = false) {
       const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
@@ -333610,7 +333739,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
-    declareTypeBound(node, bindingPath, isBuiltIn = false) {
+    registerTypeBound(node, bindingPath, isBuiltIn = false) {
       const resp = this.checkForBindingConflicts(node, node.symbolName);
       if (resp.success == false) {
         return resp.error;
@@ -333632,7 +333761,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       node.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
-    declareCallable(node, bindingPath, isExternallyDefined, isBuiltIn = false) {
+    registerCallableDefinition(node, bindingPath, isExternallyDefined, isBuiltIn = false) {
       let symbolType;
       if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstDeclareFunctionStatement) {
         symbolType = "Function";
@@ -333713,29 +333842,50 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       return void 0;
     }
-    declareNamespace(astNamespaceNode, bindingPath, isBuiltIn = false) {
+    registerNamespaceDefinition(astNamespaceNode, bindingPath, isBuiltIn = false) {
       const symbolName = astNamespaceNode.symbolName;
       if (symbolName == void 0) {
         throw new Error("TODO: I haven't thought this through yet.");
       }
-      const resp = this.checkForBindingConflicts(astNamespaceNode, astNamespaceNode.symbolName);
-      if (resp.success == false) {
-        return resp.error;
+      let shadow = void 0;
+      const existing = this.findSymbolAndScope(symbolName);
+      let hasExistingDefinitionInScope = false;
+      if (existing != void 0) {
+        const [existingSymbol, existingScope] = [existing.info, existing.scope];
+        if (existingScope != this) {
+          if (!existingSymbol.isShadowable) {
+            const err = BINDER_ERROR_MESSAGES.unshadowableSymbol(astNamespaceNode, symbolName);
+            return err;
+          }
+          shadow = existingSymbol;
+        } else {
+          if (existingSymbol.symbolDefinition.resolveSymbol().symbolType != "Namespace") {
+            const err = BINDER_ERROR_MESSAGES.namespaceConflictsWithExistingSymbol(astNamespaceNode, symbolName, existingSymbol);
+            return err;
+          }
+          const existingSymbolDef = existingSymbol.symbolDefinition.resolveSymbol();
+          if (!(existingSymbolDef instanceof NamespaceSymbolDefinition)) {
+            throw new Error("Should not happend");
+          }
+          existingSymbolDef.definitionNodes.push(astNamespaceNode);
+          astNamespaceNode.augmentedProperties.symbolInfo = existingSymbol;
+          return;
+        }
+      } else {
+        const t = new NamespaceSymbolDefinition(astNamespaceNode);
+        const symbol = SymbolInformation4.create({
+          symbolName,
+          bindingPath,
+          declaringScope: this,
+          symbolDefinition: t,
+          shadow,
+          isShadowable: !isBuiltIn,
+          isBuiltIn,
+          isExternallyDefined: false
+        });
+        this.setSymbol(symbolName, symbol);
+        astNamespaceNode.augmentedProperties.symbolInfo = symbol;
       }
-      const shadow = resp.shadow;
-      const t = new NamespaceSymbolDefinition(astNamespaceNode);
-      const symbol = SymbolInformation4.create({
-        symbolName,
-        bindingPath,
-        declaringScope: this,
-        symbolDefinition: t,
-        shadow,
-        isShadowable: !isBuiltIn,
-        isBuiltIn,
-        isExternallyDefined: false
-      });
-      this.setSymbol(symbolName, symbol);
-      astNamespaceNode.augmentedProperties.symbolInfo = symbol;
       return void 0;
     }
     // Creates a "symbol reference" to the originally defined symbol
@@ -334279,341 +334429,243 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
   };
 
-  // ../compiler/dist/src/compiler/symbol/SymbolDefinition.js
-  var SymbolInformation4 = class _SymbolInformation {
+  // ../compiler/dist/src/compiler/NamespaceUtils.js
+  var NamespaceRegistry = class {
     static {
-      __name(this, "SymbolInformation");
+      __name(this, "NamespaceRegistry");
     }
-    symbolName;
-    bindingPath;
-    declaringScope;
-    symbolDefinition;
-    shadow;
-    isBuiltIn;
-    isShadowable;
-    isExternallyDefined;
-    // Mostly just hacked in so that I don't have to change too much code in the symbol table, but I prefer keyword arguments
-    // for functions that take in a large number of parameters
-    static create(args) {
-      return new _SymbolInformation(args.symbolName, args.bindingPath, args.declaringScope, args.symbolDefinition, args.shadow, args.isBuiltIn, args.isShadowable, args.isExternallyDefined);
+    // Adds a namespace to the registry. If there are multiple definitions for the namespace, then the
+    // entries in each namespace are merged.
+    _backingMap = new NestedMap();
+    globalSymbolTable;
+    constructor(globalSymbolTable) {
+      this.globalSymbolTable = globalSymbolTable.getGlobalScope();
     }
-    // Used to track the order that the symbols are created. I think I added this in for debugging binding during namespace scanning, since
-    // it can be somewhat sensitive to proper symbol order expansion.
-    internalCounter = getAndIncSymbolDefCounter();
-    constructor(symbolName, bindingPath, declaringScope, symbolDefinition, shadow, isBuiltIn, isShadowable, isExternallyDefined) {
-      this.symbolName = symbolName;
-      this.bindingPath = bindingPath;
-      this.declaringScope = declaringScope;
-      this.symbolDefinition = symbolDefinition;
-      this.shadow = shadow;
-      this.isBuiltIn = isBuiltIn;
-      this.isShadowable = isShadowable;
-      this.isExternallyDefined = isExternallyDefined;
+    createNamespace(path, node, symbol) {
+      if (path.hasRelativeComponent()) {
+        throw new Error("My backing map only supports absolute paths.");
+      }
+      const current = this.findNamespace(path);
+      if (current != void 0) {
+        if (current.symbolInformation == void 0) {
+          current.symbolInformation = symbol;
+        }
+        if (current.definitionNodes.find((n) => n.id == node.id) == void 0) {
+          current.definitionNodes.push(node);
+        }
+        return { success: true, namespace: current };
+      }
+      const parentScope = this.ensureParentScopesExist(path);
+      const namespace = this.createEmptyNamespace(path, parentScope);
+      namespace.definitionNodes.push(node);
+      namespace.symbolInformation = symbol;
+      return this.addNamespaceInternal(namespace);
     }
-    markdownInfo() {
-      const internal = this.symbolDefinition.markdownInfo();
-      const out = {
-        identifier: `${this.symbolName} (${this.internalCounter})`,
-        pathExpression: this.bindingPath?.toString() ?? "",
-        symbolType: this.symbolDefinition.symbolType,
-        scope: `${this.declaringScope.scopeName}(${this.declaringScope.id})`,
-        definitionData: internal
-      };
+    addNamespaceInternal(namespace) {
+      const path = namespace.path;
+      if (path.hasRelativeComponent()) {
+        throw new Error("My backing map only supports absolute paths.");
+      }
+      const pathStr = path.components.map((c) => c.toString());
+      const current = this._backingMap.get(pathStr);
+      if (current == void 0) {
+        this._backingMap.set(pathStr, namespace);
+      }
+      return { success: true, namespace: current ?? namespace };
+    }
+    // Takes in a path and ensures that the parent namespaces for the path exists
+    // for example [this::is::a::path], would make sure that [this, this::is, this::is:a] exists
+    // it returns the parent scope.
+    ensureParentScopesExist(path) {
+      const parentPaths = [];
+      for (let i = 1; i < path.components.length; i++) {
+        const parentComponents = path.components.slice(0, i);
+        parentPaths.push(new PathExpression(void 0, parentComponents));
+      }
+      let parentScope = this.globalSymbolTable;
+      for (let i = 0; i < parentPaths.length; i++) {
+        const currentPath = parentPaths[i];
+        let currentNamespace = this.findNamespace(currentPath);
+        if (currentNamespace == void 0) {
+          currentNamespace = this.createEmptyNamespace(currentPath, parentScope);
+          this.addNamespaceInternal(currentNamespace);
+          console.log("creating", currentPath.toString());
+        }
+        parentScope = currentNamespace.symbolTable;
+      }
+      return parentScope;
+    }
+    createEmptyNamespace(path, parentScope) {
+      const namespaceScope = new SymbolTable(
+        `namespace:${path.toString()}`,
+        parentScope,
+        void 0,
+        "Namespace"
+        /* ScopeAccessType.Namespace */
+      );
+      const namespace = new Namespace2(path, namespaceScope, void 0);
+      return namespace;
+    }
+    findNamespace(namespaceQualifier) {
+      if (namespaceQualifier.hasRelativeComponent()) {
+        throw new Error("My backing map only supports absolute paths.");
+      }
+      const pathStr = namespaceQualifier.components.map((c) => c.toString());
+      const out = this._backingMap.get(pathStr);
       return out;
     }
+    toMarkdownString() {
+      let out = ``;
+      for (const entry of this._backingMap.entries()) {
+        const path = entry.key.join("::") + "		";
+        const tableName = `${entry.value.symbolTable.scopeName} (${entry.value.symbolTable.parent?.scopeName})		`;
+        const symbols = entry.value.symbolNames().join(", ");
+        out += path + tableName + symbols + "\n";
+      }
+      return out;
+    }
+    registeredNamespacePaths() {
+      return this._backingMap.keys().map((k) => k.join("::"));
+    }
   };
-  var AbstractSymbolDefinition = class {
+  var Namespace2 = class {
     static {
-      __name(this, "AbstractSymbolDefinition");
+      __name(this, "Namespace");
     }
-    symbolType;
-    definitionNode;
-    constructor(symbolType, definitionNode) {
-      this.symbolType = symbolType;
-      this.definitionNode = definitionNode;
+    path;
+    symbolTable;
+    definitionNodes = [];
+    _symbolInformation;
+    constructor(path, symbolTable, symbolInformation) {
+      this.path = path;
+      this.symbolTable = symbolTable;
+      this._symbolInformation = symbolInformation;
     }
-    // Used to resolve any indirect symbols (symbol references) to their root symbol definition
-    resolveSymbol() {
+    findSymbol(symbolName) {
+      return this.symbolTable.findSymbol(symbolName);
+    }
+    symbolNames() {
+      return this.symbolTable.symbolNamesInThis();
+    }
+    get symbolInformation() {
+      return this._symbolInformation;
+    }
+    set symbolInformation(value) {
+      this._symbolInformation = value;
+    }
+  };
+  var NestedMap = class _NestedMap {
+    static {
+      __name(this, "NestedMap");
+    }
+    _backingMap = /* @__PURE__ */ new Map();
+    get(key) {
+      if (key.length == 0) {
+        return void 0;
+      }
+      const [current, ...rest] = key;
+      const entry = this._backingMap.get(current);
+      if (entry == void 0) {
+        return void 0;
+      }
+      if (rest.length == 0) {
+        return entry.value;
+      }
+      return entry.nested?.get(rest);
+    }
+    set(key, value) {
+      if (key.length == 0) {
+        return this;
+      }
+      const [current, ...rest] = key;
+      if (rest.length == 0) {
+        const currentValue = this._backingMap.get(current);
+        this._backingMap.set(current, { value, nested: currentValue?.nested });
+        return this;
+      } else {
+        let entry = this._backingMap.get(current);
+        if (entry == void 0 || entry.nested == void 0) {
+          entry = { value: entry?.value, nested: entry?.nested ?? new _NestedMap() };
+          this._backingMap.set(current, entry);
+        }
+        entry.nested?.set(rest, value);
+      }
       return this;
     }
-  };
-  var VariableSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "VariableSymbolDefinition");
+    has(key) {
+      return this.get(key) != void 0;
     }
-    name;
-    declaredType;
-    scopeType;
-    isConst;
-    // Resolved Type is set in the checker
-    _resolvedType = void 0;
-    constructor(definitionNode, name, declaredType, scopeType, isConst) {
-      super("Variable", definitionNode);
-      this.name = name;
-      this.declaredType = declaredType;
-      this.scopeType = scopeType;
-      this.isConst = isConst;
-    }
-    set resolvedType(value) {
-      if (this._resolvedType == void 0) {
-        this._resolvedType = value;
-      } else {
-        if (!value.equals(this._resolvedType)) {
-          throw new Error(`Type resolution conflicts. For variable: ${this.name} Original type is ${this._resolvedType.toShortString()}, new type is ${value.toShortString()}`);
+    delete(key) {
+      if (key.length == 0) {
+        return false;
+      }
+      const [current, ...rest] = key;
+      const entry = this._backingMap.get(current);
+      if (rest.length == 0) {
+        return this._backingMap.delete(current);
+      }
+      if (entry?.nested != void 0) {
+        const isDeleted = entry.nested.delete(rest);
+        if (entry.value == void 0 && (entry.nested == void 0 || entry.nested.size == 0)) {
+          this._backingMap.delete(current);
         }
+        return isDeleted;
       }
+      return false;
     }
-    get resolvedType() {
-      return this._resolvedType;
+    clear() {
+      this._backingMap.clear();
     }
-    markdownInfo() {
-      const typeExpressionString = formatTypeString(this.declaredType);
-      const typeDefinitionString = this.resolvedType?.toShortString() ?? "unknown?";
-      const isConstString = this.isConst ? "C" : "V";
-      const scopeType = this.scopeType;
-      const row = {
-        binderResolvedInfo: `(${isConstString}) (${scopeType}) ` + typeExpressionString,
-        checkerResolvedInfo: typeDefinitionString,
-        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
-      };
-      return row;
-    }
-  };
-  var ErasedSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "ErasedSymbolDefinition");
-    }
-    constructor() {
-      super("ErasedSymbol", void 0);
-    }
-    markdownInfo() {
-      const row = {
-        binderResolvedInfo: `--erased--`,
-        checkerResolvedInfo: `--erased--`,
-        source: `${this.definitionNode?.firstToken.createTokenSourceString()}`
-      };
-      return row;
-    }
-  };
-  var TypeSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "TypeSymbolDefinition");
-    }
-    typeExpression;
-    _typeDefinition;
-    _genericTypeParamInfo;
-    _genericTypeParamInfoSet = false;
-    // will be undefined if the parameter is not a generic type param
-    // I think its set in the checker?
-    constructor(definitionNode, typeExpression) {
-      super("Type", definitionNode);
-      this.typeExpression = typeExpression;
-    }
-    // TODO: clean up this interface a bit
-    get compositeDefinitionNode() {
-      if (this.definitionNode instanceof AstCompositeDefinition) {
-        return this.definitionNode;
-      }
-      return void 0;
-    }
-    set typeDefinition(value) {
-      if (this._typeDefinition == void 0) {
-        this._typeDefinition = value;
-      } else {
-        if (!this._typeDefinition.equals(value)) {
-          throw new Error(`Double type definition binding. Original type is ${this._typeDefinition.toShortString()}, new type is ${value.toShortString()}`);
+    entries() {
+      const out = [];
+      const entries2 = [...this._backingMap.entries()];
+      for (const entry of entries2) {
+        const entryKey = entry[0];
+        const entryValue = entry[1];
+        if (entryValue.value != void 0) {
+          out.push({ key: [entryKey], value: entryValue.value });
         }
-      }
-    }
-    get typeDefinition() {
-      return this._typeDefinition;
-    }
-    set genericTypeParamInfo(value) {
-      if (this._genericTypeParamInfoSet) {
-        throw new Error("Double binding!");
-      }
-      this._genericTypeParamInfo = value;
-      this._genericTypeParamInfoSet = true;
-    }
-    get genericTypeParamInfo() {
-      return this._genericTypeParamInfo;
-    }
-    markdownInfo() {
-      const out = {
-        binderResolvedInfo: this.typeExpression.toString(),
-        checkerResolvedInfo: this._typeDefinition?.toString() ?? "unresolved",
-        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
-      };
-      if (this._typeDefinition instanceof AlgebraicDataTypeDefinition && this._typeDefinition.typeInstantiations != void 0) {
-        const formattedTypeInstantiations = this._typeDefinition.typeInstantiations.map((instance) => {
-          const out2 = {
-            binderResolvedInfo: instance.expression.toString(),
-            checkerResolvedInfo: instance.toString(),
-            source: ""
-            // no source for instantiated types
-          };
-          return out2;
-        });
-        out.childDefinitions = formattedTypeInstantiations;
+        if (entryValue.nested != void 0) {
+          const internal = [...entryValue.nested.entries()];
+          const mapped = internal.map((pair) => {
+            return { key: [entryKey, ...pair.key], value: pair.value };
+          });
+          out.push(...mapped);
+        }
       }
       return out;
     }
-  };
-  var TypeBoundSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "TypeBoundSymbolDefinition");
+    keys() {
+      return this.entries().map((e) => e.key);
     }
-    definitionNode;
-    // Should be set in the checker
-    _typeBoundDefinition;
-    constructor(definitionNode) {
-      super("TypeBound", definitionNode);
-      this.definitionNode = definitionNode;
+    values() {
+      return this.entries().map((v) => v.value);
     }
-    set typeBoundDefinition(value) {
-      if (this._typeBoundDefinition != void 0) {
-        throw new Error("Redef!");
-      }
-      this._typeBoundDefinition = value;
-    }
-    get typeBoundDefinition() {
-      return this._typeBoundDefinition;
-    }
-    get name() {
-      return this.definitionNode.identifier.symbolName;
-    }
-    markdownInfo() {
-      const typeParameters = this.definitionNode.typeParameters?.map((t) => t.identifier.name) ?? [];
-      const requirementDefString = this.typeBoundDefinition?.toString() ?? "UNBOUND";
-      const out = {
-        binderResolvedInfo: `${this.definitionNode.identifier.name}<${typeParameters.join(",")}>`,
-        checkerResolvedInfo: requirementDefString,
-        source: this.definitionNode.firstToken.createTokenSourceString()
-      };
-      return out;
-    }
-  };
-  var CallableSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "CallableSymbolDefinition");
-    }
-    name;
-    symbolType;
-    overloads;
-    constructor(name, symbolType, overloads) {
-      super(symbolType, void 0);
-      this.name = name;
-      this.symbolType = symbolType;
-      this.overloads = overloads;
-    }
-    markdownInfo() {
-      const mainOut = {
-        skip: true,
-        binderResolvedInfo: "",
-        checkerResolvedInfo: "",
-        source: "",
-        childDefinitions: []
-      };
-      for (const overload of this.overloads) {
-        if (overload.isBuiltIn) {
-          continue;
-        }
-        const genericParams = overload.typeParametersExpression ? `<${overload.typeParametersExpression.map((t) => t.toString()).join(", ")}> ` : "";
-        const typeParameterString = overload.typeParameterDefinitions == void 0 ? "" : `<${overload.typeParameterDefinitions.map((t) => t.name).join(",")}>`;
-        const typeDefinitionString = overload.typeDefinition?.toString() ?? "ERROR";
-        let typeBoundExpressionInfo = "";
-        let typeBoundDefinitionInfo = "";
-        if (overload.typeBoundSource != void 0) {
-          const tbSymbol = overload.typeBoundSource.typeBoundSymbol;
-          const tbParamExpression = overload.typeBoundSource.typeParameterExpression._identifier.name;
-          typeBoundExpressionInfo = ` [Type Bound: ${tbSymbol?.typeBoundDefinition?.name} (from: ${tbParamExpression})]`;
-          if (overload.typeBoundSource.resolvedTypeBoundInfo != void 0) {
-            const resolved = overload.typeBoundSource.resolvedTypeBoundInfo;
-            const args = resolved.arguments.map((t) => t.toShortString());
-            const def = resolved.definition.toShortString();
-            typeBoundDefinitionInfo = ` [Type Bound: ${def} (from: ${args})]`;
-          }
-        }
-        const overloadInfo = {
-          binderResolvedInfo: `${genericParams}${overload.typeExpression.toString()}${typeBoundExpressionInfo}`,
-          checkerResolvedInfo: `${typeParameterString}${typeDefinitionString}${typeBoundDefinitionInfo}`,
-          source: overload.definitionNode.firstToken.createTokenSourceString()
-        };
-        mainOut.childDefinitions?.push(overloadInfo);
-        for (const specialization of overload.specializations ?? []) {
-          const specializationInfo = {
-            binderResolvedInfo: specialization.instantiatedType.expression.toString(),
-            checkerResolvedInfo: specialization.instantiatedType.toString(),
-            source: ""
-            // specializations don't have a source. They have a first instantiation, but that's not really a concrete value
-          };
-          mainOut.childDefinitions?.push(specializationInfo);
-        }
-      }
-      return mainOut;
-    }
-  };
-  var NamespaceSymbolDefinition = class extends AbstractSymbolDefinition {
-    static {
-      __name(this, "NamespaceSymbolDefinition");
-    }
-    definitionNode;
-    constructor(definitionNode) {
-      super("Namespace", definitionNode);
-      this.definitionNode = definitionNode;
-    }
-    markdownInfo() {
-      const out = {
-        binderResolvedInfo: "",
-        checkerResolvedInfo: "",
-        source: `${this.definitionNode.firstToken.createTokenSourceString()}`
-      };
-      return out;
-    }
-  };
-  var SymbolReferenceDefinition = class _SymbolReferenceDefinition extends AbstractSymbolDefinition {
-    static {
-      __name(this, "SymbolReferenceDefinition");
-    }
-    originalSymbol;
-    constructor(definitionNode, originalSymbol) {
-      super("SymbolReference", definitionNode);
-      this.originalSymbol = originalSymbol;
-    }
-    resolveOriginalScope() {
-      if (this.originalSymbol instanceof _SymbolReferenceDefinition) {
-        return this.originalSymbol.resolveOriginalScope();
-      }
-      return this.originalSymbol.declaringScope;
-    }
-    resolveSymbol() {
-      return this.originalSymbol.symbolDefinition.resolveSymbol();
-    }
-    markdownInfo() {
-      const referencedData = this.originalSymbol.markdownInfo();
-      const out = {
-        binderResolvedInfo: `(Ref) -> (${this.originalSymbol.internalCounter}) ${referencedData.definitionData.binderResolvedInfo}`,
-        checkerResolvedInfo: `(Ref) -> ${referencedData.definitionData.checkerResolvedInfo}`,
-        source: this.definitionNode?.firstToken.createTokenSourceString() ?? ""
-      };
-      return out;
+    get size() {
+      return this.entries().length;
     }
   };
 
   // ../compiler/dist/src/compiler/symbol/GlobalTableUtils.js
   function createGlobalSymbolTable() {
-    const table = new SymbolTable("global", void 0, void 0);
+    const table = new SymbolTable(
+      "global",
+      void 0,
+      void 0,
+      "Global"
+      /* ScopeAccessType.Global */
+    );
     for (const t of BUILT_IN_SCALAR_TYPE_NAMES) {
       const config = BuiltInTypeConfig[t];
       const astTypeDefinition = config.astValues.astTypeDefinition;
-      const err = table.declareType(astTypeDefinition, void 0, true);
+      const err = table.registerTypeDefinition(astTypeDefinition, void 0, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
       }
     }
     for (const t of BUILT_IN_NUMERIC_OPERATIONS) {
-      const err = table.declareCallable(t, void 0, false, true);
+      const err = table.registerCallableDefinition(t, void 0, false, true);
       if (err) {
         console.log(err);
         throw new Error("Error during bind!");
@@ -334700,12 +334752,13 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     scopeIdCounter = 0;
     // used to deduplicate anonymous scopes (e.g. blocks)
     static createContext(violations) {
+      const globalTable = createGlobalSymbolTable();
       const symbolTableCreatorContext = {
         worklist: new BinderWorkList(),
         violations,
-        table: createGlobalSymbolTable(),
+        table: globalTable,
         currentNamespacePath: void 0,
-        namespaceRegistery: new NamespaceRegistry(),
+        namespaceRegistery: new NamespaceRegistry(globalTable),
         additionalContext: { state: "declaration", currentNamespaceNode: void 0 }
       };
       return symbolTableCreatorContext;
@@ -334752,11 +334805,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     bindDefinitionsForNodes(groupingNode, context) {
       groupingNode.astNodes.forEach((node) => {
-        if (node instanceof AstAbstractCallableDefinition) {
+        if (node instanceof AstNamedCallableDefinition) {
           let error;
           if (node instanceof AstFunctionDefinition || node instanceof AstWatFunctionDefinition || node instanceof AstOperatorDefinition || node instanceof AstWatOperatorDefinition || node instanceof AstDeclareFunctionStatement) {
             const isExternallyDefined = node instanceof AstDeclareFunctionStatement ? true : false;
-            error = context.table.declareCallable(node, context.currentNamespacePath, isExternallyDefined, false);
+            error = context.table.registerCallableDefinition(node, context.currentNamespacePath, isExternallyDefined, false);
           } else {
             throw new Error(`Not implemented for type: ${node.constructor.name}`);
           }
@@ -334764,18 +334817,23 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
             context.violations.push(error);
           }
         } else if (node instanceof AstCompositeDefinition) {
-          const error = context.table.declareType(node, context.currentNamespacePath);
+          const error = context.table.registerTypeDefinition(node, context.currentNamespacePath);
           if (error != void 0) {
             context.violations.push(error);
           }
           context.worklist.pushDefinitionSignature(node, context);
         } else if (node instanceof AstTypeBoundDefinition) {
-          const error = context.table.declareTypeBound(node, context.currentNamespacePath);
+          const error = context.table.registerTypeBound(node, context.currentNamespacePath);
           if (error != void 0) {
             context.violations.push(error);
           }
           context.worklist.pushDeclaration(node, context);
         } else if (node instanceof AstNamespaceDefinition) {
+          const error = context.table.registerNamespaceDefinition(node, context.currentNamespacePath, false);
+          if (error != void 0) {
+            context.violations.push(error);
+          }
+          context.worklist.pushDeclaration(node, context);
         } else {
         }
       });
@@ -334946,29 +335004,34 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       if (namespaceDefinitionNode.definitionScope != void 0) {
         return context;
       }
+      if (context.additionalContext.state == "definitionBody") {
+        const err = BINDER_ERROR_MESSAGES.namespaceDefinedInFunction(namespaceDefinitionNode);
+        context.violations.push(err);
+      }
+      const namespaceContext = this.handleNamespaceDefinitionRegistration(namespaceDefinitionNode, context);
+      this.traverseBlockNode(namespaceDefinitionNode.body, namespaceContext, false);
+      return context;
+    }
+    handleNamespaceDefinitionRegistration(namespaceDefinitionNode, context) {
       const namespacePathExpression = astPathToPathExpression(namespaceDefinitionNode.pathExpression);
       if (namespacePathExpression.hasRelativeComponent()) {
         const error = BINDER_ERROR_MESSAGES.namespaceDefinitionIsRelative(namespaceDefinitionNode, namespacePathExpression);
         context.violations.push(error);
         return context;
       }
-      const namespaceScope = new SymbolTable(`namespace:${namespacePathExpression.toString()}`, context.table, namespaceDefinitionNode);
-      namespaceDefinitionNode.definitionScope = namespaceScope;
-      let nestedPathExpression = context.currentNamespacePath == void 0 ? namespacePathExpression : context.currentNamespacePath.naiveConcat(namespacePathExpression);
-      nestedPathExpression = nestedPathExpression.normalize();
-      const possibleErr = context.table.declareNamespace(namespaceDefinitionNode, nestedPathExpression, false);
-      if (possibleErr != void 0) {
-        context.violations.push(possibleErr);
+      const _nestedPathExpression = context.currentNamespacePath == void 0 ? namespacePathExpression : context.currentNamespacePath.naiveConcat(namespacePathExpression);
+      const nestedPathExpression = _nestedPathExpression.normalize();
+      if (namespaceDefinitionNode.definitionScope != void 0) {
+        const newContext2 = {
+          worklist: context.worklist,
+          violations: context.violations,
+          table: namespaceDefinitionNode.definitionScope,
+          currentNamespacePath: nestedPathExpression,
+          namespaceRegistery: context.namespaceRegistery,
+          additionalContext: { state: "declaration", currentNamespaceNode: namespaceDefinitionNode }
+        };
+        return newContext2;
       }
-      const newContext = {
-        worklist: context.worklist,
-        violations: context.violations,
-        table: namespaceDefinitionNode.definitionScope,
-        currentNamespacePath: nestedPathExpression,
-        namespaceRegistery: context.namespaceRegistery,
-        additionalContext: { state: "declaration", currentNamespaceNode: namespaceDefinitionNode }
-      };
-      this.traverseBlockNode(namespaceDefinitionNode.body, newContext, false);
       const symbolName = namespaceDefinitionNode.symbolName;
       if (symbolName == void 0) {
         throw new Error("I haven't thought this through yet");
@@ -334984,9 +335047,35 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         context.violations.push(err);
         return context;
       }
-      const namespace = new Namespace2(nestedPathExpression, namespaceDefinitionNode, namespaceScope, symbol);
-      context.namespaceRegistery.addNamespace(namespace);
-      return context;
+      const existingRegisteredNamespace = context.namespaceRegistery.findNamespace(nestedPathExpression);
+      let namespaceScope;
+      if (existingRegisteredNamespace == void 0) {
+        const possibleErr = context.table.registerNamespaceDefinition(namespaceDefinitionNode, nestedPathExpression, false);
+        if (possibleErr != void 0) {
+          context.violations.push(possibleErr);
+        }
+        const res = context.namespaceRegistery.createNamespace(nestedPathExpression, namespaceDefinitionNode, symbol);
+        if (res.success != true) {
+          throw new Error("Should not fail");
+        }
+        namespaceScope = res.namespace.symbolTable;
+      } else {
+        namespaceScope = existingRegisteredNamespace.symbolTable;
+        existingRegisteredNamespace.definitionNodes.push(namespaceDefinitionNode);
+        if (existingRegisteredNamespace.symbolInformation == void 0) {
+          existingRegisteredNamespace.symbolInformation = symbol;
+        }
+      }
+      namespaceDefinitionNode.definitionScope = namespaceScope;
+      const newContext = {
+        worklist: context.worklist,
+        violations: context.violations,
+        table: namespaceDefinitionNode.definitionScope,
+        currentNamespacePath: nestedPathExpression,
+        namespaceRegistery: context.namespaceRegistery,
+        additionalContext: { state: "declaration", currentNamespaceNode: namespaceDefinitionNode }
+      };
+      return newContext;
     }
     // literals
     // The simple literals (numbers, bools, nulls) don't require any looksups or entries into
@@ -335177,7 +335266,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseRightPipeExpression(node, context) {
       this.traverse(node.lhs, context);
-      const rhsScope = new SymbolTable(`_rightPipe.${node.firstToken.createTokenSourceString()}`, context.table, node);
+      const rhsScope = new SymbolTable(`_rightPipe.${node.counter}.${node.firstToken.createTokenSourceString()}`, context.table, node);
       node.rhsScope = rhsScope;
       const fakeAstVariableWithOptType = new AstVariableWithOptType(node.rhs.parseTreeNode, true, new AstSimpleVariableAccess(node.rhs.parseTreeNode, new AstIdentifierNode(node.rhs.parseTreeNode, "_")), void 0);
       rhsScope.declareVariable(fakeAstVariableWithOptType, void 0, "Local", false);
@@ -335438,7 +335527,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return context;
     }
     traverseReturnStatement(node, context) {
-      if (context.table.isGlobal) {
+      if (context.table.isGloballyAccessible) {
         const error = {
           firstToken: node.firstToken,
           type: "ReturnFromGlobalScope",
@@ -335556,7 +335645,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return bodyContext;
     }
     traverseTypeAliasingStatement(node, context) {
-      const error = context.table.declareType(node, context.currentNamespacePath);
+      const error = context.table.registerTypeDefinition(node, context.currentNamespacePath);
       if (error != void 0) {
         context.violations.push(error);
       }
@@ -336557,7 +336646,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       let isStaticCall = false;
       if (functionName != void 0) {
-        isStaticCall = context.table.findSymbol(functionName)?.symbolDefinition.symbolType == "Function";
+        isStaticCall = context.table.findSymbol(functionName)?.symbolDefinition?.resolveSymbol()?.symbolType == "Function";
       }
       if (isStaticCall) {
         const resolvedOverloadTypeDefinition = this.dispatchToFunctionLike(node, resolvedTypeArguments, context);
@@ -336581,7 +336670,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "CallOnUncallable",
-            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.join(" ")}, but that expression is
+            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.map((t) => t.lexeme).join(" ")}, but that expression is
            not a function type. Instead it is: ${typeOfInternal.toString()}.
            Referenced on: ${node.firstToken.createTokenSourceString()}
           `)
@@ -336593,7 +336682,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
           const error = {
             firstToken: node.firstToken,
             type: "IncorrectNumberOfArgs",
-            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.join(" ")} but got the incorrect number of function arguments.
+            message: formatErrorMessage(`Attempting to dynamically call expression ${node.tokens.map((t) => t.lexeme).join(" ")} but got the incorrect number of function arguments.
           Function type was: ${resolvedCallExpressionType.toString()}
           But arguments to the call was: ${callArgumentTypes.map((t) => t.toShortString()).join(", ")}
           isStatic: ${isStaticCall}
@@ -337172,12 +337261,12 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     }
     traverseReturnStatement(node, context) {
       const parentFunction = node.getParentBlock();
-      if (!(parentFunction instanceof AstAbstractCallableDefinition || parentFunction instanceof AstFunctionLiteral)) {
+      if (!(parentFunction instanceof AstNamedCallableDefinition || parentFunction instanceof AstFunctionLiteral)) {
         throw new Error("Return in non-function call");
       }
       let parentFuncToString;
       let functionReturnTypeExpr;
-      if (parentFunction instanceof AstAbstractCallableDefinition) {
+      if (parentFunction instanceof AstNamedCallableDefinition) {
         functionReturnTypeExpr = parentFunction.returnTypeExpression;
         parentFuncToString = parentFunction.identifier.name;
       } else if (parentFunction instanceof AstFunctionLiteral) {
@@ -342060,15 +342149,25 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     // an expression evaluator and convert this to only evaluating statements (also split out the assignment subexpression evaluations too I think)
     lookupIrVariable(name, nodeScope, context) {
       const lookup = nodeScope.findSymbolAndScope(name);
-      if (lookup == void 0 || lookup.info.symbolDefinition.symbolType != "Variable") {
+      if (lookup == void 0 || lookup.info.symbolDefinition.resolveSymbol().symbolType != "Variable") {
         throw new Error(`Failed to lookup variable with name: ${name}`);
       }
-      const key = new IRVariableIdentifier(lookup.scope, name);
       let irVariable;
-      if (lookup.scope.isGlobal) {
-        irVariable = context.module.globals.getByName(name)[0];
+      if (lookup.info.symbolDefinition instanceof SymbolReferenceDefinition) {
+        const aliasedOriginalScope = lookup.info.symbolDefinition.originalSymbol.declaringScope;
+        const key = new IRVariableIdentifier(aliasedOriginalScope, name);
+        if (aliasedOriginalScope.isGloballyAccessible) {
+          irVariable = context.module.globals.getByName(name)[0];
+        } else {
+          irVariable = context.func.definition.getVariable(key);
+        }
       } else {
-        irVariable = context.func.definition.getVariable(key);
+        const key = new IRVariableIdentifier(lookup.scope, name);
+        if (lookup.scope.isGloballyAccessible) {
+          irVariable = context.module.globals.getByName(name)[0];
+        } else {
+          irVariable = context.func.definition.getVariable(key);
+        }
       }
       return irVariable;
     }
@@ -342876,7 +342975,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var import_wabt = __toESM(require_wabt(), 1);
 
   // build-info.js
-  var buildDateStr = "5/11/2026 7:15:43 AM";
+  var buildDateStr = "6/20/2026 7:12:52 PM";
   console.log("build date:", buildDateStr);
   var build_info_default = {};
 
@@ -342948,18 +343047,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var LOCAL_STORAGE_SAVE_KEY = "saved-code";
   self.MonacoEnvironment = {
     getWorkerUrl: /* @__PURE__ */ __name(function(moduleId, label) {
-      if (label === "json") {
-        return "./vs/language/json/json.worker.js";
-      }
-      if (label === "css" || label === "scss" || label === "less") {
-        return "./vs/language/css/css.worker.js";
-      }
-      if (label === "html" || label === "handlebars" || label === "razor") {
-        return "./vs/language/html/html.worker.js";
-      }
-      if (label === "typescript" || label === "javascript") {
-        return "./vs/language/typescript/ts.worker.js";
-      }
       return "./vs/editor/editor.worker.js";
     }, "getWorkerUrl")
   };
@@ -343052,21 +343139,19 @@ function main(): Complex {
       compileWat("test", formatted).then((res) => {
         const { binary, module: module2 } = res;
         return binary;
-      }).then((binary) => {
-        instantiateModule({ moduleContent: binary, runModule: true }).then((res) => {
-          const { result } = res;
-          console.log(result);
-          evaluationOutput.setValue(`${result}`);
-        });
+      }).then((binary) => instantiateModule({ moduleContent: binary, runModule: true })).then((res) => {
+        const { result } = res;
+        console.log(result);
+        evaluationOutput.setValue(`${result}`);
       }).catch((error) => {
-        evaluationOutput.setValue("ERROR: \n" + error.message);
+        evaluationOutput.setValue("ERROR: \n" + (error.stack || error.message));
         console.error(error);
       });
     } catch (ex) {
       compilerOutput.setValue(`ERROR: 
  ${ex.message}`);
       console.error(ex);
-      evaluationOutput.setValue("");
+      evaluationOutput.setValue("Error during compilation");
     }
   });
   document.querySelector("#save-button").addEventListener("click", () => {
