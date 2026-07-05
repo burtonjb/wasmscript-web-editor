@@ -332950,8 +332950,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       this.originalSymbol = originalSymbol;
     }
     resolveOriginalScope() {
-      if (this.originalSymbol instanceof _SymbolReferenceDefinition) {
-        return this.originalSymbol.resolveOriginalScope();
+      if (this.originalSymbol.symbolDefinition instanceof _SymbolReferenceDefinition) {
+        return this.originalSymbol.symbolDefinition.resolveOriginalScope();
       }
       return this.originalSymbol.declaringScope;
     }
@@ -342154,7 +342154,11 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       }
       let irVariable;
       if (lookup.info.symbolDefinition instanceof SymbolReferenceDefinition) {
-        const aliasedOriginalScope = lookup.info.symbolDefinition.originalSymbol.declaringScope;
+        let aliasingSymbol = lookup.info.symbolDefinition;
+        while (aliasingSymbol.originalSymbol instanceof SymbolReferenceDefinition) {
+          aliasingSymbol = aliasingSymbol.originalSymbol;
+        }
+        const aliasedOriginalScope = aliasingSymbol.originalSymbol.declaringScope;
         const key = new IRVariableIdentifier(aliasedOriginalScope, name);
         if (aliasedOriginalScope.isGloballyAccessible) {
           irVariable = context.module.globals.getByName(name)[0];
@@ -342864,8 +342868,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       return "";
     }
   }, "jsonToWat");
-  function compileFiles(values, printDebugInfo) {
+  function compileFiles(values, debugInfoRequested) {
     let hasError = false;
+    const internalDebugStrings = {};
     const scanner = new Scanner3();
     const scanResult = scanner.scanFiles(values.map((v) => [v.contents, v.filename]));
     if (scanResult.errors.length > 0) {
@@ -342884,6 +342889,10 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const binderContext = Binder.createContext(violations);
     try {
       binder.traverse(parseResult, binderContext);
+      if (debugInfoRequested?.captureDebugStrings) {
+        internalDebugStrings.binderMarkdownTable = binderContext.table.toMarkdownString();
+        internalDebugStrings.namespaceMarkdown = binderContext.namespaceRegistery.toMarkdownString();
+      }
     } catch (error) {
       hasError = true;
       console.error(error);
@@ -342891,7 +342900,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const binderEndTimeMs = performance.now();
     const binderTimeMs = binderEndTimeMs - binderStartTimeMs;
     if (hasError || binderContext.violations.length > 0) {
-      console.log(binderContext.table.toMarkdownString(printDebugInfo?.printBuiltInSymbols));
       console.log(violations);
       for (const mismatch of violations) {
         const contents = values.filter((v) => v.filename == mismatch.firstToken.file)[0].contents;
@@ -342911,6 +342919,9 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     try {
       checker.scanSymbolTable(checkerContext);
       checker.traverse(parseResult, checkerContext);
+      if (debugInfoRequested?.captureDebugStrings) {
+        internalDebugStrings.checkerTableMarkdown = checkerContext.table.toMarkdownString();
+      }
     } catch (error) {
       hasError = true;
       console.error(error);
@@ -342918,7 +342929,6 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
     const checkerEndTimeMs = performance.now();
     const checkerTimeMs = checkerEndTimeMs - checkerStartTimeMs;
     if (hasError || checkerContext.typeMismatches.length > 0) {
-      console.log(checkerContext.table.toMarkdownString(printDebugInfo?.printBuiltInSymbols));
       console.log(checkerContext.typeMismatches);
       for (const mismatch of checkerContext.typeMismatches) {
         const contents = values.filter((v) => v.filename == mismatch.firstToken.file)[0].contents;
@@ -342929,19 +342939,19 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
       throw new Error(`Found type checker errors while processing input.
     Errors: ${errorMessages}`);
     }
-    if (printDebugInfo && printDebugInfo.symbolTable) {
-      console.log(checkerContext.table.toMarkdownString());
-    }
     const emitterStartTimeMs = performance.now();
     const irEmitter = new IRModuleConverter();
     const irModule = irEmitter.toIRModule(parseResult, {
       table: binderContext.table
     });
-    if (printDebugInfo) {
-      console.log(irModule.toJson({}));
+    if (debugInfoRequested?.captureDebugStrings) {
+      internalDebugStrings.irJson = irModule.toJson({});
     }
     const emitterV2 = new WasmModuleEmitterV2();
     const watModule = emitterV2.convertToWasmModule(irModule);
+    if (debugInfoRequested?.captureDebugStrings) {
+      internalDebugStrings.watJson = watModule.toWatJson({});
+    }
     const emitterEndTimeMs = performance.now();
     const emitterTimeMs = emitterEndTimeMs - emitterStartTimeMs;
     return {
@@ -342953,7 +342963,8 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
         binder: binderTimeMs,
         checker: checkerTimeMs,
         emitter: emitterTimeMs
-      }
+      },
+      internalDebugStrings
     };
   }
   __name(compileFiles, "compileFiles");
@@ -342975,7 +342986,7 @@ and the first ${len} remaining tokens are: ${tokenStream.tokens.slice(this.cache
   var import_wabt = __toESM(require_wabt(), 1);
 
   // build-info.js
-  var buildDateStr = "6/20/2026 7:12:52 PM";
+  var buildDateStr = "7/5/2026 5:29:49 PM";
   console.log("build date:", buildDateStr);
   var build_info_default = {};
 
